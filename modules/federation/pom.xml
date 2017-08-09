@@ -19,8 +19,9 @@
 
   <licenses>
     <license>
-      <name>lgpl</name>
-      <url>http://repository.jboss.com/licenses/lgpl.txt</url>
+      <name>Apache License, Version 2.0</name>
+      <distribution>repo</distribution>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
     </license>
   </licenses>
 
