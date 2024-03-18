@@ -2,7 +2,7 @@
   <parent>
     <groupId>org.picketlink</groupId>
     <artifactId>picketlink-parent</artifactId>
-    <version>2.5.5.SP7</version>
+    <version>2.5.5.jdk17.1</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,7 @@
   <description>PicketLink Federation Core contains the core infrastructure code</description>
 
   <properties>
-    <picketbox.version>4.0.20.Final</picketbox.version>
+    <picketbox.version>5.0.3.jdk17.1</picketbox.version>
   </properties>
 
   <licenses>
@@ -122,6 +122,12 @@
       <groupId>org.jboss.security</groupId>
       <artifactId>jbossxacml</artifactId>
       <version>2.0.8.Final</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-core</artifactId>
+      <version>3.3.6</version>
     </dependency>
 
     <dependency>

@@ -17,10 +17,10 @@
  */
 package org.picketlink.identity.federation.core.wstrust.auth;
 
+import org.apache.cxf.common.security.SimpleGroup;
+import org.apache.cxf.common.security.SimplePrincipal;
 import org.jboss.security.SecurityConstants;
 import org.jboss.security.SecurityContext;
-import org.jboss.security.SimpleGroup;
-import org.jboss.security.SimplePrincipal;
 import org.jboss.security.identity.Role;
 import org.jboss.security.identity.RoleGroup;
 import org.jboss.security.mapping.MappingContext;
@@ -57,7 +57,6 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.security.acl.Group;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -760,7 +759,7 @@ public abstract class AbstractSTSLoginModule implements LoginModule {
         }
 
         if (injectCallerPrincipalGroup) {
-            Group callerPrincipal = new SimpleGroup("CallerPrincipal");
+            SimpleGroup callerPrincipal = new SimpleGroup("CallerPrincipal");
             List<String> roles = AssertionUtil.getRoles(assertion, null);
             for (String role : roles) {
                 callerPrincipal.addMember(new SimplePrincipal(role));
