@@ -9,8 +9,8 @@
   </parent>
 
   <groupId>org.picketlink</groupId>
-  <artifactId>picketlink-jdocbook-style</artifactId>
-  <version>2.5.5.jdk17.1</version>
+  <artifactId>picketlink-jdk17-jdocbook-style</artifactId>
+  <version>2.5.5.bravura.2</version>
   <packaging>jdocbook-style</packaging>
 
   <name>PicketLink Documentation Style</name>

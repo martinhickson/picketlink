@@ -4,12 +4,12 @@
 
   <parent>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-base-parent</artifactId>
-    <version>2.5.5.jdk17.1</version>
+    <artifactId>picketlink-jdk17-base-parent</artifactId>
+    <version>2.5.5.bravura.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>picketlink-api</artifactId>
+  <artifactId>picketlink-jdk17-api</artifactId>
   <packaging>jar</packaging>
 
   <name>PicketLink API</name>
@@ -17,7 +17,7 @@
   <dependencies>
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
     </dependency>
     <dependency>
       <groupId>javax.enterprise</groupId>

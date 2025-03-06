@@ -3,8 +3,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.picketlink</groupId>
-  <artifactId>picketlink-parent</artifactId>
-  <version>2.5.5.jdk17.1</version>
+  <artifactId>picketlink-jdk17-parent</artifactId>
+  <version>2.5.5.bravura.2</version>
   <packaging>pom</packaging>
 
   <name>PicketLink Parent</name>
@@ -145,55 +145,55 @@
     <dependencies>
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-config</artifactId>
+        <artifactId>picketlink-jdk17-config</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-common</artifactId>
+        <artifactId>picketlink-jdk17-common</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-api</artifactId>
+        <artifactId>picketlink-jdk17-api</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-impl</artifactId>
+        <artifactId>picketlink-jdk17-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-idm-api</artifactId>
+        <artifactId>picketlink-jdk17-idm-api</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-idm-impl</artifactId>
+        <artifactId>picketlink-jdk17-idm-impl</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-idm-drools</artifactId>
+        <artifactId>picketlink-jdk17-idm-drools</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-idm-simple-schema</artifactId>
+        <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-federation</artifactId>
+        <artifactId>picketlink-jdk17-federation</artifactId>
         <version>${project.version}</version>
         <exclusions>
           <exclusion>
@@ -209,13 +209,13 @@
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-json</artifactId>
+        <artifactId>picketlink-jdk17-json</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-social</artifactId>
+        <artifactId>picketlink-jdk17-social</artifactId>
         <version>${project.version}</version>
         <exclusions>
           <exclusion>
@@ -231,7 +231,7 @@
 
       <dependency>
         <groupId>org.picketlink</groupId>
-        <artifactId>picketlink-deltaspike</artifactId>
+        <artifactId>picketlink-jdk17-deltaspike</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -362,6 +362,7 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.3</version>
           <configuration>
+            <useIncrementalCompilation>false</useIncrementalCompilation>
             <source>1.8</source>
             <target>1.8</target>
           </configuration>
@@ -447,7 +448,7 @@
           <dependencies>
             <dependency>
               <groupId>org.picketlink</groupId>
-              <artifactId>picketlink-build-config</artifactId>
+              <artifactId>picketlink-jdk17-build-config</artifactId>
               <version>${project.version}</version>
             </dependency>
           </dependencies>

@@ -3,12 +3,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-idm-parent</artifactId>
-    <version>2.5.5.jdk17.1</version>
+    <artifactId>picketlink-jdk17-idm-parent</artifactId>
+    <version>2.5.5.bravura.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>picketlink-idm-tests</artifactId>
+  <artifactId>picketlink-jdk17-idm-tests</artifactId>
   <packaging>jar</packaging>
   <name>PicketLink Identity Management Tests</name>
 
@@ -32,22 +32,22 @@
   <dependencies>
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-impl</artifactId>
+      <artifactId>picketlink-jdk17-idm-impl</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-simple-schema</artifactId>
+      <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-config</artifactId>
+      <artifactId>picketlink-jdk17-config</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -204,27 +204,27 @@
             <dependencies>
               <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-idm-api</artifactId>
+                <artifactId>picketlink-jdk17-idm-api</artifactId>
                 <version>${project.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-idm-impl</artifactId>
+                <artifactId>picketlink-jdk17-idm-impl</artifactId>
                 <version>${project.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-idm-simple-schema</artifactId>
+                <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
                 <version>${project.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-common</artifactId>
+                <artifactId>picketlink-jdk17-common</artifactId>
                 <version>${project.version}</version>
               </dependency>
               <dependency>
                 <groupId>org.picketlink</groupId>
-                <artifactId>picketlink-idm-tests</artifactId>
+                <artifactId>picketlink-jdk17-idm-tests</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
               </dependency>

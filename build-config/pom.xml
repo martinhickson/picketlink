@@ -2,12 +2,12 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-parent</artifactId>
-    <version>2.5.5.jdk17.1</version>
+    <artifactId>picketlink-jdk17-parent</artifactId>
+    <version>2.5.5.bravura.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>picketlink-build-config</artifactId>
+  <artifactId>picketlink-jdk17-build-config</artifactId>
 
   <name>PicketLink Build Configuration</name>
 

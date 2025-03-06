@@ -4,12 +4,12 @@
 
 	<parent>
 		<groupId>org.picketlink</groupId>
-		<artifactId>picketlink-idm-parent</artifactId>
-		<version>2.5.5.jdk17.1</version>
+		<artifactId>picketlink-jdk17-idm-parent</artifactId>
+		<version>2.5.5.bravura.2</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>picketlink-idm-drools</artifactId>
+	<artifactId>picketlink-jdk17-idm-drools</artifactId>
 	<packaging>jar</packaging>
 
 	<name>PicketLink Identity Management Drools Integration</name>
@@ -17,12 +17,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.picketlink</groupId>
-			<artifactId>picketlink-common</artifactId>
+			<artifactId>picketlink-jdk17-common</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>org.picketlink</groupId>
-			<artifactId>picketlink-idm-api</artifactId>
+			<artifactId>picketlink-jdk17-idm-api</artifactId>
 		</dependency>
 		
     <dependency>

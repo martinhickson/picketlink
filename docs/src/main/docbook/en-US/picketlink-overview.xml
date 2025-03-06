@@ -179,7 +179,7 @@
     <!-- Dependency Management for PicketLink and Java EE 6.0. -->
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-javaee-6.0</artifactId>
+      <artifactId>picketlink-jdk17-javaee-6.0</artifactId>
       <version>${version.picketlink.javaee.bom}</version>
       <scope>import</scope>
       <type>pom</type>
@@ -201,14 +201,14 @@
         and can compile against it -->
   <dependency>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-api</artifactId>
+    <artifactId>picketlink-jdk17-api</artifactId>
   </dependency>
 
   <!-- Import the PicketLink implementation, we deploy this as library with the application,
         but don't compile against it -->
   <dependency>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-impl</artifactId>
+    <artifactId>picketlink-jdk17-impl</artifactId>
     <scope>runtime</scope>
   </dependency>
 </dependencies>]]></programlisting>
@@ -227,7 +227,7 @@
     <!-- Dependency Management for PicketLink and Apache Deltaspike. -->
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-javaee-6.0-with-deltaspike</artifactId>
+      <artifactId>picketlink-jdk17-javaee-6.0-with-deltaspike</artifactId>
       <version>${version.picketlink.javaee.bom}</version>
       <scope>import</scope>
       <type>pom</type>
@@ -243,13 +243,13 @@
     <programlisting language="XML"><![CDATA[<dependencies>
   <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
       <scope>compile</scope>
   </dependency>
   
   <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-impl</artifactId>
+      <artifactId>picketlink-jdk17-idm-impl</artifactId>
       <scope>runtime</scope>
   </dependency>]]></programlisting>
 
@@ -260,7 +260,7 @@
 
     <programlisting language="XML"><![CDATA[  <dependency>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-idm-simple-schema</artifactId>
+    <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
   </dependency>]]></programlisting>
 
     <para>
@@ -274,14 +274,14 @@
 <dependencies>
   <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
       <scope>compile</scope>
       <version>${picketlink.version}</version>
   </dependency>
 
   <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-impl</artifactId>
+      <artifactId>picketlink-jdk17-idm-impl</artifactId>
       <scope>runtime</scope>
       <version>${picketlink.version}</version>
   </dependency>

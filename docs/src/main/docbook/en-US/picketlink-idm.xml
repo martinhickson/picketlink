@@ -740,7 +740,7 @@ builder
           
           <programlisting language="XML"><![CDATA[<dependency>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-idm-schema</artifactId>
+    <artifactId>picketlink-jdk17-idm-schema</artifactId>
     <version>${picketlink.version}</version>
 </dependency>]]></programlisting>
 

@@ -4,12 +4,12 @@
 
   <parent>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-parent</artifactId>
-    <version>2.5.5.jdk17.1</version>
+    <artifactId>picketlink-jdk17-parent</artifactId>
+    <version>2.5.5.bravura.2</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>picketlink-distribution</artifactId>
+  <artifactId>picketlink-jdk17-distribution</artifactId>
   <packaging>jar</packaging>
 
   <name>PicketLink Distribution</name>
@@ -24,42 +24,42 @@
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-api</artifactId>
+      <artifactId>picketlink-jdk17-api</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-impl</artifactId>
+      <artifactId>picketlink-jdk17-impl</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-impl</artifactId>
+      <artifactId>picketlink-jdk17-idm-impl</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-simple-schema</artifactId>
+      <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-common</artifactId>
+      <artifactId>picketlink-jdk17-common</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -74,7 +74,7 @@
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-api</artifactId>
+      <artifactId>picketlink-jdk17-api</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
       <optional>true</optional>
@@ -82,14 +82,14 @@
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-impl</artifactId>
+      <artifactId>picketlink-jdk17-impl</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-api</artifactId>
+      <artifactId>picketlink-jdk17-idm-api</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
       <optional>true</optional>
@@ -97,14 +97,14 @@
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-impl</artifactId>
+      <artifactId>picketlink-jdk17-idm-impl</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-idm-simple-schema</artifactId>
+      <artifactId>picketlink-jdk17-idm-simple-schema</artifactId>
       <version>${project.version}</version>
       <classifier>sources</classifier>
     </dependency>
@@ -113,7 +113,7 @@
 
     <!--dependency>
        <groupId>org.picketlink</groupId>
-       <artifactId>picketlink-api</artifactId>
+       <artifactId>picketlink-jdk17-api</artifactId>
        <version>${project.version}</version>
        <classifier>javadoc</classifier>
        <optional>true</optional>
@@ -121,7 +121,7 @@
 
     <dependency>
        <groupId>org.picketlink</groupId>
-       <artifactId>picketlink-idm-api</artifactId>
+       <artifactId>picketlink-jdk17-idm-api</artifactId>
        <version>${project.version}</version>
        <classifier>javadoc</classifier>
        <optional>true</optional>
@@ -131,7 +131,7 @@
 
     <dependency>
       <groupId>org.picketlink</groupId>
-      <artifactId>picketlink-reference-guide</artifactId>
+      <artifactId>picketlink-jdk17-reference-guide</artifactId>
       <version>${project.version}</version>
       <type>war</type>
       <optional>true</optional>

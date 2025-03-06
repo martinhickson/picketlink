@@ -5,12 +5,12 @@
 
   <parent>
     <groupId>org.picketlink</groupId>
-    <artifactId>picketlink-javaee-6.0</artifactId>
-    <version>2.5.5.jdk17.1</version>
+    <artifactId>picketlink-jdk17-javaee-6.0</artifactId>
+    <version>2.5.5.bravura.2</version>
     <relativePath>../picketlink-javaee-6.0/pom.xml</relativePath>
   </parent>
 
-  <artifactId>picketlink-javaee-6.0-with-deltaspike</artifactId>
+  <artifactId>picketlink-jdk17-javaee-6.0-with-deltaspike</artifactId>
   <packaging>pom</packaging>
 
   <name>PicketLink Java EE 6.0 BOM with Apache Deltaspike</name>

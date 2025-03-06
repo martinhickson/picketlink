@@ -131,13 +131,13 @@
     </para>
     <programlisting language="XML"><![CDATA[<dependency>
   <groupId>org.picketlink</groupId>
-  <artifactId>picketlink-api</artifactId>
+  <artifactId>picketlink-jdk17-api</artifactId>
   <scope>provided</scope>
 </dependency>
 
 <dependency>
   <groupId>org.picketlink</groupId>
-  <artifactId>picketlink-idm-api</artifactId>
+  <artifactId>picketlink-jdk17-idm-api</artifactId>
   <scope>provided</scope>
 </dependency>
 ]]></programlisting>

@@ -1,4 +1,7 @@
 # PicketLink 2.5 #
+
+The use of JDK 8 for compilation is a requirement.
+
 [![Build Status](https://travis-ci.org/picketlink/picketlink.png?branch=master)](https://travis-ci.org/picketlink/picketlink)
 
 PicketLink provides features for securing Java EE applications.
