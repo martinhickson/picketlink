@@ -18,10 +18,10 @@
 
 package org.picketlink.common.reflection;
 
-import javax.enterprise.inject.spi.AnnotatedField;
-import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Qualifier;
+import jakarta.enterprise.inject.spi.AnnotatedField;
+import jakarta.enterprise.inject.spi.AnnotatedType;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Qualifier;
 import java.beans.Introspector;
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
