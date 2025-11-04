@@ -20,9 +20,9 @@ package org.picketlink.identity.federation.web.core;
 import org.picketlink.identity.federation.core.interfaces.ProtocolContext;
 import org.picketlink.identity.federation.core.interfaces.SecurityTokenProvider;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.namespace.QName;
 
 /**

@@ -44,10 +44,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.soap.SOAPConnection;
-import javax.xml.soap.SOAPConnectionFactory;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
+import jakarta.xml.soap.SOAPConnection;
+import jakarta.xml.soap.SOAPConnectionFactory;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayInputStream;

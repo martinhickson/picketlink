@@ -49,7 +49,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;

@@ -38,17 +38,17 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPPart;
+import jakarta.xml.soap.SOAPBody;
+import jakarta.xml.soap.SOAPEnvelope;
+import jakarta.xml.soap.SOAPPart;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.ws.BindingProvider;
-import javax.xml.ws.Dispatch;
-import javax.xml.ws.Service;
-import javax.xml.ws.Service.Mode;
-import javax.xml.ws.soap.SOAPBinding;
+import jakarta.xml.ws.BindingProvider;
+import jakarta.xml.ws.Dispatch;
+import jakarta.xml.ws.Service;
+import jakarta.xml.ws.Service.Mode;
+import jakarta.xml.ws.soap.SOAPBinding;
 
 import java.io.InputStream;
 import java.net.URI;

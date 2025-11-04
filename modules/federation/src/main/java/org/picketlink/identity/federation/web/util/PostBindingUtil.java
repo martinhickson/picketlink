@@ -27,8 +27,8 @@ import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.util.Base64;
 import org.picketlink.identity.federation.core.saml.v2.holders.DestinationInfoHolder;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

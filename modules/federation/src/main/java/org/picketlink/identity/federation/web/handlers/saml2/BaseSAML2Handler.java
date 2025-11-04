@@ -32,8 +32,8 @@ import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRe
 import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerResponse;
 import org.picketlink.identity.federation.web.core.HTTPContext;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 
 /**

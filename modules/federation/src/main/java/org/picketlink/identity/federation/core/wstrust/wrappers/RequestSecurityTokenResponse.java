@@ -38,7 +38,7 @@ import org.picketlink.identity.federation.ws.trust.RequestedTokenCancelledType;
 import org.picketlink.identity.federation.ws.trust.StatusType;
 import org.picketlink.identity.federation.ws.trust.UseKeyType;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 import java.net.URI;
 import java.net.URISyntaxException;

@@ -25,9 +25,9 @@ import org.picketlink.identity.federation.core.saml.v2.common.SAMLProtocolContex
 import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
 import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
 
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionListener;
 
 /**
  * An instance of {@link HttpSessionListener} at the IDP that performs actions when an {@link HttpSession} is created

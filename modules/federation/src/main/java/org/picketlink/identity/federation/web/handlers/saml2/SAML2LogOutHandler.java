@@ -53,9 +53,9 @@ import org.picketlink.identity.federation.web.core.IdentityServer;
 import org.picketlink.identity.federation.web.util.RedirectBindingUtil;
 import org.w3c.dom.Document;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.net.URI;

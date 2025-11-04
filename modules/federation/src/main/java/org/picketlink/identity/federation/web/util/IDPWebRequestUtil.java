@@ -46,8 +46,8 @@ import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.w3c.dom.Document;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

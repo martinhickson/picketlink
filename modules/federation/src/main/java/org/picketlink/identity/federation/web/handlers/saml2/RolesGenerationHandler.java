@@ -34,7 +34,7 @@ import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRe
 import org.picketlink.identity.federation.saml.v2.protocol.LogoutRequestType;
 import org.picketlink.identity.federation.web.core.HTTPContext;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;

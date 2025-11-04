@@ -17,7 +17,7 @@
  */
 package org.picketlink.identity.federation.web.config;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;

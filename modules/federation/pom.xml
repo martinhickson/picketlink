@@ -55,8 +55,14 @@
 
     <dependency>
       <groupId>org.jboss.security</groupId>
-      <artifactId>jbossxacml</artifactId>
-      <version>2.0.8.Final</version>
+      <artifactId>jboss-xacml</artifactId>
+      <version>2.1.8.jakarta.bravura.11</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.xerces</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -66,15 +72,37 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jboss.spec.javax.servlet</groupId>
-      <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>5.0.0</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
-      <groupId>javax.persistence</groupId>
-      <artifactId>persistence-api</artifactId>
-      <version>1.0</version>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.xml.ws</groupId>
+      <artifactId>jakarta.xml.ws-api</artifactId>
+      <version>3.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.xml.soap</groupId>
+      <artifactId>jakarta.xml.soap-api</artifactId>
+      <version>2.0.1</version>
       <scope>provided</scope>
     </dependency>
 

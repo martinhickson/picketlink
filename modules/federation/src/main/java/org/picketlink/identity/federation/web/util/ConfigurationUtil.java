@@ -36,7 +36,7 @@ import org.picketlink.config.federation.parsers.SAMLConfigParser;
 import org.picketlink.identity.federation.core.audit.PicketLinkAuditHelper;
 import org.picketlink.identity.federation.web.config.AbstractSAMLConfigurationProvider;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import static org.picketlink.common.constants.GeneralConstants.AUDIT_HELPER;
 import static org.picketlink.common.constants.GeneralConstants.CONFIG_FILE_LOCATION;

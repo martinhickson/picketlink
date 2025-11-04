@@ -46,8 +46,8 @@ import org.picketlink.identity.federation.saml.v2.protocol.XACMLAuthzDecisionQue
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.StringWriter;

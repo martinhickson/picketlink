@@ -42,12 +42,12 @@ import org.picketlink.identity.federation.saml.v2.metadata.RoleDescriptorType;
 import org.picketlink.identity.federation.web.util.ConfigurationUtil;
 import org.w3c.dom.Element;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.IOException;
 import java.io.InputStream;

@@ -18,7 +18,7 @@
 package org.picketlink.identity.federation.core.wstrust;
 
 import javax.xml.transform.Source;
-import javax.xml.ws.Provider;
+import jakarta.xml.ws.Provider;
 
 /**
  * <p>

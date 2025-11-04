@@ -41,9 +41,9 @@ import org.picketlink.identity.federation.saml.v2.assertion.SubjectType;
 import org.picketlink.identity.federation.saml.v2.profiles.xacml.assertion.XACMLAuthzDecisionStatementType;
 import org.w3c.dom.Element;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -205,7 +205,6 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
         try {
             JAXBContext jaxb = JAXBContext.newInstance(xacmlPath);
             Unmarshaller un = jaxb.createUnmarshaller();
-            un.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
             JAXBElement<ResponseType> jaxbResponseType = (JAXBElement<ResponseType>) un.unmarshal(DocumentUtil
                     .getNodeAsStream(xacmlResponse));
             return jaxbResponseType.getValue();
@@ -222,7 +221,6 @@ public class SAMLAssertionParser implements ParserNamespaceSupport {
         try {
             JAXBContext jaxb = JAXBContext.newInstance(xacmlPath);
             Unmarshaller un = jaxb.createUnmarshaller();
-            un.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
             JAXBElement<RequestType> jaxbRequestType = (JAXBElement<RequestType>) un.unmarshal(DocumentUtil
                     .getNodeAsStream(xacmlRequest));
             return jaxbRequestType.getValue();

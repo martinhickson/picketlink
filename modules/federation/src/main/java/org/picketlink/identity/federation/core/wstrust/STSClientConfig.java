@@ -23,7 +23,7 @@ import org.picketlink.common.constants.WSTrustConstants;
 import org.picketlink.common.util.StringUtil;
 import org.picketlink.identity.federation.core.constants.PicketLinkFederationConstants;
 
-import javax.xml.ws.soap.SOAPBinding;
+import jakarta.xml.ws.soap.SOAPBinding;
 
 import java.io.File;
 import java.io.FileInputStream;

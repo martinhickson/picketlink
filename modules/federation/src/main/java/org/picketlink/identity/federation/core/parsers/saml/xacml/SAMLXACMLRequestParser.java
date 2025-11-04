@@ -27,9 +27,9 @@ import org.picketlink.identity.federation.core.parsers.saml.SAMLRequestAbstractP
 import org.picketlink.identity.federation.saml.v2.protocol.XACMLAuthzDecisionQueryType;
 import org.w3c.dom.Element;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.events.EndElement;
@@ -108,7 +108,6 @@ public class SAMLXACMLRequestParser extends SAMLRequestAbstractParser implements
                 try {
                     JAXBContext jaxb = JAXBContext.newInstance(xacmlPath);
                     Unmarshaller un = jaxb.createUnmarshaller();
-                    un.setEventHandler(new javax.xml.bind.helpers.DefaultValidationEventHandler());
                     JAXBElement<RequestType> jaxbRequestType = (JAXBElement<RequestType>) un.unmarshal(DocumentUtil
                             .getNodeAsStream(xacmlRequest));
                     RequestType req = jaxbRequestType.getValue();

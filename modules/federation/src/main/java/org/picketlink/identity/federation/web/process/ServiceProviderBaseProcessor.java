@@ -44,7 +44,7 @@ import org.picketlink.identity.federation.core.saml.v2.util.SAMLMetadataUtil;
 import org.picketlink.identity.federation.saml.v2.metadata.IDPSSODescriptorType;
 import org.picketlink.identity.federation.web.core.HTTPContext;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URL;
 import java.security.PublicKey;

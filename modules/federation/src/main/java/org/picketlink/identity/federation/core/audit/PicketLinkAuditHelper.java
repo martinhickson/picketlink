@@ -35,7 +35,7 @@ import org.w3c.dom.Text;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 import java.io.InputStream;
 
 /**

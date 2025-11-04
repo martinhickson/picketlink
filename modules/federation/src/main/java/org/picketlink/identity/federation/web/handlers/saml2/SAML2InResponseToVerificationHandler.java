@@ -24,7 +24,7 @@ import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRe
 import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerResponse;
 import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Handler is useful on SP side. It's used for verification that InResponseId from SAML Authentication Response is same

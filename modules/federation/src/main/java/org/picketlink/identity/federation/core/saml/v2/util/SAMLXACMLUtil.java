@@ -24,12 +24,12 @@ import org.picketlink.common.PicketLinkLogger;
 import org.picketlink.common.PicketLinkLoggerFactory;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
-import org.picketlink.common.util.TransformerUtil;
 import org.w3c.dom.Document;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 
@@ -56,7 +56,10 @@ public class SAMLXACMLUtil {
         StreamResult result = new StreamResult(baos);
 
         try {
-            TransformerUtil.transform(SAMLXACMLUtil.getJAXBContext(), jaxb, result);
+            JAXBContext context = getJAXBContext();
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, false);
+            marshaller.marshal(jaxb, baos);
             return DocumentUtil.getDocument(new String(baos.toByteArray()));
         } catch (Exception e) {
             throw logger.processingError(e);
@@ -65,13 +68,13 @@ public class SAMLXACMLUtil {
 
     public static Document getXACMLRequest(RequestType requestType) throws ProcessingException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        // Marshaller marshaller = getMarshaller();
         JAXBElement<?> jaxb = (new ObjectFactory()).createRequest(requestType);
 
-        StreamResult result = new StreamResult(baos);
-
         try {
-            TransformerUtil.transform(getJAXBContext(), jaxb, result);
+            JAXBContext context = getJAXBContext();
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, false);
+            marshaller.marshal(jaxb, baos);
             return DocumentUtil.getDocument(new String(baos.toByteArray()));
         } catch (Exception e) {
             throw logger.processingError(e);

@@ -32,7 +32,7 @@ import org.picketlink.identity.federation.web.core.HTTPContext;
 import org.picketlink.identity.federation.web.util.RedirectBindingSignatureUtil;
 import org.w3c.dom.Document;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.PublicKey;
 import java.util.Map;
 

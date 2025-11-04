@@ -79,8 +79,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
 import javax.xml.namespace.QName;
 import java.net.URI;
 import java.security.Principal;
