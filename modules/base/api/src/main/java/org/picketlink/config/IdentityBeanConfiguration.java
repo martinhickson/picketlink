@@ -21,7 +21,7 @@
  */
 package org.picketlink.config;
 
-import javax.enterprise.context.NormalScope;
+import jakarta.enterprise.context.NormalScope;
 import java.lang.annotation.Annotation;
 
 /**

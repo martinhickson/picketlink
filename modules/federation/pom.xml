@@ -1,21 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.picketlink</groupId>
     <artifactId>picketlink-parent</artifactId>
     <version>2.5.5.jdk17.1</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
   <artifactId>picketlink-federation</artifactId>
   <packaging>jar</packaging>
 
   <name>PicketLink Federation Core</name>
-  <url>http://labs.jboss.org/portal/picketlink/</url>
   <description>PicketLink Federation Core contains the core infrastructure code</description>
+  <url>http://labs.jboss.org/portal/picketlink/</url>
 
-  <properties>
-    <picketbox.version>5.0.3.jdk17.1</picketbox.version>
-  </properties>
+  <organization>
+    <name>JBoss Inc.</name>
+    <url>http://www.jboss.org</url>
+  </organization>
 
   <licenses>
     <license>
@@ -24,76 +26,9 @@
     </license>
   </licenses>
 
-  <organization>
-    <name>JBoss Inc.</name>
-    <url>http://www.jboss.org</url>
-  </organization>
-
-  <profiles>
-    <profile>
-      <id>picketbox4</id>
-      <activation>
-        <property>
-          <name>!eap-5</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.picketbox</groupId>
-          <artifactId>picketbox</artifactId>
-          <version>${picketbox.version}</version>
-          <scope>compile</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>jboss-security</id>
-      <activation>
-        <property>
-          <name>eap-5</name>
-        </property>
-      </activation>
-      <!-- we have to use the correct org.jboss.security.SecurityConstants for EAP-5,
-         therefore using jboss-security-spi before the PicketBox dependency -->
-      <dependencies>
-        <dependency>
-          <groupId>org.jboss.security</groupId>
-          <artifactId>jboss-security-spi</artifactId>
-          <version>2.0.5.SP3-1</version>
-          <scope>compile</scope>
-        </dependency>
-        <dependency>
-          <groupId>org.picketbox</groupId>
-          <artifactId>picketbox</artifactId>
-          <version>${picketbox.version}</version>
-          <scope>compile</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
-
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <printSummary>true</printSummary>
-          <disableXmlReport>false</disableXmlReport>
-          <testFailureIgnore>false</testFailureIgnore>
-          <includes>
-            <include>**/**TestCase.java</include>
-          </includes>
-          <forkMode>pertest</forkMode>
-          <useFile>false</useFile>
-          <trimStackTrace>false</trimStackTrace>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+  <properties>
+    <picketbox.version>5.0.3.jdk17.1</picketbox.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -186,5 +121,71 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <printSummary>true</printSummary>
+          <disableXmlReport>false</disableXmlReport>
+          <testFailureIgnore>false</testFailureIgnore>
+          <includes>
+            <include>**/**TestCase.java</include>
+          </includes>
+          <forkMode>pertest</forkMode>
+          <useFile>false</useFile>
+          <trimStackTrace>false</trimStackTrace>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>picketbox4</id>
+      <activation>
+        <property>
+          <name>!eap-5</name>
+        </property>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.picketbox</groupId>
+          <artifactId>picketbox</artifactId>
+          <version>${picketbox.version}</version>
+          <scope>compile</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>jboss-security</id>
+      <activation>
+        <property>
+          <name>eap-5</name>
+        </property>
+      </activation>
+      <!-- we have to use the correct org.jboss.security.SecurityConstants for EAP-5,
+         therefore using jboss-security-spi before the PicketBox dependency -->
+      <dependencies>
+        <dependency>
+          <groupId>org.jboss.security</groupId>
+          <artifactId>jboss-security-spi</artifactId>
+          <version>2.0.5.SP3-1</version>
+          <scope>compile</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.picketbox</groupId>
+          <artifactId>picketbox</artifactId>
+          <version>${picketbox.version}</version>
+          <scope>compile</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
 </project>

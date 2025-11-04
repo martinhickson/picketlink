@@ -24,8 +24,8 @@ package org.picketlink.config;
 import org.picketlink.idm.config.Builder;
 import org.picketlink.idm.config.SecurityConfigurationException;
 
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.context.SessionScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.SessionScoped;
 import java.lang.annotation.Annotation;
 
 /**
@@ -43,7 +43,7 @@ public class IdentityBeanConfigurationBuilder extends AbstractSecurityConfigurat
 
     /**
      * <p>Enables the stateless mode of the {@link org.picketlink.Identity} bean. In this case, the bean will be
-     * {@link javax.enterprise.context.RequestScoped}.</p>
+     * {@link jakarta.enterprise.context.RequestScoped}.</p>
      *
      * <p>Default is false.</p>
      *

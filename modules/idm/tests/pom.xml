@@ -17,18 +17,6 @@
     <version.hibernate.entitymanager>4.2.0.Final</version.hibernate.entitymanager>
   </properties>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
   <dependencies>
     <dependency>
       <groupId>org.picketlink</groupId>
@@ -78,8 +66,8 @@
       <groupId>org.picketbox</groupId>
       <artifactId>picketbox-ldap</artifactId>
       <version>1.0.2.Final</version>
-      <scope>test</scope>
       <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
 
     <!-- JPA Identity Store Dependencies -->
@@ -136,12 +124,12 @@
       <version>2.9</version>
       <exclusions>
         <exclusion>
-          <artifactId>xalan</artifactId>
           <groupId>xalan</groupId>
+          <artifactId>xalan</artifactId>
         </exclusion>
         <exclusion>
-          <artifactId>xalan</artifactId>
           <groupId>serializer</groupId>
+          <artifactId>xalan</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -160,6 +148,18 @@
       <version>0.8</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
   <profiles>
     <profile>
@@ -192,15 +192,6 @@
             <groupId>com.lazerycode.jmeter</groupId>
             <artifactId>jmeter-maven-plugin</artifactId>
             <version>1.4</version>
-            <executions>
-              <execution>
-                <id>jmeter-tests</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>jmeter</goal>
-                </goals>
-              </execution>
-            </executions>
             <dependencies>
               <dependency>
                 <groupId>org.picketlink</groupId>
@@ -254,6 +245,15 @@
                 <version>3.6.6.Final</version>
               </dependency>
             </dependencies>
+            <executions>
+              <execution>
+                <id>jmeter-tests</id>
+                <goals>
+                  <goal>jmeter</goal>
+                </goals>
+                <phase>verify</phase>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>

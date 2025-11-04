@@ -23,9 +23,9 @@
 package org.picketlink.authentication.web;
 
 import java.io.IOException;
-import javax.servlet.FilterConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.picketlink.common.util.Base64;
 import org.picketlink.common.util.StringUtil;

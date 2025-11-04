@@ -18,8 +18,8 @@
 
 package org.picketlink.credential;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Named;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Named;
 
 import org.picketlink.idm.credential.AbstractBaseCredentials;
 import org.picketlink.idm.credential.Password;

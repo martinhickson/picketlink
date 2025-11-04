@@ -27,9 +27,9 @@ import org.picketlink.authentication.web.support.NonceCache;
 import org.picketlink.credential.DefaultLoginCredentials;
 import org.picketlink.idm.credential.Digest;
 
-import javax.servlet.FilterConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Timer;
 

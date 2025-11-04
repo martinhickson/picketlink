@@ -18,12 +18,12 @@
 package org.picketlink.authentication.web;
 
 import java.io.IOException;
-import javax.servlet.FilterConfig;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.picketlink.authentication.web.support.RequestCache;
 import org.picketlink.authentication.web.support.SavedRequest;
 import org.picketlink.credential.DefaultLoginCredentials;

@@ -14,6 +14,11 @@
 
   <name>PicketLink Base Parent</name>
 
+  <modules>
+    <module>api</module>
+    <module>impl</module>
+  </modules>
+
   <dependencies>
     <dependency>
       <groupId>org.jboss.logging</groupId>
@@ -26,15 +31,10 @@
     </dependency>
   </dependencies>
 
-  <modules>
-    <module>api</module>
-    <module>impl</module>
-  </modules>
-
   <build>
     <plugins>
       <plugin>
-          <artifactId>maven-checkstyle-plugin</artifactId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

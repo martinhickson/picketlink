@@ -9,11 +9,17 @@
 
   <name>PicketLink Parent</name>
 
-  <description>
-    PicketLink provides features for securing Java EE6 applications.
-  </description>
+  <description>PicketLink provides features for securing Java EE6 applications.</description>
 
   <url>http://www.jboss.org/picketlink</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <developers>
     <developer>
@@ -27,13 +33,25 @@
     </developer>
   </developers>
 
-  <licenses>
-    <license>
-      <name>Apache License, Version 2.0</name>
-      <distribution>repo</distribution>
-      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-    </license>
-  </licenses>
+  <scm>
+    <connection>scm:git:git://github.com/picketlink/picketlink.git</connection>
+    <developerConnection>scm:git:git@github.com:picketlink/picketlink.git</developerConnection>
+    <url>http://github.com/picketlink/picketlink</url>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>jboss-releases-repository</id>
+      <name>JBoss Releases Repository</name>
+      <url>${jboss.releases.repo.url}</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>jboss-snapshots-repository</id>
+      <name>JBoss Snapshots Repository</name>
+      <url>${jboss.snapshots.repo.url}</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <properties>
     <!-- Maven Compiler Options -->
@@ -57,10 +75,8 @@
     <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
     <jboss.javaee.version>2.0.0.Final</jboss.javaee.version>
-    <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/
-    </jboss.releases.repo.url>
-    <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/
-    </jboss.snapshots.repo.url>
+    <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
+    <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
     <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
     <pressgang.version>3.0.0</pressgang.version>
     <drools.version>6.0.0.CR4</drools.version>
@@ -69,77 +85,10 @@
     <shrinkwrap.resolver.version>2.0.0-beta-2</shrinkwrap.resolver.version>
     <arquillian.version>1.0.3.Final</arquillian.version>
     <jboss.logging.version>3.1.1.GA</jboss.logging.version>
-    <jboss.logging.processor.version>1.0.3.Final</jboss.logging.processor.version>
+    <jboss.logging.processor.version>2.2.1.Final</jboss.logging.processor.version>
     <junit.version>4.10</junit.version>
     <mockito.version>1.9.0</mockito.version>
   </properties>
-
-  <profiles>
-    <profile>
-      <id>all</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-        <property>
-          <name>release</name>
-        </property>
-      </activation>
-      <modules>
-        <module>build-config</module>
-        <module>modules/common</module>
-        <module>modules/config</module>
-        <module>modules/idm</module>
-        <module>modules/base</module>
-
-        <module>modules/federation</module>
-
-        <!-- module>bom</module -->
-      </modules>
-    </profile>
-    <profile>
-      <id>eap6</id>
-      <modules>
-          <module>modules/common</module>
-          <module>modules/config</module>
-          <module>modules/idm</module>
-          <module>modules/base</module>
-          <module>modules/federation</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>release</id>
-      <activation>
-        <property>
-          <name>release</name>
-        </property>
-      </activation>
-      <modules>
-        <module>maven-plugins/picketlink-jdocbook-style</module>
-        <module>docs</module>
-        <module>dist</module>
-      </modules>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.2.1</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <dependencyManagement>
     <dependencies>
@@ -197,12 +146,12 @@
         <version>${project.version}</version>
         <exclusions>
           <exclusion>
-            <artifactId>apache-xalan</artifactId>
             <groupId>xalan</groupId>
+            <artifactId>apache-xalan</artifactId>
           </exclusion>
           <exclusion>
-            <artifactId>apache-xalan</artifactId>
             <groupId>serializer</groupId>
+            <artifactId>apache-xalan</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -219,12 +168,12 @@
         <version>${project.version}</version>
         <exclusions>
           <exclusion>
-            <artifactId>xalan</artifactId>
             <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
           </exclusion>
           <exclusion>
-            <artifactId>xalan</artifactId>
             <groupId>serializer</groupId>
+            <artifactId>xalan</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -271,15 +220,15 @@
         <groupId>org.jboss.spec</groupId>
         <artifactId>jboss-javaee-6.0</artifactId>
         <version>${jboss.javaee.version}</version>
-        <scope>import</scope>
         <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <dependency>
         <groupId>org.drools</groupId>
         <artifactId>drools-bom</artifactId>
-        <type>pom</type>
         <version>${drools.version}</version>
+        <type>pom</type>
         <scope>import</scope>
       </dependency>
 
@@ -297,7 +246,7 @@
         <scope>provided</scope>
       </dependency>
 
-        <!-- Not going to upgrade to org.glassfish:javax.el:3.0.0 for now, since it is only Java 7 compatible -->
+      <!-- Not going to upgrade to org.glassfish:javax.el:3.0.0 for now, since it is only Java 7 compatible -->
       <dependency>
         <groupId>javax.el</groupId>
         <artifactId>javax.el-api</artifactId>
@@ -316,16 +265,16 @@
         <groupId>org.jboss.shrinkwrap.resolver</groupId>
         <artifactId>shrinkwrap-resolver-bom</artifactId>
         <version>${shrinkwrap.resolver.version}</version>
-        <scope>test</scope>
         <type>pom</type>
+        <scope>test</scope>
       </dependency>
 
       <dependency>
         <groupId>org.jboss.arquillian</groupId>
         <artifactId>arquillian-bom</artifactId>
         <version>${arquillian.version}</version>
-        <scope>import</scope>
         <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <dependency>
@@ -345,9 +294,60 @@
     </dependencies>
   </dependencyManagement>
 
+  <repositories>
+    <repository>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+        <updatePolicy>never</updatePolicy>
+      </snapshots>
+      <id>jboss-public-repository-group</id>
+      <name>JBoss Public Maven Repository Group</name>
+      <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+      <layout>default</layout>
+    </repository>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>repository.jboss.org</id>
+      <name>JBoss Repository</name>
+      <url>http://repository.jboss.org/maven2/</url>
+      <layout>default</layout>
+    </repository>
+    <repository>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>snapshots.jboss.org</id>
+      <name>JBoss Snapshots Repository</name>
+      <url>http://snapshots.jboss.org/maven2/</url>
+      <layout>default</layout>
+    </repository>
+  </repositories>
+
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>com.github.ekryd.sortpom</groupId>
+          <artifactId>sortpom-maven-plugin</artifactId>
+          <version>3.4.0</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>sort</goal>
+              </goals>
+              <phase>validate</phase>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
@@ -411,10 +411,10 @@
           <executions>
             <execution>
               <id>distribution</id>
-              <phase>package</phase>
               <goals>
                 <goal>single</goal>
               </goals>
+              <phase>package</phase>
               <configuration>
                 <descriptors>
                   <descriptor>src/main/assembly/assembly.xml</descriptor>
@@ -444,6 +444,12 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${version.checkstyle.plugin}</version>
+          <configuration>
+            <configLocation>picketlink-checkstyle/checkstyle.xml</configLocation>
+            <consoleOutput>true</consoleOutput>
+            <failsOnError>true</failsOnError>
+            <useFile></useFile>
+          </configuration>
           <dependencies>
             <dependency>
               <groupId>org.picketlink</groupId>
@@ -451,19 +457,13 @@
               <version>${project.version}</version>
             </dependency>
           </dependencies>
-          <configuration>
-            <configLocation>picketlink-checkstyle/checkstyle.xml</configLocation>
-            <consoleOutput>true</consoleOutput>
-            <failsOnError>true</failsOnError>
-            <useFile />
-          </configuration>
           <executions>
             <execution>
               <id>check-style</id>
-              <phase>compile</phase>
               <goals>
                 <goal>checkstyle</goal>
               </goals>
+              <phase>compile</phase>
             </execution>
           </executions>
         </plugin>
@@ -479,7 +479,7 @@
             <forkMode>pertest</forkMode>
             <useFile>false</useFile>
             <trimStackTrace>false</trimStackTrace>
-            </configuration>
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-deploy-plugin</artifactId>
@@ -497,62 +497,71 @@
 
   </build>
 
-  <scm>
-    <connection>scm:git:git://github.com/picketlink/picketlink.git</connection>
-    <developerConnection>scm:git:git@github.com:picketlink/picketlink.git</developerConnection>
-    <url>http://github.com/picketlink/picketlink</url>
-  </scm>
+  <profiles>
+    <profile>
+      <id>all</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>release</name>
+        </property>
+      </activation>
+      <modules>
+        <module>build-config</module>
+        <module>modules/common</module>
+        <module>modules/config</module>
+        <module>modules/idm</module>
+        <module>modules/base</module>
 
-  <distributionManagement>
-    <repository>
-      <id>jboss-releases-repository</id>
-      <name>JBoss Releases Repository</name>
-      <url>${jboss.releases.repo.url}</url>
-    </repository>
+        <module>modules/federation</module>
 
-    <snapshotRepository>
-      <id>jboss-snapshots-repository</id>
-      <name>JBoss Snapshots Repository</name>
-      <url>${jboss.snapshots.repo.url}</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>jboss-public-repository-group</id>
-      <name>JBoss Public Maven Repository Group</name>
-      <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-      <layout>default</layout>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-        <updatePolicy>never</updatePolicy>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>repository.jboss.org</id>
-      <name>JBoss Repository</name>
-      <layout>default</layout>
-      <url>http://repository.jboss.org/maven2/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>snapshots.jboss.org</id>
-      <name>JBoss Snapshots Repository</name>
-      <layout>default</layout>
-      <url>http://snapshots.jboss.org/maven2/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
-  </repositories>
+        <!-- module>bom</module -->
+      </modules>
+    </profile>
+    <profile>
+      <id>eap6</id>
+      <modules>
+        <module>modules/common</module>
+        <module>modules/config</module>
+        <module>modules/idm</module>
+        <module>modules/base</module>
+        <module>modules/federation</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>release</id>
+      <activation>
+        <property>
+          <name>release</name>
+        </property>
+      </activation>
+      <modules>
+        <module>maven-plugins/picketlink-jdocbook-style</module>
+        <module>docs</module>
+        <module>dist</module>
+      </modules>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>2.2.1</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

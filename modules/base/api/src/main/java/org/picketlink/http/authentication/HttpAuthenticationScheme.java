@@ -25,8 +25,8 @@ package org.picketlink.http.authentication;
 import org.picketlink.config.http.AuthenticationSchemeConfiguration;
 import org.picketlink.credential.DefaultLoginCredentials;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Basis for the HTTP Authentication Schemes such as BASIC, FORM, DIGEST and CLIENT-CERT. Applications can provide their
@@ -47,7 +47,7 @@ public interface HttpAuthenticationScheme<C extends AuthenticationSchemeConfigur
     void initialize(C config);
 
     /**
-     * Extracts the credentials from the given {@link javax.servlet.http.HttpServletRequest} and populates the
+     * Extracts the credentials from the given {@link jakarta.servlet.http.HttpServletRequest} and populates the
      * {@link org.picketlink.credential.DefaultLoginCredentials} with them. If the request is not an authentication attempt (as defined by the
      * implementation), then {@code creds} is not affected.
      *
@@ -63,7 +63,7 @@ public interface HttpAuthenticationScheme<C extends AuthenticationSchemeConfigur
      * with the authentication.
      *
      * @param request
-     *            The current request, which may be used to obtain a {@link javax.servlet.RequestDispatcher} if needed.
+     *            The current request, which may be used to obtain a {@link jakarta.servlet.RequestDispatcher} if needed.
      *            If this method is called, the rest of the filter chain will <i>not</i> be processed, so
      *            implementations are free to read the request body if they so choose.
      * @param response
@@ -76,7 +76,7 @@ public interface HttpAuthenticationScheme<C extends AuthenticationSchemeConfigur
      * Performs any post-authentication logic regarding of the authentication result.
      *
      * @param request
-     *            The current request, which may be used to obtain a {@link javax.servlet.RequestDispatcher} if needed.
+     *            The current request, which may be used to obtain a {@link jakarta.servlet.RequestDispatcher} if needed.
      * @param response
      *            The current response, which can be used to send an HTTP response, or a redirect.
      * @return true if the processing of the filter chain should continue, false if the processing should stop

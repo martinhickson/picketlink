@@ -23,8 +23,8 @@ package org.picketlink.http.authorization;
 
 import org.picketlink.config.http.PathConfiguration;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * <p>A {@link org.picketlink.http.authorization.PathAuthorizer} is responsible to perform
@@ -36,7 +36,7 @@ public interface PathAuthorizer {
 
     /**
      * <p>Performs an authorization check for a specific {@link org.picketlink.config.http.PathConfiguration} considering
-     * an incoming {@link javax.servlet.http.HttpServletRequest}.</p>
+     * an incoming {@link jakarta.servlet.http.HttpServletRequest}.</p>
      *
      * @param pathConfiguration The configuration associated with the given request.
      * @param request The incoming request,
