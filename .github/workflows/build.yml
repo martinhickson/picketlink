@@ -12,6 +12,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     
     steps:
     - name: Checkout code
@@ -23,6 +26,52 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
+    - name: Configure Maven for GitHub Packages
+      run: |
+        mkdir -p ~/.m2
+        # Extract repository owner and name from github.repository (format: owner/repo-name)
+        REPO_FULL="${{ github.repository }}"
+        REPO_OWNER="${REPO_FULL%%/*}"
+        REPO_NAME="${REPO_FULL#*/}"
+        # Replace repository placeholder in pom.xml with actual owner and repo name
+        sed -i "s|GITHUB_REPO_OWNER|${REPO_OWNER}|g" pom.xml
+        sed -i "s|GITHUB_REPO_NAME|${REPO_NAME}|g" pom.xml
+        # Create complete settings.xml file with proper XML escaping
+        cat > ~/.m2/settings.xml <<EOF
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                  http://maven.apache.org/xsd/settings-1.0.0.xsd">
+          <servers>
+            <server>
+              <id>github</id>
+              <username>${{ github.repository_owner }}</username>
+              <password>${{ secrets.GITHUB_TOKEN }}</password>
+            </server>
+          </servers>
+          <profiles>
+            <profile>
+              <id>github-packages</id>
+              <repositories>
+                <repository>
+                  <id>github</id>
+                  <url>https://maven.pkg.github.com/${REPO_OWNER}/${REPO_NAME}</url>
+                  <snapshots>
+                    <enabled>true</enabled>
+                  </snapshots>
+                  <releases>
+                    <enabled>true</enabled>
+                  </releases>
+                </repository>
+              </repositories>
+            </profile>
+          </profiles>
+          <activeProfiles>
+            <activeProfile>github-packages</activeProfile>
+          </activeProfiles>
+        </settings>
+        EOF
+    
     - name: Cache Maven dependencies
       uses: actions/cache@v4
       with:
@@ -31,6 +80,8 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
     
     - name: Build with Maven
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         mvn clean install \
           -DskipTests=${{ inputs.skip_tests }} \
