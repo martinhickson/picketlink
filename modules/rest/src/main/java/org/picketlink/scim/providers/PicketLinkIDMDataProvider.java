@@ -19,10 +19,10 @@ package org.picketlink.scim.providers;
 
 import java.io.Serializable;
 import java.util.List;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 import org.jboss.logging.Logger;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;

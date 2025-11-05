@@ -18,10 +18,10 @@
 package org.picketlink.idm.jpa.model.sample.simple;
 
 import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import org.picketlink.idm.jpa.annotations.Identifier;
 
 /**

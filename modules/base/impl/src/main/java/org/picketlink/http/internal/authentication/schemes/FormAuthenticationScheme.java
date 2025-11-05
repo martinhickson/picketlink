@@ -24,10 +24,10 @@ import org.picketlink.http.authentication.HttpAuthenticationScheme;
 import org.picketlink.http.internal.authentication.schemes.support.RequestCache;
 import org.picketlink.http.internal.authentication.schemes.support.SavedRequest;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**

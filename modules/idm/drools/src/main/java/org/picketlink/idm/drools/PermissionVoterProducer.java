@@ -1,7 +1,7 @@
 package org.picketlink.idm.drools;
 
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 import org.kie.api.cdi.KSession;
 import org.kie.api.runtime.KieSession;

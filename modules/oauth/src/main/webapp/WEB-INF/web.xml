@@ -6,7 +6,7 @@
 	</context-param> 
 	
 	<context-param>
-		<param-name>javax.ws.rs.Application</param-name>
+		<param-name>jakarta.ws.rs.Application</param-name>
 		<param-value>org.picketlink.oauth.PicketLinkOAuthApplication</param-value>
 	</context-param>
 

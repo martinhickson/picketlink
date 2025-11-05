@@ -25,8 +25,8 @@ import org.picketlink.idm.credential.storage.TokenCredentialStorage;
 import org.picketlink.idm.jpa.annotations.CredentialProperty;
 import org.picketlink.idm.jpa.annotations.entity.ManagedCredential;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 /**
  * <p>{@link javax.persistence.Entity} representing a {@link org.picketlink.idm.credential.Token}.</p>

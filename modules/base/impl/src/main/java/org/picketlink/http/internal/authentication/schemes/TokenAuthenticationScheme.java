@@ -29,10 +29,10 @@ import org.picketlink.http.authentication.HttpAuthenticationScheme;
 import org.picketlink.idm.credential.Token;
 import org.picketlink.idm.credential.TokenCredential;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 
 import static org.picketlink.idm.credential.Token.Builder.create;

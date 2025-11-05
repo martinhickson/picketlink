@@ -23,7 +23,7 @@ import org.picketlink.idm.jpa.annotations.entity.ConfigurationName;
 import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.idm.model.Partition;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 /**
  * @author pedroigor

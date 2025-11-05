@@ -26,7 +26,7 @@ import org.picketlink.config.http.PathConfiguration;
 import org.picketlink.http.HttpMethod;
 import org.picketlink.internal.el.ELProcessor;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;

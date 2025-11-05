@@ -5,7 +5,7 @@ import org.picketlink.idm.spi.ContextInitializer;
 import org.picketlink.idm.spi.IdentityContext;
 import org.picketlink.idm.spi.IdentityStore;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 /**
  * <p>A {@link org.picketlink.idm.spi.ContextInitializer} that sets an {@link javax.persistence.EntityManager}

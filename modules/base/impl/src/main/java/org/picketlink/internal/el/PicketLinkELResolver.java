@@ -27,8 +27,8 @@ import org.picketlink.idm.model.Attribute;
 import org.picketlink.idm.model.AttributedType;
 import org.picketlink.idm.model.Partition;
 
-import javax.el.ELContext;
-import javax.el.ELResolver;
+import jakarta.el.ELContext;
+import jakarta.el.ELResolver;
 import java.beans.FeatureDescriptor;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <p>{@link javax.el.ELResolver} that enchances EL with some PicketLink specific functionality.</p>
+ * <p>{@link jakarta.el.ELResolver} that enchances EL with some PicketLink specific functionality.</p>
  *
  * @author Pedro Igor
  */

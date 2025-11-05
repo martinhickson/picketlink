@@ -32,8 +32,8 @@ import org.picketlink.idm.model.AttributedType;
 import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.Relationship;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;

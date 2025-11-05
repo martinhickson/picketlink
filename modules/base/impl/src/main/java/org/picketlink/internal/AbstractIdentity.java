@@ -41,8 +41,8 @@ import org.picketlink.credential.DefaultLoginCredentials;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.permission.spi.PermissionResolver;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.io.Serializable;
 
 import static org.picketlink.log.BaseLog.AUTHENTICATION_LOGGER;

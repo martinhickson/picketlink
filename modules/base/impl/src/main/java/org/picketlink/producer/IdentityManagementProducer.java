@@ -33,11 +33,11 @@ import org.picketlink.idm.permission.acl.spi.PermissionHandler;
 import org.picketlink.internal.CDIEventBridge;
 import org.picketlink.internal.SecuredIdentityManager;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

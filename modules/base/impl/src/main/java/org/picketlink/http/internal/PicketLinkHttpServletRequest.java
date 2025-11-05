@@ -30,9 +30,9 @@ import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.annotation.StereotypeProperty;
 import org.picketlink.internal.el.ELProcessor;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.security.Principal;
 import java.util.List;
 

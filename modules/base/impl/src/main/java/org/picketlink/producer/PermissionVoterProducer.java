@@ -22,8 +22,8 @@ import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.permission.acl.spi.PersistentPermissionVoter;
 import org.picketlink.idm.permission.spi.PermissionVoter;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 
 /**
  * <p>Defines a default producer method for {@link org.picketlink.idm.permission.acl.spi.PersistentPermissionVoter} instances.</p>

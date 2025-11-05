@@ -18,8 +18,8 @@
 package org.picketlink.social.auth;
 
 import java.security.Principal;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpSession;
 import org.picketlink.authentication.AuthenticationException;
 import org.picketlink.idm.model.basic.User;
 import org.picketlink.social.auth.conf.TwitterConfiguration;

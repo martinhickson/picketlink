@@ -17,8 +17,8 @@
  */
 package org.picketlink.http.internal.authentication.schemes.support;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

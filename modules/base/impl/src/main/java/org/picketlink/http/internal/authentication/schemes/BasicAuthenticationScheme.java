@@ -28,8 +28,8 @@ import org.picketlink.config.http.BasicAuthenticationConfiguration;
 import org.picketlink.credential.DefaultLoginCredentials;
 import org.picketlink.http.authentication.HttpAuthenticationScheme;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static org.picketlink.http.internal.util.RequestUtil.isAjaxRequest;
 

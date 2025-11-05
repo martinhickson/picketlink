@@ -16,8 +16,8 @@ import org.picketlink.internal.CDIEventBridge;
 import org.picketlink.internal.EntityManagerContextInitializer;
 import org.picketlink.internal.EntityManagerProvider;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

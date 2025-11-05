@@ -26,10 +26,10 @@ import org.picketlink.config.http.AuthorizationConfiguration;
 import org.picketlink.config.http.PathConfiguration;
 import org.picketlink.http.authorization.PathAuthorizer;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * @author Pedro Igor

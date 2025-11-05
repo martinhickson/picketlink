@@ -19,8 +19,8 @@ package org.picketlink.social.auth;
 
 import org.picketlink.authentication.BaseAuthenticator;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Base class for social authentication

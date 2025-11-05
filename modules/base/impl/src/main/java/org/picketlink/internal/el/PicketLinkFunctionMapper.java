@@ -21,7 +21,7 @@
  */
 package org.picketlink.internal.el;
 
-import javax.el.FunctionMapper;
+import jakarta.el.FunctionMapper;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;

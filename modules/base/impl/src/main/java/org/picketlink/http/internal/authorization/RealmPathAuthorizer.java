@@ -27,8 +27,8 @@ import org.picketlink.config.http.AuthorizationConfiguration;
 import org.picketlink.config.http.PathConfiguration;
 import org.picketlink.idm.model.Partition;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import static org.picketlink.authorization.util.AuthorizationUtil.hasPartition;
 

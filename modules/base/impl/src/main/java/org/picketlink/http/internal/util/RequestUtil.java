@@ -21,7 +21,7 @@
  */
 package org.picketlink.http.internal.util;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 import static org.picketlink.config.http.InboundHeaderConfiguration.X_REQUESTED_WITH_AJAX;
 import static org.picketlink.config.http.InboundHeaderConfiguration.X_REQUESTED_WITH_HEADER_NAME;

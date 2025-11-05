@@ -17,7 +17,7 @@
  */
 package org.picketlink.idm.jpa.model.sample.simple;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 import org.picketlink.idm.credential.storage.DigestCredentialStorage;
 import org.picketlink.idm.jpa.annotations.CredentialProperty;
 import org.picketlink.idm.jpa.annotations.entity.ManagedCredential;

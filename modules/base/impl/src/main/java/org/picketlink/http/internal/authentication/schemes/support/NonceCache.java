@@ -25,8 +25,8 @@ package org.picketlink.http.internal.authentication.schemes.support;
 import org.picketlink.common.util.Base64;
 import org.picketlink.idm.credential.Digest;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

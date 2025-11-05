@@ -20,9 +20,9 @@ package org.picketlink.oauth.server.endpoint;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.oauth.server.util.OAuthServerUtil;
 
-import javax.inject.Inject;
-import javax.servlet.ServletContext;
-import javax.ws.rs.core.Context;
+import jakarta.inject.Inject;
+import jakarta.servlet.ServletContext;
+import jakarta.ws.rs.core.Context;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.logging.Level;

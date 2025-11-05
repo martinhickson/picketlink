@@ -24,13 +24,13 @@ package org.picketlink.http.internal;
 import org.picketlink.config.SecurityConfiguration;
 import org.picketlink.extension.PicketLinkExtension;
 
-import javax.inject.Inject;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
+import jakarta.inject.Inject;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterRegistration;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.annotation.WebListener;
 import java.util.EnumSet;
 
 /**

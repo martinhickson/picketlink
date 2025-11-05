@@ -17,7 +17,7 @@
  */
 package org.picketlink.idm.jpa.model.sample.simple;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 import org.picketlink.idm.jpa.annotations.RelationshipClass;
 import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.idm.model.Relationship;

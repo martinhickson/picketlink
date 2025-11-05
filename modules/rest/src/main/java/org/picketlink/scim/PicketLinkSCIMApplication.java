@@ -20,7 +20,7 @@ package org.picketlink.scim;
 import org.picketlink.scim.endpoints.GroupsEndpoint;
 import org.picketlink.scim.endpoints.UsersEndpoint;
 
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.core.Application;
 import java.util.HashSet;
 import java.util.Set;
 

@@ -11,8 +11,8 @@ import org.picketlink.idm.credential.DigestCredentials;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.credential.UsernamePasswordCredentials;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 
 import static org.picketlink.log.BaseLog.AUTHENTICATION_LOGGER;
 
