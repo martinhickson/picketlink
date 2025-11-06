@@ -56,6 +56,10 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        server-id: github
+        server-username: ${{ github.repository_owner }}
+        server-password: ${{ secrets.GITHUB_TOKEN }}
+        settings-path: ${{ github.workspace }}
     
     - name: Configure Git
       run: |
@@ -165,46 +169,33 @@ jobs:
     - name: Configure Maven for GitHub Packages
       if: inputs.publish_packages == true
       run: |
-        mkdir -p ~/.m2
         # Extract repository owner and name
         REPO_FULL="${{ github.repository }}"
         REPO_OWNER="${REPO_FULL%%/*}"
         REPO_NAME="${REPO_FULL#*/}"
-        # Create settings.xml for GitHub Packages
-        cat > ~/.m2/settings.xml <<EOF
-        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                  http://maven.apache.org/xsd/settings-1.0.0.xsd">
-          <servers>
-            <server>
-              <id>github</id>
-              <username>${{ github.repository_owner }}</username>
-              <password>${{ secrets.GITHUB_TOKEN }}</password>
-            </server>
-          </servers>
-          <profiles>
-            <profile>
-              <id>github-packages</id>
-              <repositories>
-                <repository>
-                  <id>github</id>
-                  <url>https://maven.pkg.github.com/${REPO_OWNER}/${REPO_NAME}</url>
-                  <snapshots>
-                    <enabled>true</enabled>
-                  </snapshots>
-                  <releases>
-                    <enabled>true</enabled>
-                  </releases>
-                </repository>
-              </repositories>
-            </profile>
-          </profiles>
-          <activeProfiles>
-            <activeProfile>github-packages</activeProfile>
-          </activeProfiles>
-        </settings>
-        EOF
+        
+        echo "Repository: ${REPO_OWNER}/${REPO_NAME}"
+        
+        # Replace placeholders in root pom.xml and BOM pom.xml with actual repository owner and name
+        # Do this BEFORE any Maven commands that might modify the POM
+        sed -i "s|GITHUB_REPO_OWNER|${REPO_OWNER}|g" pom.xml
+        sed -i "s|GITHUB_REPO_NAME|${REPO_NAME}|g" pom.xml
+        sed -i "s|GITHUB_REPO_OWNER|${REPO_OWNER}|g" bom/pom.xml
+        sed -i "s|GITHUB_REPO_NAME|${REPO_NAME}|g" bom/pom.xml
+        
+        echo "Updated pom.xml and bom/pom.xml with GitHub Packages repository"
+        echo "Verifying root pom.xml distributionManagement:"
+        grep -A 5 '<distributionManagement>' pom.xml || echo "ERROR: distributionManagement not found!"
+        echo "Verifying bom/pom.xml distributionManagement:"
+        grep -A 5 '<distributionManagement>' bom/pom.xml || echo "ERROR: distributionManagement not found!"
+        
+        # Also verify that jboss-releases-repository is NOT present
+        if grep -q "jboss-releases-repository" pom.xml || grep -q "jboss-releases-repository" bom/pom.xml; then
+          echo "ERROR: jboss-releases-repository still found in POM files!"
+          grep -n "jboss-releases-repository" pom.xml bom/pom.xml || true
+          exit 1
+        fi
+        echo "Verified: No jboss-releases-repository found"
     
     - name: Cache Maven dependencies
       uses: actions/cache@v4
@@ -244,13 +235,15 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        # Use the distributionManagement configured in pom.xml
+        # The setup-java action has already configured settings.xml with authentication
         mvn deploy \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
           -Dmaven.compiler.target=17 \
-          -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          -s ${{ github.workspace }}/settings.xml
     
     - name: Commit version changes
       run: |

@@ -61,15 +61,10 @@
 
   <distributionManagement>
     <repository>
-      <id>jboss-releases-repository</id>
-      <name>JBoss Releases Repository</name>
-      <url>${jboss.releases.repo.url}</url>
+      <id>github</id>
+      <name>GitHub Packages</name>
+      <url>https://maven.pkg.github.com/GITHUB_REPO_OWNER/GITHUB_REPO_NAME</url>
     </repository>
-    <snapshotRepository>
-      <id>jboss-snapshots-repository</id>
-      <name>JBoss Snapshots Repository</name>
-      <url>${jboss.snapshots.repo.url}</url>
-    </snapshotRepository>
   </distributionManagement>
 
 </project>
