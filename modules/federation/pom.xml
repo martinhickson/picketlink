@@ -27,7 +27,7 @@
   </licenses>
 
   <properties>
-    <picketbox.version>5.0.3.jdk17.1</picketbox.version>
+    <picketbox.version>5.0.3.jakarta.bravura.1</picketbox.version>
   </properties>
 
   <dependencies>
