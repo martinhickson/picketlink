@@ -1,0 +1,311 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.2.3)'
+        required: true
+        type: string
+      base_branch:
+        description: 'Base branch to create release from'
+        required: false
+        default: 'main'
+        type: string
+      branch_name:
+        description: 'Branch name for release (e.g., release/1.2.3)'
+        required: true
+        type: string
+      release_tag:
+        description: 'Git tag for release (e.g., 1.2.3)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create GitHub Release'
+        required: false
+        default: true
+        type: boolean
+      publish_packages:
+        description: 'Publish to GitHub Packages'
+        required: false
+        default: true
+        type: boolean
+      run_tests:
+        description: 'Run tests after build'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Configure Git
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+    
+    - name: Create or checkout release branch
+      run: |
+        BASE_BRANCH="${{ inputs.base_branch }}"
+        BRANCH_NAME="${{ inputs.branch_name }}"
+        
+        # Fetch all branches
+        git fetch origin
+        
+        # Checkout base branch
+        git checkout ${BASE_BRANCH}
+        git pull origin ${BASE_BRANCH}
+        
+        # Check if release branch exists
+        if git show-ref --verify --quiet refs/heads/${BRANCH_NAME} || git show-ref --verify --quiet refs/remotes/origin/${BRANCH_NAME}; then
+          echo "Release branch ${BRANCH_NAME} already exists, checking it out"
+          git checkout ${BRANCH_NAME}
+          git pull origin ${BRANCH_NAME} || true
+        else
+          echo "Creating new release branch ${BRANCH_NAME}"
+          git checkout -b ${BRANCH_NAME}
+        fi
+    
+    - name: Backup external parent POM versions
+      id: backup_parents
+      run: |
+        # Find all external parent POMs and save their versions before versions:set
+        echo "Backing up external parent POM versions..."
+        # Create a backup file with parent versions
+        find . -name "pom.xml" -type f | while read pomfile; do
+          # Check if file has external parent (org.jboss, org.apache, etc.)
+          if grep -q "<parent>" "$pomfile"; then
+            PARENT_GROUP=$(grep -A 10 "<parent>" "$pomfile" | grep "<groupId>" | head -1 | sed 's/.*<groupId>\(.*\)<\/groupId>.*/\1/' | xargs)
+            PARENT_ARTIFACT=$(grep -A 10 "<parent>" "$pomfile" | grep "<artifactId>" | head -1 | sed 's/.*<artifactId>\(.*\)<\/artifactId>.*/\1/' | xargs)
+            PARENT_VERSION=$(grep -A 10 "<parent>" "$pomfile" | grep "<version>" | head -1 | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | xargs)
+            
+            # Only backup if it's an external parent (not org.picketlink)
+            if [ -n "$PARENT_GROUP" ] && [ "$PARENT_GROUP" != "org.picketlink" ] && [ -n "$PARENT_VERSION" ]; then
+              echo "${pomfile}|${PARENT_GROUP}|${PARENT_ARTIFACT}|${PARENT_VERSION}" >> /tmp/parent_versions.txt
+              echo "Backed up: $pomfile -> $PARENT_GROUP:$PARENT_ARTIFACT:$PARENT_VERSION"
+            fi
+          fi
+        done
+        echo "Parent versions backed up to /tmp/parent_versions.txt"
+    
+    - name: Update project versions
+      run: |
+        VERSION="${{ inputs.version }}"
+        echo "Updating project version to ${VERSION}"
+        
+        # Use versions:set to update all module versions
+        # Exclude external parent POMs using processParent=false
+        mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -DprocessParent=false
+        
+        # Update SCM tag in root pom.xml
+        if [ -f pom.xml ]; then
+          if grep -q "<tag>" pom.xml; then
+            sed -i "s|<tag>.*</tag>|<tag>${VERSION}</tag>|g" pom.xml
+          else
+            # Add tag after <url> in <scm> section
+            sed -i "s|</scm>|  <tag>${VERSION}</tag>\n  </scm>|" pom.xml
+          fi
+        fi
+    
+    - name: Restore external parent POM versions
+      run: |
+        echo "Restoring external parent POM versions..."
+        if [ -f /tmp/parent_versions.txt ]; then
+          while IFS='|' read -r pomfile parent_group parent_artifact parent_version; do
+            if [ -f "$pomfile" ]; then
+              echo "Restoring $parent_group:$parent_artifact:$parent_version in $pomfile"
+              # Use a more robust sed command to restore the version
+              sed -i "/<parent>/,/<\/parent>/ {
+                /<groupId>${parent_group}<\/groupId>/,/<artifactId>${parent_artifact}<\/artifactId>/ {
+                  /<version>/ {
+                    s|<version>.*</version>|<version>${parent_version}</version>|
+                  }
+                }
+              }" "$pomfile"
+            fi
+          done < /tmp/parent_versions.txt
+          echo "External parent POM versions restored"
+        else
+          echo "No parent versions backup found, skipping restoration"
+        fi
+    
+    - name: Verify external parent versions
+      run: |
+        echo "Verifying external parent POM versions..."
+        # Check that jboss-parent versions are not the release version
+        RELEASE_VERSION="${{ inputs.version }}"
+        MISMATCHED=$(grep -r "<parent>" --include="pom.xml" -A 5 | \
+          grep -B 2 -A 2 "jboss-parent" | \
+          grep "<version>${RELEASE_VERSION}</version>" || true)
+        if [ -n "$MISMATCHED" ]; then
+          echo "WARNING: Found external parent POMs with release version!"
+          echo "$MISMATCHED"
+          exit 1
+        fi
+        echo "External parent POM versions verified"
+    
+    - name: Configure Maven for GitHub Packages
+      if: inputs.publish_packages == true
+      run: |
+        mkdir -p ~/.m2
+        # Extract repository owner and name
+        REPO_FULL="${{ github.repository }}"
+        REPO_OWNER="${REPO_FULL%%/*}"
+        REPO_NAME="${REPO_FULL#*/}"
+        # Create settings.xml for GitHub Packages
+        cat > ~/.m2/settings.xml <<EOF
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                  http://maven.apache.org/xsd/settings-1.0.0.xsd">
+          <servers>
+            <server>
+              <id>github</id>
+              <username>${{ github.repository_owner }}</username>
+              <password>${{ secrets.GITHUB_TOKEN }}</password>
+            </server>
+          </servers>
+          <profiles>
+            <profile>
+              <id>github-packages</id>
+              <repositories>
+                <repository>
+                  <id>github</id>
+                  <url>https://maven.pkg.github.com/${REPO_OWNER}/${REPO_NAME}</url>
+                  <snapshots>
+                    <enabled>true</enabled>
+                  </snapshots>
+                  <releases>
+                    <enabled>true</enabled>
+                  </releases>
+                </repository>
+              </repositories>
+            </profile>
+          </profiles>
+          <activeProfiles>
+            <activeProfile>github-packages</activeProfile>
+          </activeProfiles>
+        </settings>
+        EOF
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+    
+    - name: Build project
+      run: |
+        mvn clean install \
+          -Dmaven.test.skip=true \
+          -DskipTests \
+          -Dcheckstyle.skip=true \
+          -Dmaven.compiler.source=17 \
+          -Dmaven.compiler.target=17
+    
+    - name: Run tests
+      if: inputs.run_tests == true
+      run: |
+        mvn test \
+          -Dcheckstyle.skip=true \
+          -Dmaven.compiler.source=17 \
+          -Dmaven.compiler.target=17
+    
+    - name: Package artifacts
+      run: |
+        mvn package \
+          -Dmaven.test.skip=true \
+          -DskipTests \
+          -Dcheckstyle.skip=true \
+          -Dmaven.compiler.source=17 \
+          -Dmaven.compiler.target=17
+    
+    - name: Publish to GitHub Packages
+      if: inputs.publish_packages == true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        mvn deploy \
+          -Dmaven.test.skip=true \
+          -DskipTests \
+          -Dcheckstyle.skip=true \
+          -Dmaven.compiler.source=17 \
+          -Dmaven.compiler.target=17 \
+          -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}
+    
+    - name: Commit version changes
+      run: |
+        git add -A
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Release version ${{ inputs.version }}"
+          git push origin ${{ inputs.branch_name }}
+        fi
+    
+    - name: Create Git tag
+      id: create_tag
+      run: |
+        TAG="${{ inputs.release_tag }}"
+        
+        # Check if tag already exists
+        if git rev-parse "$TAG" >/dev/null 2>&1; then
+          echo "Tag $TAG already exists"
+          echo "tag_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "Creating tag $TAG"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "tag_exists=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create GitHub Release
+      if: inputs.create_release == true && steps.create_tag.outputs.tag_exists == 'false'
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ inputs.release_tag }}
+        name: Release ${{ inputs.release_tag }}
+        body: |
+          Release ${{ inputs.release_tag }}
+          
+          ## Changes
+          - Version updated to ${{ inputs.version }}
+          
+          ## Artifacts
+          See attached build artifacts.
+        draft: false
+        prerelease: false
+        files: |
+          **/target/*.jar
+          **/target/*.war
+          **/target/*.pom
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts-${{ inputs.version }}
+        path: |
+          **/target/*.jar
+          **/target/*.war
+          **/target/*.pom
+        retention-days: 30
+
