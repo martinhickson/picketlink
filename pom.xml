@@ -64,13 +64,7 @@
     <version.surefire.plugin>2.17</version.surefire.plugin>
     <version.deploy.plugin>2.8.1</version.deploy.plugin>
 
-    <!-- Distribution Options -->
-    <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-    <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
-
     <jboss.javaee.version>2.0.0.Final</jboss.javaee.version>
-    <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
-    <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
     <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
     <pressgang.version>3.0.0</pressgang.version>
     <drools.version>6.0.0.CR4</drools.version>
@@ -301,41 +295,6 @@
       </snapshots>
     </repository>
     <repository>
-      <releases>
-        <enabled>true</enabled>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-        <updatePolicy>never</updatePolicy>
-      </snapshots>
-      <id>jboss-public-repository-group</id>
-      <name>JBoss Public Maven Repository Group</name>
-      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-      <layout>default</layout>
-    </repository>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>repository.jboss.org</id>
-      <name>JBoss Repository</name>
-      <url>https://repository.jboss.org/maven2/</url>
-      <layout>default</layout>
-    </repository>
-    <repository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>snapshots.jboss.org</id>
-      <name>JBoss Snapshots Repository</name>
-      <url>https://snapshots.jboss.org/maven2/</url>
-      <layout>default</layout>
-    </repository>
-    <repository>
       <id>github</id>
       <name>GitHub Packages</name>
       <url>https://maven.pkg.github.com/GITHUB_REPO_OWNER/GITHUB_REPO_NAME</url>
@@ -421,12 +380,6 @@
               </goals>
             </execution>
           </executions>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.6</version>
         </plugin>
 
         <plugin>

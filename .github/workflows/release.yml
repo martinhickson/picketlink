@@ -200,9 +200,23 @@ jobs:
     - name: Cache Maven dependencies
       uses: actions/cache@v4
       with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+        # Cache only Maven repository (downloaded dependencies), NOT source code or POM files
+        # This cache does NOT affect POM file modifications made in previous steps
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-m2-repo-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-m2-repo-
+          ${{ runner.os }}-m2-
+    
+    - name: Install parent POM first
+      run: |
+        # Install the parent POM to local repository first so child modules can resolve it
+        mvn clean install -N \
+          -Dmaven.test.skip=true \
+          -DskipTests \
+          -Dcheckstyle.skip=true \
+          -Dmaven.compiler.source=17 \
+          -Dmaven.compiler.target=17
     
     - name: Build project
       run: |
@@ -211,7 +225,8 @@ jobs:
           -DskipTests \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
-          -Dmaven.compiler.target=17
+          -Dmaven.compiler.target=17 \
+          -U
     
     - name: Run tests
       if: inputs.run_tests == true
