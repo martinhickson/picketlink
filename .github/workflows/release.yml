@@ -10,7 +10,7 @@ on:
       base_branch:
         description: 'Base branch to create release from'
         required: false
-        default: 'main'
+        default: '2.5.5-jakarta'
         type: string
       branch_name:
         description: 'Branch name for release (e.g., release/1.2.3)'
@@ -116,8 +116,7 @@ jobs:
         echo "Updating project version to ${VERSION}"
         
         # Use versions:set to update all module versions
-        # Exclude external parent POMs using processParent=false
-        mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -DprocessParent=false
+        mvn versions:set -DnewVersion=${VERSION} -DgenerateBackupPoms=false -DprocessParent=true
         
         # Update SCM tag in root pom.xml
         if [ -f pom.xml ]; then
@@ -167,7 +166,7 @@ jobs:
         echo "External parent POM versions verified"
     
     - name: Configure Maven for GitHub Packages
-      if: inputs.publish_packages == true
+      # Maven needs this for dependency resolution during build
       run: |
         # Extract repository owner and name
         REPO_FULL="${{ github.repository }}"
@@ -177,12 +176,49 @@ jobs:
         echo "Repository: ${REPO_OWNER}/${REPO_NAME}"
         
         # Replace placeholders in root pom.xml and BOM pom.xml with actual repository owner and name
-        # Do this BEFORE any Maven commands that might modify the POM
         sed -i "s|GITHUB_REPO_OWNER|${REPO_OWNER}|g" pom.xml
         sed -i "s|GITHUB_REPO_NAME|${REPO_NAME}|g" pom.xml
         sed -i "s|GITHUB_REPO_OWNER|${REPO_OWNER}|g" bom/pom.xml
         sed -i "s|GITHUB_REPO_NAME|${REPO_NAME}|g" bom/pom.xml
         
+        # Create complete settings.xml with authentication and repository configuration
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<EOF
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                  http://maven.apache.org/xsd/settings-1.0.0.xsd">
+          <servers>
+            <server>
+              <id>github</id>
+              <username>${{ github.repository_owner }}</username>
+              <password>${{ secrets.GITHUB_TOKEN }}</password>
+            </server>
+          </servers>
+          <profiles>
+            <profile>
+              <id>github-packages</id>
+              <repositories>
+                <repository>
+                  <id>github</id>
+                  <url>https://maven.pkg.github.com/${REPO_OWNER}/${REPO_NAME}</url>
+                  <snapshots>
+                    <enabled>true</enabled>
+                  </snapshots>
+                  <releases>
+                    <enabled>true</enabled>
+                  </releases>
+                </repository>
+              </repositories>
+            </profile>
+          </profiles>
+          <activeProfiles>
+            <activeProfile>github-packages</activeProfile>
+          </activeProfiles>
+        </settings>
+        EOF
+        
+        echo "Created ~/.m2/settings.xml with GitHub Packages authentication"
         echo "Updated pom.xml and bom/pom.xml with GitHub Packages repository"
         echo "Verifying root pom.xml distributionManagement:"
         grep -A 5 '<distributionManagement>' pom.xml || echo "ERROR: distributionManagement not found!"
@@ -208,19 +244,31 @@ jobs:
           ${{ runner.os }}-m2-repo-
           ${{ runner.os }}-m2-
     
+    - name: Clear Maven cache of failed parent resolution
+      run: |
+        # Clear any cached "not found" entries for the parent POM
+        # Use the release version from workflow input
+        VERSION="${{ inputs.version }}"
+        rm -rf ~/.m2/repository/org/picketlink/picketlink-parent/${VERSION} || true
+        echo "Cleared cache for picketlink-parent:${VERSION}"
+    
     - name: Install parent POM first
       run: |
         # Install the parent POM to local repository first so child modules can resolve it
+        # Use -N flag to build only the root POM (non-recursive)
         mvn clean install -N \
+          -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
-          -Dmaven.compiler.target=17
+          -Dmaven.compiler.target=17 \
+          -U
     
     - name: Build project
       run: |
         mvn clean install \
+          -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
@@ -232,6 +280,7 @@ jobs:
       if: inputs.run_tests == true
       run: |
         mvn test \
+          -s ~/.m2/settings.xml \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
           -Dmaven.compiler.target=17
@@ -239,6 +288,7 @@ jobs:
     - name: Package artifacts
       run: |
         mvn package \
+          -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
@@ -251,14 +301,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Use the distributionManagement configured in pom.xml
-        # The setup-java action has already configured settings.xml with authentication
+        # The settings.xml has already been configured with authentication
         mvn deploy \
+          -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
-          -Dmaven.compiler.target=17 \
-          -s ${{ github.workspace }}/settings.xml
+          -Dmaven.compiler.target=17
     
     - name: Commit version changes
       run: |
