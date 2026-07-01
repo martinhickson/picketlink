@@ -160,16 +160,16 @@ public class MetadataServletSP extends HttpServlet {
                 options.put(kvt.getKey(), kvt.getValue());
         }
 
-
-        //inject inputStream and other provider-specific properties
-        String fileInjectionStr = metadataProvider.requireFileInjection();
-        if (isNotNull(fileInjectionStr)) {
-            metadataProvider.injectFileStream(context.getResourceAsStream(fileInjectionStr));
-        }else if (metadataProvider instanceof SPMetadataProvider){
-            ((SPMetadataProvider)metadataProvider).setPicketLinkConf(picketLinkType);
+        if (isSpMetadataProvider(metadataProvider)) {
+            ((SPMetadataProvider) metadataProvider).setPicketLinkConf(picketLinkType);
         }
 
         metadataProvider.init(options);
+
+        String fileInjectionStr = metadataProvider.requireFileInjection();
+        if (isNotNull(fileInjectionStr)) {
+            metadataProvider.injectFileStream(context.getResourceAsStream(fileInjectionStr));
+        }
 
         Object metadata = metadataProvider.getMetaData();
         if (metadata instanceof EntitiesDescriptorType) {
@@ -309,6 +309,11 @@ public class MetadataServletSP extends HttpServlet {
 
         }
 
+    }
+
+    private static boolean isSpMetadataProvider(IMetadataProvider<?> provider) {
+        return provider instanceof SPMetadataProvider
+                || SPMetadataProvider.class.getName().equals(provider.getClass().getName());
     }
 
     private void updateKeyDescriptor(EntityDescriptorType entityD, KeyDescriptorType keyD) {

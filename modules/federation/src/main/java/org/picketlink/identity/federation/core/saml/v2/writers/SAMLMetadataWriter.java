@@ -255,6 +255,11 @@ public class SAMLMetadataWriter extends BaseWriter {
         }
         writeProtocolSupportEnumeration(idpSSODescriptor.getProtocolSupportEnumeration());
 
+        List<KeyDescriptorType> keyDescriptors = idpSSODescriptor.getKeyDescriptor();
+        for (KeyDescriptorType keyDescriptor : keyDescriptors) {
+            writeKeyDescriptor(keyDescriptor);
+        }
+
         List<IndexedEndpointType> artifactResolutionServices = idpSSODescriptor.getArtifactResolutionService();
         for (IndexedEndpointType indexedEndpoint : artifactResolutionServices) {
             writeArtifactResolutionService(indexedEndpoint);

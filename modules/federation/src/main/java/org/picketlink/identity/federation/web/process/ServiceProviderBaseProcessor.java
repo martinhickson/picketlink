@@ -45,6 +45,7 @@ import org.picketlink.identity.federation.saml.v2.metadata.IDPSSODescriptorType;
 import org.picketlink.identity.federation.web.core.HTTPContext;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URL;
 import java.security.PublicKey;
@@ -220,7 +221,14 @@ public class ServiceProviderBaseProcessor {
     protected boolean isLogOutRequest(HTTPContext httpContext) {
         HttpServletRequest request = httpContext.getRequest();
         String gloStr = request.getParameter(GeneralConstants.GLOBAL_LOGOUT);
-        return isNotNull(gloStr) && "true".equalsIgnoreCase(gloStr) && request.getUserPrincipal() != null;
+        if (!isNotNull(gloStr) || !"true".equalsIgnoreCase(gloStr)) {
+            return false;
+        }
+        if (request.getUserPrincipal() != null) {
+            return true;
+        }
+        HttpSession session = request.getSession(false);
+        return session != null && session.getAttribute(GeneralConstants.PRINCIPAL_ID) != null;
     }
 
     protected URL safeURL(String urlString) {

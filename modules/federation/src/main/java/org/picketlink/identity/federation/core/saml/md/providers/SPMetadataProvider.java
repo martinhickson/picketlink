@@ -61,10 +61,10 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
     private static final String ATTRIBUTE_KEYS = "ATTRIBUTE_KEYS";
     private static final String SERVICE_NAME = "ServiceName" ;
     private String entityId;
-    private String logoutPage;
+    private String sloLocation;
+    private String sloResponseLocation;
     private String bindingUri;
     private String serviceUrl;
-    private String logoutResponseLocation;
     private String serviceName;
     private String nameIdFormat;
     private PicketLinkType picketLinkType;
@@ -76,12 +76,11 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
         if (entityId == null)
             throw logger.optionNotSet("EntityId");
         ProviderType providerType = MetadataProviderUtils.getProviderType(picketLinkType);
-        //Add parameters from picket-link.xml
         String bindingURI = MetadataProviderUtils.getBindingURI(providerType);
         if (bindingURI == null) throw new RuntimeException("bindingURI cannot be null");
 
-        logoutPage = MetadataProviderUtils.getLogoutURL(providerType);
-        logoutResponseLocation = MetadataProviderUtils.getLogoutResponseLocation(providerType);
+        sloLocation = MetadataProviderUtils.getSingleLogoutServiceLocation(providerType);
+        sloResponseLocation = MetadataProviderUtils.getSingleLogoutServiceResponseLocation(providerType);
         bindingUri = bindingURI;
         serviceUrl = MetadataProviderUtils.getServiceURL(providerType);
         serviceName = options.get(SERVICE_NAME);
@@ -96,17 +95,22 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
         SPSSODescriptorType spSSO = new SPSSODescriptorType(protocols);
         spSSO.setAuthnRequestsSigned(true);
         spSSO.setWantAssertionsSigned(true);
-        if (bindingUri!=null && logoutPage != null) {
-            EndpointType endpointType = new EndpointType(URI.create(bindingUri), URI.create(logoutPage));
-            endpointType.setResponseLocation(URI.create(logoutResponseLocation));
+        if (bindingUri != null && sloLocation != null) {
+            EndpointType endpointType = new EndpointType(URI.create(bindingUri), URI.create(sloLocation));
+            if (sloResponseLocation != null) {
+                endpointType.setResponseLocation(URI.create(sloResponseLocation));
+            }
             spSSO.addSingleLogoutService(endpointType);
         }
         IndexedEndpointType assertionConsumerSvc = new IndexedEndpointType(URI.create(bindingUri), URI.create(serviceUrl));
         assertionConsumerSvc.setIsDefault(true);
         spSSO.addAssertionConsumerService(assertionConsumerSvc);
         if (serviceName != null) {
-            spSSO.addAttributeConsumerService(getAttributeConsumerService());
-            if(nameIdFormat != null) {
+            AttributeConsumingServiceType attributeConsumerService = getAttributeConsumerService();
+            if (attributeConsumerService != null) {
+                spSSO.addAttributeConsumerService(attributeConsumerService);
+            }
+            if (nameIdFormat != null) {
                 spSSO.addNameIDFormat(nameIdFormat);
             }
         }
@@ -122,6 +126,9 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
         try {
             Handler attributeHandler = MetadataProviderUtils.getHandler(picketLinkType,
                     "org.picketlink.identity.federation.web.handlers.saml2.SAML2AttributeHandler");
+            if (attributeHandler == null) {
+                return null;
+            }
             List<KeyValueType> options = attributeHandler.getOption();
             ArrayList<String> attributeVals = new ArrayList<String>();
             for(KeyValueType option:options)
@@ -152,9 +159,11 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
 
     public String getNameIdFormat() {
         try {
-
             Handler authHandler = MetadataProviderUtils.getHandler(picketLinkType,
                     "org.picketlink.identity.federation.web.handlers.saml2.SAML2AuthenticationHandler");
+            if (authHandler == null) {
+                return null;
+            }
             List<KeyValueType> options = authHandler.getOption();
             for(KeyValueType option:options) {
                 if (option.getKey().equals(GeneralConstants.NAMEID_FORMAT)){

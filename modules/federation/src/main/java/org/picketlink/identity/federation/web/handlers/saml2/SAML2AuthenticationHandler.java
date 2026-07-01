@@ -433,6 +433,12 @@ public class SAML2AuthenticationHandler extends BaseSAML2Handler {
             String id = IDGenerator.create("ID_");
 
             String assertionConsumerURL = (String) handlerConfig.getParameter(SAML2Handler.ASSERTION_CONSUMER_URL);
+            if (StringUtil.isNullOrEmpty(assertionConsumerURL) && handlerChainConfig != null) {
+                Object chainValue = handlerChainConfig.getParameter(SAML2Handler.ASSERTION_CONSUMER_URL);
+                if (chainValue != null) {
+                    assertionConsumerURL = chainValue.toString();
+                }
+            }
             if (StringUtil.isNullOrEmpty(assertionConsumerURL)) {
                 assertionConsumerURL = issuerValue;
             }
