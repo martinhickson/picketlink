@@ -126,6 +126,8 @@
       </element>
       <element name="MetaDataProvider" type="tns:MetadataProviderType"
                maxOccurs="1" minOccurs="0"></element>
+      <element name="MetadataPublishing" type="tns:MetadataPublishingType"
+               maxOccurs="1" minOccurs="0"></element>
     </sequence>
     <!-- Specify what is the server environment where the IDP or SP exists -->
     <attribute name="ServerEnvironment" use="optional" default="picketlink">
@@ -201,6 +203,18 @@
                minOccurs="0"></element>
     </sequence>
     <attribute name="ClassName" type="string"></attribute>
+  </complexType>
+
+  <complexType name="MetadataPublishingType">
+    <annotation>
+      <documentation>
+        Controls SAML XML metadata (/metadata) and admin JSON metadata API
+        (/api/admin/federation/metadata). Admin JSON is off by default.
+      </documentation>
+    </annotation>
+    <attribute name="XmlEnabled" type="boolean" use="optional" default="true"/>
+    <attribute name="AdminJsonEnabled" type="boolean" use="optional" default="false"/>
+    <attribute name="AdminJsonRequireAuth" type="boolean" use="optional" default="true"/>
   </complexType>
 
   <!-- Security Token Service Elements -->

@@ -72,6 +72,8 @@ public class ProviderType {
 
     protected MetadataProviderType metaDataProvider;
 
+    protected MetadataPublishingType metadataPublishing;
+
     protected String serverEnvironment;
 
     protected String canonicalizationMethod = CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS;
@@ -150,6 +152,14 @@ public class ProviderType {
      */
     public void setMetaDataProvider(MetadataProviderType value) {
         this.metaDataProvider = value;
+    }
+
+    public MetadataPublishingType getMetadataPublishing() {
+        return metadataPublishing;
+    }
+
+    public void setMetadataPublishing(MetadataPublishingType metadataPublishing) {
+        this.metadataPublishing = metadataPublishing;
     }
 
     /**
@@ -244,6 +254,10 @@ public class ProviderType {
 
         if (metaDataProvider != null) {
             setMetaDataProvider(metaDataProvider);
+        }
+
+        if (other.getMetadataPublishing() != null) {
+            setMetadataPublishing(other.getMetadataPublishing());
         }
 
         setSupportsSignature(other.isSupportsSignature());

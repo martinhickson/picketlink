@@ -29,6 +29,7 @@ import org.picketlink.config.federation.IDPType;
 import org.picketlink.config.federation.IdentityURLProviderType;
 import org.picketlink.config.federation.KeyProviderType;
 import org.picketlink.config.federation.KeyValueType;
+import org.picketlink.config.federation.MetadataPublishingType;
 import org.picketlink.config.federation.MetadataProviderType;
 import org.picketlink.config.federation.ProviderType;
 import org.picketlink.config.federation.SPType;
@@ -80,6 +81,14 @@ public class SAMLConfigParser extends AbstractParser {
     public static final String KEY_PROVIDER = "KeyProvider";
 
     public static final String META_PROVIDER = "MetaDataProvider";
+
+    public static final String METADATA_PUBLISHING = "MetadataPublishing";
+
+    public static final String XML_ENABLED = "XmlEnabled";
+
+    public static final String ADMIN_JSON_ENABLED = "AdminJsonEnabled";
+
+    public static final String ADMIN_JSON_REQUIRE_AUTH = "AdminJsonRequireAuth";
 
     public static final String CLASS_NAME = "ClassName";
 
@@ -286,6 +295,10 @@ public class SAMLConfigParser extends AbstractParser {
             } else if (elementName.equals(META_PROVIDER)) {
                 MetadataProviderType mdProviderType = parseMDProvider(xmlEventReader, startElement);
                 idp.setMetaDataProvider(mdProviderType);
+            } else if (elementName.equals(METADATA_PUBLISHING)) {
+                idp.setMetadataPublishing(parseMetadataPublishing(startElement));
+                EndElement endElement = StaxParserUtil.getNextEndElement(xmlEventReader);
+                StaxParserUtil.validate(endElement, METADATA_PUBLISHING);
             }
         }
         return idp;
@@ -392,9 +405,10 @@ public class SAMLConfigParser extends AbstractParser {
             } else if (elementName.equals(META_PROVIDER)) {
                 MetadataProviderType mdProviderType = parseMDProvider(xmlEventReader, startElement);
                 sp.setMetaDataProvider(mdProviderType);
-            } else if (elementName.equals(META_PROVIDER)) {
-                MetadataProviderType mdProviderType = parseMDProvider(xmlEventReader, startElement);
-                sp.setMetaDataProvider(mdProviderType);
+            } else if (elementName.equals(METADATA_PUBLISHING)) {
+                sp.setMetadataPublishing(parseMetadataPublishing(startElement));
+                EndElement endElement = StaxParserUtil.getNextEndElement(xmlEventReader);
+                StaxParserUtil.validate(endElement, METADATA_PUBLISHING);
             }
         }
         return sp;
@@ -570,6 +584,27 @@ public class SAMLConfigParser extends AbstractParser {
             }
         }
         return metaProviderType;
+    }
+
+    protected MetadataPublishingType parseMetadataPublishing(StartElement startElement) {
+        MetadataPublishingType publishing = new MetadataPublishingType();
+
+        Attribute attribute = startElement.getAttributeByName(new QName("", XML_ENABLED));
+        if (attribute != null) {
+            publishing.setXmlEnabled(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
+        }
+
+        attribute = startElement.getAttributeByName(new QName("", ADMIN_JSON_ENABLED));
+        if (attribute != null) {
+            publishing.setAdminJsonEnabled(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
+        }
+
+        attribute = startElement.getAttributeByName(new QName("", ADMIN_JSON_REQUIRE_AUTH));
+        if (attribute != null) {
+            publishing.setAdminJsonRequireAuth(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
+        }
+
+        return publishing;
     }
 
     protected void populateKeyValueType(KeyValueType kvt, StartElement startElement) {
