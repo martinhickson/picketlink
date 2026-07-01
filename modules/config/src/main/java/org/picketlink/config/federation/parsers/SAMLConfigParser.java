@@ -90,6 +90,10 @@ public class SAMLConfigParser extends AbstractParser {
 
     public static final String ADMIN_JSON_REQUIRE_AUTH = "AdminJsonRequireAuth";
 
+    public static final String ACCEPT_LEGACY_ALGORITHMS = "AcceptLegacyAlgorithms";
+
+    public static final String ENABLE_LEGACY_SIGNING = "EnableLegacySigning";
+
     public static final String CLASS_NAME = "ClassName";
 
     public static final String CLASS = "class";
@@ -250,6 +254,8 @@ public class SAMLConfigParser extends AbstractParser {
             idp.setSupportsSignature(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
         }
 
+        parseProviderCryptoAttributes(startElement, idp);
+
         attributeQName = new QName("", IDENTITY_PARTICIPANT_STACK);
         attribute = startElement.getAttributeByName(attributeQName);
         if (attribute != null) {
@@ -367,6 +373,8 @@ public class SAMLConfigParser extends AbstractParser {
         if (attribute != null) {
             sp.setSupportsSignature(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
         }
+
+        parseProviderCryptoAttributes(startElement, sp);
 
         while (xmlEventReader.hasNext()) {
             XMLEvent xmlEvent = StaxParserUtil.peek(xmlEventReader);
@@ -605,6 +613,18 @@ public class SAMLConfigParser extends AbstractParser {
         }
 
         return publishing;
+    }
+
+    private void parseProviderCryptoAttributes(StartElement startElement, ProviderType providerType) {
+        Attribute attribute = startElement.getAttributeByName(new QName("", ACCEPT_LEGACY_ALGORITHMS));
+        if (attribute != null) {
+            providerType.setAcceptLegacyAlgorithms(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
+        }
+
+        attribute = startElement.getAttributeByName(new QName("", ENABLE_LEGACY_SIGNING));
+        if (attribute != null) {
+            providerType.setEnableLegacySigning(Boolean.parseBoolean(StaxParserUtil.getAttributeValue(attribute)));
+        }
     }
 
     protected void populateKeyValueType(KeyValueType kvt, StartElement startElement) {

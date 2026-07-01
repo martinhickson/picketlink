@@ -31,4 +31,21 @@ public class MetadataPublishingConfigTestCase {
         Assert.assertTrue(publishing.isAdminJsonEnabled());
         Assert.assertFalse(publishing.isAdminJsonRequireAuth());
     }
+
+    @Test
+    public void cryptoPolicyDefaultsFalseOnProvider() throws Exception {
+        String xml = "<PicketLinkSP xmlns=\"urn:picketlink:identity-federation:config:2.1\"/>";
+        SPType sp = (SPType) new SAMLConfigParser().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+        Assert.assertFalse(sp.isAcceptLegacyAlgorithms());
+        Assert.assertFalse(sp.isEnableLegacySigning());
+    }
+
+    @Test
+    public void parsesProviderCryptoPolicyAttributes() throws Exception {
+        String xml = "<PicketLinkSP xmlns=\"urn:picketlink:identity-federation:config:2.1\""
+                + " AcceptLegacyAlgorithms=\"true\" EnableLegacySigning=\"true\"/>";
+        SPType sp = (SPType) new SAMLConfigParser().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+        Assert.assertTrue(sp.isAcceptLegacyAlgorithms());
+        Assert.assertTrue(sp.isEnableLegacySigning());
+    }
 }

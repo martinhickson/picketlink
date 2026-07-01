@@ -24,6 +24,7 @@ import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.core.util.SignatureUtilTransferObject;
 import org.picketlink.identity.federation.core.util.XMLSignatureUtil;
 import org.picketlink.identity.federation.saml.v2.protocol.RequestAbstractType;
@@ -35,8 +36,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.crypto.MarshalException;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -61,9 +60,9 @@ public class SAML2Signature {
 
     private static final String ID_ATTRIBUTE_NAME = "ID";
 
-    private String signatureMethod = SignatureMethod.RSA_SHA1;
+    private String signatureMethod = SamlCryptoSecurityUtil.getDefaultSignatureMethod();
 
-    private String digestMethod = DigestMethod.SHA1;
+    private String digestMethod = SamlCryptoSecurityUtil.getDefaultDigestMethod();
 
     private Node sibling;
 

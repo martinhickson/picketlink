@@ -33,6 +33,7 @@ import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.StringUtil;
 import org.picketlink.config.federation.SPType;
 import org.picketlink.identity.federation.api.util.EncryptedAssertionSecurityUtil;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.core.SerializablePrincipal;
@@ -511,7 +512,16 @@ public class SAML2AuthenticationHandler extends BaseSAML2Handler {
 
                 if (requiresEncryptedAssertionSignature(request, httpContext)) {
                     PublicKey publicKey = (PublicKey) request.getOptions().get(GeneralConstants.SENDER_PUBLIC_KEY);
-                    if (publicKey == null || !AssertionUtil.isSignatureValid(decryptedAssertionElement, publicKey)) {
+                    boolean signatureValid;
+                    SamlCryptoSecurityUtil.setAcceptLegacyAlgorithmsForValidation(
+                            SamlCryptoSecurityUtil.isAcceptLegacyAlgorithmsFromConfig(getSPConfiguration()));
+                    try {
+                        signatureValid = publicKey != null
+                                && AssertionUtil.isSignatureValid(decryptedAssertionElement, publicKey);
+                    } finally {
+                        SamlCryptoSecurityUtil.clearValidationCryptoContext();
+                    }
+                    if (!signatureValid) {
                         throw logger.samlHandlerInvalidSignatureError();
                     }
                 }

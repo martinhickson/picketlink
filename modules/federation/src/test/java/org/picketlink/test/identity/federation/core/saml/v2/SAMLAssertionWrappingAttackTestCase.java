@@ -118,7 +118,6 @@ public class SAMLAssertionWrappingAttackTestCase {
         ResponseType responseType = createSignedResponse();
 
         SAML2Signature ss = new SAML2Signature();
-        ss.setSignatureMethod(SignatureMethod.RSA_SHA1);
         Document signedDoc = ss.sign(responseType, new KeyPair(publicKey, privateKey));
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug(DocumentUtil.asString(signedDoc));
@@ -192,7 +191,6 @@ public class SAMLAssertionWrappingAttackTestCase {
         ResponseType responseType = createSignedResponse();
 
         SAML2Signature ss = new SAML2Signature();
-        ss.setSignatureMethod(SignatureMethod.RSA_SHA1);
         Document signedDoc = ss.sign(responseType, new KeyPair(publicKey, privateKey));
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug(DocumentUtil.asString(signedDoc));

@@ -82,6 +82,10 @@ public class ProviderType {
 
     protected boolean supportsSignature = false;
 
+    protected Boolean acceptLegacyAlgorithms;
+
+    protected Boolean enableLegacySigning;
+
     /**
      * Gets the value of the identityURL property.
      *
@@ -262,6 +266,13 @@ public class ProviderType {
 
         setSupportsSignature(other.isSupportsSignature());
 
+        if (other.acceptLegacyAlgorithms != null) {
+            setAcceptLegacyAlgorithms(other.acceptLegacyAlgorithms);
+        }
+        if (other.enableLegacySigning != null) {
+            setEnableLegacySigning(other.enableLegacySigning);
+        }
+
         String can = other.getCanonicalizationMethod();
         if (StringUtil.isNotNull(can)) {
             setCanonicalizationMethod(can);
@@ -282,5 +293,27 @@ public class ProviderType {
 
     public void setSupportsSignature(boolean supportsSignature) {
         this.supportsSignature = supportsSignature;
+    }
+
+    /**
+     * Accept deprecated partner signature algorithms when validating inbound SAML. Default {@code false}.
+     */
+    public boolean isAcceptLegacyAlgorithms() {
+        return acceptLegacyAlgorithms != null && acceptLegacyAlgorithms;
+    }
+
+    public void setAcceptLegacyAlgorithms(Boolean acceptLegacyAlgorithms) {
+        this.acceptLegacyAlgorithms = acceptLegacyAlgorithms;
+    }
+
+    /**
+     * Sign outbound SAML with deprecated algorithms. Default {@code false}.
+     */
+    public boolean isEnableLegacySigning() {
+        return enableLegacySigning != null && enableLegacySigning;
+    }
+
+    public void setEnableLegacySigning(Boolean enableLegacySigning) {
+        this.enableLegacySigning = enableLegacySigning;
     }
 }

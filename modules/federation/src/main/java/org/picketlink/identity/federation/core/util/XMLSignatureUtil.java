@@ -29,6 +29,7 @@ import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.StringUtil;
 import org.picketlink.common.util.SystemPropertiesUtil;
 import org.picketlink.common.util.TransformerUtil;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.api.util.XmlSignatureSecurityUtil;
 import org.picketlink.identity.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.picketlink.identity.xmlsec.w3.xmldsig.KeyValueType;
@@ -550,7 +551,11 @@ public class XMLSignatureUtil {
     private static boolean validateSignatureAndCollectReferences(Node signatureNode, Key publicKey, Set<Node> signedNodes)
             throws MarshalException, XMLSignatureException {
         DOMValidateContext valContext = new DOMValidateContext(publicKey, signatureNode);
+        SamlCryptoSecurityUtil.configureSecureValidation(valContext);
         XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+        if (SamlCryptoSecurityUtil.usesDisallowedAlgorithms(signature)) {
+            return false;
+        }
         boolean coreValidity = signature.validate(valContext);
 
         if (!coreValidity) {
@@ -597,7 +602,12 @@ public class XMLSignatureUtil {
                 }
             }
             DOMValidateContext valContext = new DOMValidateContext(publicKey, signatureNode);
+            SamlCryptoSecurityUtil.configureSecureValidation(valContext);
             XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+
+            if (SamlCryptoSecurityUtil.usesDisallowedAlgorithms(signature)) {
+                return false;
+            }
 
             boolean coreValidity = signature.validate(valContext);
 

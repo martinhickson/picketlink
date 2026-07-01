@@ -24,6 +24,7 @@ import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRequest;
 import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerResponse;
 import org.picketlink.identity.federation.web.util.RedirectBindingSignatureUtil;
@@ -93,6 +94,16 @@ public class SAML2SignatureGenerationHandler extends AbstractSignatureHandler {
             return;
         }
 
+        bindSigningCryptoContext();
+        try {
+            signWithCryptoContext(samlDocument, request, response);
+        } finally {
+            clearSigningCryptoContext();
+        }
+    }
+
+    private void signWithCryptoContext(Document samlDocument, SAML2HandlerRequest request, SAML2HandlerResponse response)
+            throws ProcessingException {
         // Get the Key Pair
         KeyPair keypair = (KeyPair) this.handlerChainConfig.getParameter(GeneralConstants.KEYPAIR);
         X509Certificate x509Certificate = (X509Certificate) this.handlerChainConfig.getParameter(GeneralConstants.X509CERTIFICATE);
@@ -143,6 +154,8 @@ public class SAML2SignatureGenerationHandler extends AbstractSignatureHandler {
 
     private void signDocument(Document samlDocument, KeyPair keypair, X509Certificate x509Certificate) throws ProcessingException {
         SAML2Signature samlSignature = new SAML2Signature();
+        samlSignature.setSignatureMethod(SamlCryptoSecurityUtil.getSignatureMethodForSigning());
+        samlSignature.setDigestMethod(SamlCryptoSecurityUtil.getDigestMethodForSigning());
         Node nextSibling = samlSignature.getNextSiblingOfIssuer(samlDocument);
 
         samlSignature.setNextSibling(nextSibling);

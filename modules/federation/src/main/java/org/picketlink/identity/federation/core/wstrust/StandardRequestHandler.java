@@ -27,6 +27,7 @@ import org.picketlink.common.exceptions.fed.WSTrustException;
 import org.picketlink.common.util.Base64;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.SystemPropertiesUtil;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.core.saml.v1.SAML11Constants;
 import org.picketlink.identity.federation.core.saml.v2.util.SignatureUtil;
 import org.picketlink.identity.federation.core.sts.PicketLinkCoreSTS;
@@ -53,8 +54,6 @@ import org.w3c.dom.Node;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.namespace.QName;
 
 import java.net.URI;
@@ -569,7 +568,7 @@ public class StandardRequestHandler implements WSTrustRequestHandler {
             if (this.configuration.signIssuedToken() && this.configuration.getSTSKeyPair() != null) {
                 KeyPair keyPair = this.configuration.getSTSKeyPair();
                 URI signatureURI = request.getSignatureAlgorithm();
-                String signatureMethod = signatureURI != null ? signatureURI.toString() : SignatureMethod.RSA_SHA1;
+                String signatureMethod = signatureURI != null ? signatureURI.toString() : SamlCryptoSecurityUtil.getDefaultSignatureMethod();
                 try {
                     Node rst = rstrDocument.getElementsByTagNameNS(WSTrustConstants.BASE_NAMESPACE, "RequestedSecurityToken")
                             .item(0);
@@ -586,7 +585,7 @@ public class StandardRequestHandler implements WSTrustRequestHandler {
                     // Set the CanonicalizationMethod if any
                     XMLSignatureUtil.setCanonicalizationMethodType(configuration.getXMLDSigCanonicalizationMethod());
 
-                    rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, DigestMethod.SHA1,
+                    rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(),
                             signatureMethod, setupIDAttribute(tokenElement), x509Certificate);
                     if (logger.isTraceEnabled()) {
                         try {

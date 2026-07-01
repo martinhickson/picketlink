@@ -40,8 +40,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamWriter;
@@ -65,6 +63,7 @@ import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.util.StaxUtil;
 
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.api.saml.v2.metadata.KeyDescriptorMetaDataBuilder;
 import org.picketlink.identity.federation.api.util.KeyUtil;
 import org.picketlink.identity.federation.core.interfaces.IMetadataProvider;
@@ -114,6 +113,8 @@ public class MetadataServletSP extends HttpServlet {
 
     private transient EntityDescriptorType entityDescriptor;
 
+    private transient ProviderType providerType;
+
     private String signingAlias = null;
 
     private String encryptingAlias = null;
@@ -142,6 +143,7 @@ public class MetadataServletSP extends HttpServlet {
 
         PicketLinkType picketLinkType = MetadataProviderUtils.getPicketLinkConf(is);
         ProviderType providerType = MetadataProviderUtils.getProviderType(picketLinkType);
+        this.providerType = providerType;
 
         metadataProviderType = providerType.getMetaDataProvider();
         String fqn = metadataProviderType.getClassName();
@@ -273,8 +275,10 @@ public class MetadataServletSP extends HttpServlet {
             KeyPair keyPair = new KeyPair(null, keyManager.getSigningKey());
             //Sign doc
             Element spssoDesc = doc.getDocumentElement();
-            XMLSignatureUtil.sign(spssoDesc,spssoDesc.getFirstChild(),keyPair,DigestMethod.SHA1,
-                    SignatureMethod.RSA_SHA1,"",(X509Certificate) keyManager.getCertificate(signingAlias));
+            XMLSignatureUtil.sign(spssoDesc,spssoDesc.getFirstChild(),keyPair,
+                    SamlCryptoSecurityUtil.getDigestMethodForSigning(isLegacySigningEnabled()),
+                    SamlCryptoSecurityUtil.getSignatureMethodForSigning(isLegacySigningEnabled()),"",
+                    (X509Certificate) keyManager.getCertificate(signingAlias));
             //extract Signature
             entityDescriptor.setSignature(extractSignatureFromDoc(spssoDesc));
 
@@ -341,5 +345,9 @@ public class MetadataServletSP extends HttpServlet {
 
             }
         }
+    }
+
+    private boolean isLegacySigningEnabled() {
+        return providerType != null && providerType.isEnableLegacySigning();
     }
 }

@@ -27,6 +27,7 @@ import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.constants.WSTrustConstants;
 import org.picketlink.common.util.DocumentUtil;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.core.util.KeyStoreUtil;
 import org.picketlink.identity.federation.core.util.XMLSignatureUtil;
 import org.picketlink.identity.xmlsec.w3.xmldsig.DSAKeyValueType;
@@ -79,10 +80,10 @@ public class XMLSignatureUtilUnitTestCase {
             }
         }
 
-        String signatureMethod = SignatureMethod.RSA_SHA1;
+        String signatureMethod = SamlCryptoSecurityUtil.getDefaultSignatureMethod();
         KeyPair keyPair = KeyStoreUtil.generateKeyPair("RSA");
 
-        rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, DigestMethod.SHA1, signatureMethod, "#"
+        rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(), signatureMethod, "#"
                 + tokenElement.getAttribute("AssertionID"));
 
         assertNotNull(rstrDocument);
@@ -103,11 +104,11 @@ public class XMLSignatureUtilUnitTestCase {
         Document rstrDocument = DocumentUtil.getDocument(is);
         assertNotNull(rstrDocument);
 
-        String signatureMethod = SignatureMethod.RSA_SHA1;
+        String signatureMethod = SamlCryptoSecurityUtil.getDefaultSignatureMethod();
         KeyPair keyPair = KeyStoreUtil.generateKeyPair("RSA");
 
         Element tokenElement = (Element) rstrDocument.getFirstChild();
-        rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, DigestMethod.SHA1, signatureMethod, "");
+        rstrDocument = XMLSignatureUtil.sign(rstrDocument, tokenElement, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(), signatureMethod, "");
 
         assertNotNull(rstrDocument);
 
@@ -133,7 +134,7 @@ public class XMLSignatureUtilUnitTestCase {
         Document rstrDocument = DocumentUtil.getDocument(is);
         assertNotNull(rstrDocument);
 
-        String signatureMethod = SignatureMethod.RSA_SHA1;
+        String signatureMethod = SamlCryptoSecurityUtil.getDefaultSignatureMethod();
         KeyPair keyPair = KeyStoreUtil.generateKeyPair("RSA");
 
         Element assertionElement = (Element) rstrDocument.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion",
@@ -142,7 +143,7 @@ public class XMLSignatureUtilUnitTestCase {
         assertionElement.setIdAttribute("ID", true);
         Node nextSibling = assertionElement.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                 JBossSAMLConstants.ISSUER.get()).item(0).getNextSibling();
-        XMLSignatureUtil.sign(assertionElement, nextSibling, keyPair, DigestMethod.SHA1, signatureMethod, referenceURI);
+        XMLSignatureUtil.sign(assertionElement, nextSibling, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(), signatureMethod, referenceURI);
 
         assertNotNull(rstrDocument);
 
@@ -168,7 +169,7 @@ public class XMLSignatureUtilUnitTestCase {
         Document rstrDocument = DocumentUtil.getDocument(is);
         assertNotNull(rstrDocument);
 
-        String signatureMethod = SignatureMethod.RSA_SHA1;
+        String signatureMethod = SamlCryptoSecurityUtil.getDefaultSignatureMethod();
         KeyPair keyPair = KeyStoreUtil.generateKeyPair("RSA");
 
         Element assertionElement = (Element) rstrDocument.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion",
@@ -176,7 +177,7 @@ public class XMLSignatureUtilUnitTestCase {
         String referenceURI = "#" + assertionElement.getAttribute("ID");
         assertionElement.setIdAttribute("ID", true);
 
-        XMLSignatureUtil.sign(rstrDocument.getDocumentElement(), assertionElement, keyPair, DigestMethod.SHA1, signatureMethod, referenceURI);
+        XMLSignatureUtil.sign(rstrDocument.getDocumentElement(), assertionElement, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(), signatureMethod, referenceURI);
 
         assertNotNull(rstrDocument);
 

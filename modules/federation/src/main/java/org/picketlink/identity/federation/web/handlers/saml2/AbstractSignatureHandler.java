@@ -19,9 +19,22 @@
 package org.picketlink.identity.federation.web.handlers.saml2;
 
 import org.picketlink.common.constants.GeneralConstants;
+import org.picketlink.common.exceptions.ConfigurationException;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
+import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerChainConfig;
 import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRequest;
 
 public abstract class AbstractSignatureHandler extends BaseSAML2Handler {
+
+    private boolean acceptLegacyAlgorithms;
+    private boolean legacySigningEnabled;
+
+    @Override
+    public void initChainConfig(SAML2HandlerChainConfig handlerChainConfig) throws ConfigurationException {
+        super.initChainConfig(handlerChainConfig);
+        this.acceptLegacyAlgorithms = SamlCryptoSecurityUtil.isAcceptLegacyAlgorithmsFromConfig(getProviderconfig());
+        this.legacySigningEnabled = SamlCryptoSecurityUtil.isLegacySigningEnabledFromConfig(getProviderconfig());
+    }
 
     /**
      * <p>
@@ -37,6 +50,30 @@ public abstract class AbstractSignatureHandler extends BaseSAML2Handler {
     protected boolean isSupportsSignature(SAML2HandlerRequest request) {
         return request.getOptions().get(GeneralConstants.SUPPORTS_SIGNATURES) == null
                 || ((Boolean) request.getOptions().get(GeneralConstants.SUPPORTS_SIGNATURES));
+    }
+
+    protected boolean isAcceptLegacyAlgorithms() {
+        return acceptLegacyAlgorithms;
+    }
+
+    protected boolean isLegacySigningEnabled() {
+        return legacySigningEnabled;
+    }
+
+    protected void bindValidationCryptoContext() {
+        SamlCryptoSecurityUtil.setAcceptLegacyAlgorithmsForValidation(acceptLegacyAlgorithms);
+    }
+
+    protected void bindSigningCryptoContext() {
+        SamlCryptoSecurityUtil.setLegacySigningEnabled(legacySigningEnabled);
+    }
+
+    protected void clearValidationCryptoContext() {
+        SamlCryptoSecurityUtil.clearValidationCryptoContext();
+    }
+
+    protected void clearSigningCryptoContext() {
+        SamlCryptoSecurityUtil.clearSigningCryptoContext();
     }
 
 }

@@ -30,6 +30,7 @@ import org.picketlink.config.federation.KeyValueType;
 import org.picketlink.config.federation.MetadataProviderType;
 import org.picketlink.config.federation.PicketLinkType;
 import org.picketlink.config.federation.ProviderType;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.api.saml.v2.metadata.KeyDescriptorMetaDataBuilder;
 import org.picketlink.identity.federation.api.util.KeyUtil;
 import org.picketlink.identity.federation.core.interfaces.IMetadataProvider;
@@ -58,8 +59,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamWriter;
@@ -99,6 +98,8 @@ public class MetadataServlet extends HttpServlet {
 
     private transient EntityDescriptorType metadata;
 
+    private transient ProviderType providerType;
+
     private String signingAlias = null;
 
     private String encryptingAlias = null;
@@ -124,6 +125,7 @@ public class MetadataServlet extends HttpServlet {
             encryptingAlias = config.getInitParameter("encryptingAlias");
 
             ProviderType providerType = ConfigurationUtil.getIDPConfiguration(is);
+            this.providerType = providerType;
             metadataProviderType = providerType.getMetaDataProvider();
             String fqn = metadataProviderType.getClassName();
             Class<?> clazz = SecurityActions.loadClass(getClass(), fqn);
@@ -237,8 +239,10 @@ public class MetadataServlet extends HttpServlet {
             Document doc = documentBuilderFactory.newDocumentBuilder().parse(new ByteArrayInputStream(baos.toByteArray()));
             KeyPair keyPair = new KeyPair(null, keyManager.getSigningKey());
             Element root = doc.getDocumentElement();
-            XMLSignatureUtil.sign(root, root.getFirstChild(), keyPair, DigestMethod.SHA1,
-                    SignatureMethod.RSA_SHA1, "", (X509Certificate) keyManager.getCertificate(signingAlias));
+            XMLSignatureUtil.sign(root, root.getFirstChild(), keyPair,
+                    SamlCryptoSecurityUtil.getDigestMethodForSigning(isLegacySigningEnabled()),
+                    SamlCryptoSecurityUtil.getSignatureMethodForSigning(isLegacySigningEnabled()), "",
+                    (X509Certificate) keyManager.getCertificate(signingAlias));
             entityDescriptor.setSignature((Element) root.getFirstChild());
         } catch (Exception e) {
             throw new ServletException(e);
@@ -269,5 +273,9 @@ public class MetadataServlet extends HttpServlet {
                     spDescriptor.addKeyDescriptor(keyD);
             }
         }
+    }
+
+    private boolean isLegacySigningEnabled() {
+        return providerType != null && providerType.isEnableLegacySigning();
     }
 }

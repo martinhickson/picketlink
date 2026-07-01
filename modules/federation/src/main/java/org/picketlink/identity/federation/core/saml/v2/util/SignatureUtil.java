@@ -17,13 +17,12 @@
  */
 package org.picketlink.identity.federation.core.saml.v2.util;
 
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.common.PicketLinkLogger;
 import org.picketlink.common.PicketLinkLoggerFactory;
-import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.WSTrustConstants;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.util.Base64;
-import org.picketlink.identity.federation.core.constants.PicketLinkFederationConstants;
 import org.picketlink.identity.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.picketlink.identity.xmlsec.w3.xmldsig.KeyValueType;
 import org.picketlink.identity.xmlsec.w3.xmldsig.RSAKeyValueType;
@@ -78,14 +77,7 @@ public class SignatureUtil {
      * @return
      */
     public static String getXMLSignatureAlgorithmURI(String algo) {
-        String xmlSignatureAlgo = null;
-
-        if ("DSA".equalsIgnoreCase(algo)) {
-            xmlSignatureAlgo = JBossSAMLConstants.SIGNATURE_SHA1_WITH_DSA.get();
-        } else if ("RSA".equalsIgnoreCase(algo)) {
-            xmlSignatureAlgo = JBossSAMLConstants.SIGNATURE_SHA1_WITH_RSA.get();
-        }
-        return xmlSignatureAlgo;
+        return SamlCryptoSecurityUtil.getXmlSignatureAlgorithmUriForSigning(algo);
     }
 
     /**
@@ -131,11 +123,26 @@ public class SignatureUtil {
         if (validatingKey == null)
             throw logger.nullArgumentError("validatingKey");
 
-        // We assume that the sigatureValue has the same algorithm as the public key
-        // If not, there will be an exception anyway
         String algo = validatingKey.getAlgorithm();
         Signature sig = getSignature(algo);
 
+        sig.initVerify(validatingKey);
+        sig.update(signedContent);
+        return sig.verify(signatureValue);
+    }
+
+    public static boolean validate(byte[] signedContent, byte[] signatureValue, String javaSignatureAlgorithm,
+                                   PublicKey validatingKey) throws GeneralSecurityException {
+        if (signedContent == null)
+            throw logger.nullArgumentError("signedContent");
+        if (signatureValue == null)
+            throw logger.nullArgumentError("signatureValue");
+        if (javaSignatureAlgorithm == null)
+            throw logger.nullArgumentError("javaSignatureAlgorithm");
+        if (validatingKey == null)
+            throw logger.nullArgumentError("validatingKey");
+
+        Signature sig = Signature.getInstance(javaSignatureAlgorithm);
         sig.initVerify(validatingKey);
         sig.update(signedContent);
         return sig.verify(signatureValue);
@@ -284,14 +291,10 @@ public class SignatureUtil {
     }
 
     private static Signature getSignature(String algo) throws GeneralSecurityException {
-        Signature sig = null;
-
-        if ("DSA".equalsIgnoreCase(algo)) {
-            sig = Signature.getInstance(PicketLinkFederationConstants.DSA_SIGNATURE_ALGORITHM);
-        } else if ("RSA".equalsIgnoreCase(algo)) {
-            sig = Signature.getInstance(PicketLinkFederationConstants.RSA_SIGNATURE_ALGORITHM);
-        } else
+        String javaAlgorithm = SamlCryptoSecurityUtil.getJavaSignatureAlgorithmForSigning(algo);
+        if (javaAlgorithm == null) {
             throw logger.signatureUnknownAlgo(algo);
-        return sig;
+        }
+        return Signature.getInstance(javaAlgorithm);
     }
 }

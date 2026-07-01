@@ -17,6 +17,7 @@
  */
 package org.picketlink.identity.federation.web.util;
 
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.common.PicketLinkLogger;
 import org.picketlink.common.PicketLinkLoggerFactory;
 import org.picketlink.common.constants.GeneralConstants;
@@ -33,6 +34,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -215,6 +217,14 @@ public class RedirectBindingSignatureUtil {
 
     public static boolean validateSignature(String queryString, PublicKey validatingKey, byte[] sigValue)
             throws UnsupportedEncodingException, GeneralSecurityException {
+        String sigAlgParam = RedirectBindingSignatureUtil.getTokenValue(queryString, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
+        if (sigAlgParam != null) {
+            sigAlgParam = URLDecoder.decode(sigAlgParam, "UTF-8");
+            if (SamlCryptoSecurityUtil.isDisallowedAlgorithm(sigAlgParam)) {
+                return false;
+            }
+        }
+
         // Construct the url again
         StringBuilder sb = new StringBuilder();
 
@@ -235,7 +245,15 @@ public class RedirectBindingSignatureUtil {
         addParameter(sb, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY,
                 RedirectBindingSignatureUtil.getTokenValue(queryString, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY));
 
-        return SignatureUtil.validate(sb.toString().getBytes("UTF-8"), sigValue, validatingKey);
+        byte[] signedContent = sb.toString().getBytes("UTF-8");
+        if (sigAlgParam != null) {
+            String javaAlgorithm = SamlCryptoSecurityUtil.toJavaSignatureAlgorithm(sigAlgParam);
+            if (javaAlgorithm != null) {
+                return SignatureUtil.validate(signedContent, sigValue, javaAlgorithm, validatingKey);
+            }
+        }
+
+        return SignatureUtil.validate(signedContent, sigValue, validatingKey);
     }
 
     private static boolean isRequestQueryString(String queryString) {

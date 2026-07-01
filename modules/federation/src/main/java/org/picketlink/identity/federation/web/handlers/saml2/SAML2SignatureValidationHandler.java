@@ -65,53 +65,58 @@ public class SAML2SignatureValidationHandler extends AbstractSignatureHandler {
         }
 
         Map<String, Object> requestOptions = request.getOptions();
-        PicketLinkAuditHelper auditHelper = (PicketLinkAuditHelper) requestOptions.get(GeneralConstants.AUDIT_HELPER);
-        Boolean ignoreSignatures = (Boolean) requestOptions.get(GeneralConstants.IGNORE_SIGNATURES);
-        if(ignoreSignatures == null){
-            ignoreSignatures = Boolean.FALSE;
-        }
-        if (ignoreSignatures == Boolean.TRUE)
-            return;
-
-        Document signedDocument = request.getRequestDocument();
-
-        if (logger.isTraceEnabled()) {
-            logger.trace("Going to validate signature for: " + DocumentUtil.asString(signedDocument));
-        }
-
-        PublicKey publicKey = (PublicKey) request.getOptions().get(GeneralConstants.SENDER_PUBLIC_KEY);
+        bindValidationCryptoContext();
         try {
-            boolean isValid;
+            PicketLinkAuditHelper auditHelper = (PicketLinkAuditHelper) requestOptions.get(GeneralConstants.AUDIT_HELPER);
+            Boolean ignoreSignatures = (Boolean) requestOptions.get(GeneralConstants.IGNORE_SIGNATURES);
+            if(ignoreSignatures == null){
+                ignoreSignatures = Boolean.FALSE;
+            }
+            if (ignoreSignatures == Boolean.TRUE)
+                return;
 
-            HTTPContext httpContext = (HTTPContext) request.getContext();
+            Document signedDocument = request.getRequestDocument();
 
-            logger.trace("HTTP method for validating response: " + httpContext.getRequest().getMethod());
-
-            if (isPostBinding(httpContext)) {
-                isValid = verifyPostBindingSignature(signedDocument, publicKey);
-            } else {
-                isValid = verifyRedirectBindingSignature(httpContext, publicKey);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Going to validate signature for: " + DocumentUtil.asString(signedDocument));
             }
 
-            if (!isValid) {
+            PublicKey publicKey = (PublicKey) request.getOptions().get(GeneralConstants.SENDER_PUBLIC_KEY);
+            try {
+                boolean isValid;
+
+                HTTPContext httpContext = (HTTPContext) request.getContext();
+
+                logger.trace("HTTP method for validating response: " + httpContext.getRequest().getMethod());
+
+                if (isPostBinding(httpContext)) {
+                    isValid = verifyPostBindingSignature(signedDocument, publicKey);
+                } else {
+                    isValid = verifyRedirectBindingSignature(httpContext, publicKey);
+                }
+
+                if (!isValid) {
+                    if (auditHelper != null) {
+                        PicketLinkAuditEvent auditEvent = new PicketLinkAuditEvent(AuditLevel.INFO);
+                        auditEvent.setWhoIsAuditing((String) requestOptions.get(GeneralConstants.CONTEXT_PATH));
+                        auditEvent.setType(PicketLinkAuditEventType.ERROR_SIG_VALIDATION);
+                        auditHelper.audit(auditEvent);
+                    }
+
+                    throw constructSignatureException();
+                }
+            } catch (ProcessingException pe) {
                 if (auditHelper != null) {
                     PicketLinkAuditEvent auditEvent = new PicketLinkAuditEvent(AuditLevel.INFO);
                     auditEvent.setWhoIsAuditing((String) requestOptions.get(GeneralConstants.CONTEXT_PATH));
                     auditEvent.setType(PicketLinkAuditEventType.ERROR_SIG_VALIDATION);
                     auditHelper.audit(auditEvent);
                 }
-
-                throw constructSignatureException();
+                response.setError(SAML2HandlerErrorCodes.SIGNATURE_INVALID, "Signature Validation Failed");
+                throw pe;
             }
-        } catch (ProcessingException pe) {
-            if (auditHelper != null) {
-                PicketLinkAuditEvent auditEvent = new PicketLinkAuditEvent(AuditLevel.INFO);
-                auditEvent.setWhoIsAuditing((String) requestOptions.get(GeneralConstants.CONTEXT_PATH));
-                auditEvent.setType(PicketLinkAuditEventType.ERROR_SIG_VALIDATION);
-                auditHelper.audit(auditEvent);
-            }
-            response.setError(SAML2HandlerErrorCodes.SIGNATURE_INVALID, "Signature Validation Failed");
-            throw pe;
+        } finally {
+            clearValidationCryptoContext();
         }
     }
 

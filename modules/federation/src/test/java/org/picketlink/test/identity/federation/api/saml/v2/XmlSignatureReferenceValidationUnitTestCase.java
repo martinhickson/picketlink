@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.util.DocumentUtil;
+import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.api.util.XmlSignatureSecurityUtil;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
@@ -111,7 +112,8 @@ public class XmlSignatureReferenceValidationUnitTestCase {
         String referenceURI = "#" + assertionElement.getAttribute("ID");
         Node nextSibling = assertionElement.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                 JBossSAMLConstants.ISSUER.get()).item(0).getNextSibling();
-        XMLSignatureUtil.sign(assertionElement, nextSibling, keyPair, DigestMethod.SHA1, SignatureMethod.RSA_SHA1, referenceURI);
+        XMLSignatureUtil.sign(assertionElement, nextSibling, keyPair, SamlCryptoSecurityUtil.getDefaultDigestMethod(),
+                SamlCryptoSecurityUtil.getDefaultSignatureMethod(), referenceURI);
 
         return document;
     }
