@@ -22,7 +22,7 @@ import org.picketlink.identity.federation.web.core.IdentityServer;
 import org.picketlink.test.identity.federation.web.mock.MockHttpSession;
 import org.picketlink.test.identity.federation.web.mock.MockServletContext;
 
-import javax.servlet.http.HttpSessionEvent;
+import jakarta.servlet.http.HttpSessionEvent;
 
 /**
  * Unit test the Identity Server

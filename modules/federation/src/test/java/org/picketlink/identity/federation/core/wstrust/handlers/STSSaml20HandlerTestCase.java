@@ -27,16 +27,16 @@ import org.picketlink.identity.federation.core.wstrust.STSClientConfig;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFault;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.ws.handler.soap.SOAPMessageContext;
-import javax.xml.ws.soap.SOAPFaultException;
+import jakarta.xml.soap.SOAPElement;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPFault;
+import jakarta.xml.soap.SOAPHeader;
+import jakarta.xml.soap.SOAPHeaderElement;
+import jakarta.xml.soap.SOAPMessage;
+import jakarta.xml.ws.handler.soap.SOAPMessageContext;
+import jakarta.xml.ws.soap.SOAPFaultException;
 
-import static javax.xml.ws.handler.MessageContext.MESSAGE_OUTBOUND_PROPERTY;
+import static jakarta.xml.ws.handler.MessageContext.MESSAGE_OUTBOUND_PROPERTY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

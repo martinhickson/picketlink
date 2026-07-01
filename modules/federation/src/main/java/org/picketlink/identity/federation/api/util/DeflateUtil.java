@@ -32,7 +32,21 @@ import java.util.zip.InflaterInputStream;
  * @author Anil.Saldhana@redhat.com
  * @since Dec 11, 2008
  */
-public class DeflateUtil {
+public final class DeflateUtil {
+
+    /**
+     * When {@code true}, SAML redirect-binding DEFLATE decompression is capped at
+     * {@link #DEFAULT_MAX_DEFLATE_INFLATED_SIZE} to mitigate zip-bomb DoS (CVE-class).
+     */
+    public static final boolean DEFLATE_BOUNDS_CHECK_ENABLED = true;
+
+    /**
+     * Maximum inflated output size for SAML redirect-binding DEFLATE decoding (128 KiB).
+     */
+    public static final long DEFAULT_MAX_DEFLATE_INFLATED_SIZE = 131072L;
+
+    private DeflateUtil() {
+    }
 
     /**
      * Apply DEFLATE encoding
@@ -67,14 +81,101 @@ public class DeflateUtil {
     }
 
     /**
-     * DEFLATE decoding
-     *
-     * @param msgToDecode the message that needs decoding
-     *
-     * @return
+     * DEFLATE decoding for SAML redirect binding.
      */
     public static InputStream decode(byte[] msgToDecode) {
+        if (DEFLATE_BOUNDS_CHECK_ENABLED) {
+            return decode(msgToDecode, DEFAULT_MAX_DEFLATE_INFLATED_SIZE);
+        }
+        return decodeUnbounded(msgToDecode);
+    }
+
+    /**
+     * DEFLATE decoding with an explicit inflated-size cap.
+     *
+     * @param msgToDecode compressed bytes
+     * @param maxInflatedSize maximum allowed inflated output size in bytes
+     */
+    public static InputStream decode(byte[] msgToDecode, long maxInflatedSize) {
+        ByteArrayInputStream bais = new ByteArrayInputStream(msgToDecode);
+        return new LimitedInflaterInputStream(bais, maxInflatedSize);
+    }
+
+    private static InputStream decodeUnbounded(byte[] msgToDecode) {
         ByteArrayInputStream bais = new ByteArrayInputStream(msgToDecode);
         return new InflaterInputStream(bais, new Inflater(true));
+    }
+
+    private static final class LimitedInflaterInputStream extends InputStream {
+
+        private final InflaterInputStream inflaterStream;
+        private final Inflater inflater;
+        private final long maxInflatedSize;
+
+        private LimitedInflaterInputStream(InputStream inputStream, long maxInflatedSize) {
+            this.inflater = new Inflater(true);
+            this.inflaterStream = new InflaterInputStream(inputStream, inflater);
+            this.maxInflatedSize = maxInflatedSize;
+        }
+
+        private void checkMaxInflatedSize() throws IOException {
+            if (inflater.getTotalOut() > maxInflatedSize) {
+                throw new IOException(String.format(
+                        "Maximum SAML DEFLATE inflated size of %d bytes exceeded (decompressed %d bytes)",
+                        maxInflatedSize, inflater.getTotalOut()));
+            }
+        }
+
+        @Override
+        public int read() throws IOException {
+            int result = inflaterStream.read();
+            checkMaxInflatedSize();
+            return result;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            int result = inflaterStream.read(buffer, offset, length);
+            checkMaxInflatedSize();
+            return result;
+        }
+
+        @Override
+        public int read(byte[] buffer) throws IOException {
+            int result = inflaterStream.read(buffer);
+            checkMaxInflatedSize();
+            return result;
+        }
+
+        @Override
+        public boolean markSupported() {
+            return false;
+        }
+
+        @Override
+        public void reset() throws IOException {
+            throw new IOException("mark/reset not supported");
+        }
+
+        @Override
+        public void mark(int readlimit) {
+        }
+
+        @Override
+        public void close() throws IOException {
+            inflaterStream.close();
+        }
+
+        @Override
+        public int available() throws IOException {
+            return inflaterStream.available();
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long skipped = inflaterStream.skip(n);
+            checkMaxInflatedSize();
+            return skipped;
+        }
     }
 }

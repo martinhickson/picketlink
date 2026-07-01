@@ -76,6 +76,7 @@
     <jboss.logging.processor.version>2.2.1.Final</jboss.logging.processor.version>
     <junit.version>4.10</junit.version>
     <mockito.version>1.9.0</mockito.version>
+    <xalan.version>2.7.3</xalan.version>
   </properties>
 
   <dependencyManagement>
@@ -276,6 +277,20 @@
         <groupId>org.mockito</groupId>
         <artifactId>mockito-all</artifactId>
         <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>xalan</artifactId>
+        <version>${xalan.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>xalan</groupId>
+        <artifactId>serializer</artifactId>
+        <version>${xalan.version}</version>
         <scope>test</scope>
       </dependency>
 

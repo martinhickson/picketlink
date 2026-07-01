@@ -88,15 +88,15 @@ import org.w3c.dom.Element;
 
 import javax.xml.datatype.DatatypeConstants;
 import javax.xml.namespace.QName;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.ws.EndpointReference;
-import javax.xml.ws.WebServiceContext;
-import javax.xml.ws.WebServiceException;
-import javax.xml.ws.handler.MessageContext;
+import jakarta.xml.ws.EndpointReference;
+import jakarta.xml.ws.WebServiceContext;
+import jakarta.xml.ws.WebServiceException;
+import jakarta.xml.ws.handler.MessageContext;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -2075,7 +2075,7 @@ public class PicketLinkSTSUnitTestCase {
         /*
          * (non-Javadoc)
          *
-         * @see javax.xml.ws.WebServiceContext#getEndpointReference(java.lang.Class, org.w3c.dom.Element[])
+         * @see jakarta.xml.ws.WebServiceContext#getEndpointReference(java.lang.Class, org.w3c.dom.Element[])
          */
         public <T extends EndpointReference> T getEndpointReference(Class<T> arg0, Element... arg1) {
             return null;
@@ -2084,7 +2084,7 @@ public class PicketLinkSTSUnitTestCase {
         /*
          * (non-Javadoc)
          *
-         * @see javax.xml.ws.WebServiceContext#getEndpointReference(org.w3c.dom.Element[])
+         * @see jakarta.xml.ws.WebServiceContext#getEndpointReference(org.w3c.dom.Element[])
          */
         public EndpointReference getEndpointReference(Element... arg0) {
             return null;
@@ -2093,7 +2093,7 @@ public class PicketLinkSTSUnitTestCase {
         /*
          * (non-Javadoc)
          *
-         * @see javax.xml.ws.WebServiceContext#getMessageContext()
+         * @see jakarta.xml.ws.WebServiceContext#getMessageContext()
          */
         public MessageContext getMessageContext() {
             return null;
@@ -2102,7 +2102,7 @@ public class PicketLinkSTSUnitTestCase {
         /*
          * (non-Javadoc)
          *
-         * @see javax.xml.ws.WebServiceContext#getUserPrincipal()
+         * @see jakarta.xml.ws.WebServiceContext#getUserPrincipal()
          */
         public Principal getUserPrincipal() {
             return this.principal;
@@ -2122,7 +2122,7 @@ public class PicketLinkSTSUnitTestCase {
         /*
          * (non-Javadoc)
          *
-         * @see javax.xml.ws.WebServiceContext#isUserInRole(java.lang.String)
+         * @see jakarta.xml.ws.WebServiceContext#isUserInRole(java.lang.String)
          */
         public boolean isUserInRole(String arg0) {
             return false;

@@ -17,9 +17,10 @@
  */
 package org.picketlink.test.identity.federation.web.mock;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -41,6 +42,15 @@ public class MockHttpServletResponse implements HttpServletResponse {
             @Override
             public void write(int b) throws IOException {
                 os.write(b);
+            }
+
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener writeListener) {
             }
         };
     }
@@ -179,6 +189,11 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
     public void setContentLength(int arg0) {
 
+    }
+
+    @Override
+    public void setContentLengthLong(long len) {
+        setContentLength(len > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) len);
     }
 
     public void setContentType(String arg0) {

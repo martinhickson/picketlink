@@ -17,19 +17,20 @@
  */
 package org.picketlink.test.identity.federation.web.mock;
 
-import javax.servlet.AsyncContext;
-import javax.servlet.DispatcherType;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletInputStream;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpUpgradeHandler;
+import jakarta.servlet.http.Part;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -230,6 +231,11 @@ public class MockHttpServletRequest implements HttpServletRequest {
         return 0;
     }
 
+    @Override
+    public long getContentLengthLong() {
+        return getContentLength();
+    }
+
     public String getContentType() {
 
         throw new RuntimeException("NYI");
@@ -392,5 +398,17 @@ public class MockHttpServletRequest implements HttpServletRequest {
     @Override
     public Part getPart(String name) throws IOException, ServletException {
         return null;
+    }
+
+    @Override
+    public <T extends HttpUpgradeHandler> T upgrade(Class<T> httpUpgradeHandlerClass)
+            throws IOException, ServletException {
+        throw new UnsupportedOperationException("NYI");
+    }
+
+    @Override
+    public String changeSessionId() {
+        HttpSession currentSession = getSession(false);
+        return currentSession != null ? currentSession.getId() : null;
     }
 }
