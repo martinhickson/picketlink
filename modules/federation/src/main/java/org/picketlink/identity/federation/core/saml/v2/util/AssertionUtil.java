@@ -27,10 +27,17 @@ import org.picketlink.common.PicketLinkLoggerFactory;
 import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.exceptions.fed.IssueInstantMissingException;
+import org.picketlink.common.constants.JBossSAMLConstants;
+import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.util.DocumentUtil;
+import org.picketlink.common.util.StaxParserUtil;
 import org.picketlink.common.util.StaxUtil;
 import org.picketlink.config.federation.SPType;
 import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
+import org.picketlink.identity.federation.core.parsers.saml.SAMLParser;
+import org.picketlink.identity.federation.core.util.JAXPValidationUtil;
+import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
+import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.core.saml.v2.writers.SAMLAssertionWriter;
 import org.picketlink.identity.federation.saml.v1.assertion.SAML11AssertionType;
 import org.picketlink.identity.federation.saml.v1.assertion.SAML11AttributeStatementType;
@@ -51,11 +58,14 @@ import org.picketlink.identity.federation.saml.v2.assertion.SubjectType.STSubTyp
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
@@ -545,5 +555,105 @@ public class AssertionUtil {
             }
         }
         return roles;
+    }
+
+    /**
+     * Returns {@code true} when the element has a direct {@code ds:Signature} child.
+     */
+    public static boolean isSignedElement(Element element) {
+        if (element == null) {
+            return false;
+        }
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element) {
+                Element childElement = (Element) child;
+                if (XMLSignature.XMLNS.equals(childElement.getNamespaceURI())
+                        && "Signature".equals(childElement.getLocalName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} when the first assertion choice in the response is encrypted.
+     */
+    public static boolean isAssertionEncrypted(ResponseType responseType) {
+        List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+        if (assertions == null || assertions.isEmpty()) {
+            return false;
+        }
+        return assertions.get(0).getEncryptedAssertion() != null;
+    }
+
+    /**
+     * Returns the first plaintext {@code Assertion} element in a SAML {@code Response} document.
+     */
+    public static Element getAssertionElement(Document doc) throws ProcessingException {
+        Element response = doc.getDocumentElement();
+        if (response == null) {
+            throw new ProcessingException("No response type.");
+        }
+        if (!JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(response.getNamespaceURI())
+                || !JBossSAMLConstants.RESPONSE.get().equals(response.getLocalName())) {
+            throw new ProcessingException("No response type.");
+        }
+
+        NodeList children = response.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node childNode = children.item(i);
+            if (childNode instanceof Element) {
+                Element childElement = (Element) childNode;
+                if (JBossSAMLURIConstants.ASSERTION_NSURI.get().equals(childElement.getNamespaceURI())
+                        && JBossSAMLConstants.ASSERTION.get().equals(childElement.getLocalName())) {
+                    return childElement;
+                }
+            }
+        }
+
+        throw new ProcessingException("No assertion from response.");
+    }
+
+    /**
+     * Decrypts the first encrypted assertion in the response, updates the response model, and returns the decrypted
+     * assertion element for signature verification.
+     */
+    public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ProcessingException {
+        if (privateKey == null) {
+            throw logger.nullArgumentError("privateKey");
+        }
+
+        List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+        if (assertions.isEmpty()) {
+            throw logger.samlHandlerNullEncryptedAssertion();
+        }
+
+        ResponseType.RTChoiceType rtChoiceType = assertions.get(0);
+        if (rtChoiceType.getEncryptedAssertion() == null
+                || rtChoiceType.getEncryptedAssertion().getEncryptedElement() == null) {
+            throw logger.samlHandlerNullEncryptedAssertion();
+        }
+
+        Element enc = rtChoiceType.getEncryptedAssertion().getEncryptedElement();
+        try {
+            String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
+            Document newDoc = DocumentUtil.createDocument();
+            Node importedNode = newDoc.importNode(enc, true);
+            newDoc.appendChild(importedNode);
+
+            Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
+            JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
+            SAMLParser parser = new SAMLParser();
+            AssertionType assertion = (AssertionType) parser.parse(StaxParserUtil.getXMLEventReader(DocumentUtil
+                    .getNodeAsStream(decryptedDocumentElement)));
+
+            responseType.replaceAssertion(oldID, new ResponseType.RTChoiceType(assertion));
+            return decryptedDocumentElement;
+        } catch (Exception e) {
+            throw logger.processingError(e);
+        }
     }
 }

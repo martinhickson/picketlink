@@ -30,16 +30,15 @@ import org.picketlink.common.exceptions.ConfigurationException;
 import org.picketlink.common.exceptions.ProcessingException;
 import org.picketlink.common.exceptions.fed.AssertionExpiredException;
 import org.picketlink.common.util.DocumentUtil;
-import org.picketlink.common.util.StaxParserUtil;
 import org.picketlink.common.util.StringUtil;
 import org.picketlink.config.federation.SPType;
+import org.picketlink.identity.federation.api.util.EncryptedAssertionSecurityUtil;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.core.SerializablePrincipal;
 import org.picketlink.identity.federation.core.audit.PicketLinkAuditEvent;
 import org.picketlink.identity.federation.core.audit.PicketLinkAuditEventType;
 import org.picketlink.identity.federation.core.audit.PicketLinkAuditHelper;
-import org.picketlink.identity.federation.core.parsers.saml.SAMLParser;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
 import org.picketlink.identity.federation.core.saml.v2.holders.IDPInfoHolder;
 import org.picketlink.identity.federation.core.saml.v2.holders.IssuerInfoHolder;
@@ -51,8 +50,6 @@ import org.picketlink.identity.federation.core.saml.v2.interfaces.SAML2HandlerRe
 import org.picketlink.identity.federation.core.saml.v2.util.AssertionUtil;
 import org.picketlink.identity.federation.core.saml.v2.util.StatementUtil;
 import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
-import org.picketlink.identity.federation.core.util.JAXPValidationUtil;
-import org.picketlink.identity.federation.core.util.XMLEncryptionUtil;
 import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
 import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType;
 import org.picketlink.identity.federation.saml.v2.assertion.AttributeStatementType.ASTChoiceType;
@@ -85,6 +82,7 @@ import javax.xml.namespace.QName;
 import java.net.URI;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -504,10 +502,20 @@ public class SAML2AuthenticationHandler extends BaseSAML2Handler {
 
             Object assertion = assertions.get(0).getEncryptedAssertion();
             if (assertion instanceof EncryptedAssertionType) {
-                responseType = this.decryptAssertion(responseType, privateKey);
+                if (privateKey == null) {
+                    throw logger.nullArgumentError("privateKey");
+                }
+
+                Element decryptedAssertionElement = AssertionUtil.decryptAssertion(responseType, privateKey);
                 assertion = responseType.getAssertions().get(0).getAssertion();
-            }
-            if (assertion == null) {
+
+                if (requiresEncryptedAssertionSignature(request, httpContext)) {
+                    PublicKey publicKey = (PublicKey) request.getOptions().get(GeneralConstants.SENDER_PUBLIC_KEY);
+                    if (publicKey == null || !AssertionUtil.isSignatureValid(decryptedAssertionElement, publicKey)) {
+                        throw logger.samlHandlerInvalidSignatureError();
+                    }
+                }
+            } else if (assertion == null) {
                 assertion = assertions.get(0).getAssertion();
             }
 
@@ -553,33 +561,35 @@ public class SAML2AuthenticationHandler extends BaseSAML2Handler {
         public void handleRequestType(SAML2HandlerRequest request, SAML2HandlerResponse response) throws ProcessingException {
         }
 
-        private ResponseType decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ProcessingException {
-            if (privateKey == null)
-                throw logger.nullArgumentError("privateKey");
-            SAML2Response saml2Response = new SAML2Response();
-            try {
-                Document doc = saml2Response.convert(responseType);
-
-                Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
-                if (enc == null)
-                    throw logger.samlHandlerNullEncryptedAssertion();
-                String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
-                Document newDoc = DocumentUtil.createDocument();
-                Node importedNode = newDoc.importNode(enc, true);
-                newDoc.appendChild(importedNode);
-
-                Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
-                SAMLParser parser = new SAMLParser();
-
-                JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
-                AssertionType assertion = (AssertionType) parser.parse(StaxParserUtil.getXMLEventReader(DocumentUtil
-                        .getNodeAsStream(decryptedDocumentElement)));
-
-                responseType.replaceAssertion(oldID, new RTChoiceType(assertion));
-                return responseType;
-            } catch (Exception e) {
-                throw logger.processingError(e);
+        private boolean requiresEncryptedAssertionSignature(SAML2HandlerRequest request, HTTPContext httpContext) {
+            if (!EncryptedAssertionSecurityUtil.ENCRYPTED_ASSERTION_SECURITY_CHECK_ENABLED) {
+                return false;
             }
+
+            Boolean ignoreSignatures = (Boolean) request.getOptions().get(GeneralConstants.IGNORE_SIGNATURES);
+            if (Boolean.TRUE.equals(ignoreSignatures)) {
+                return false;
+            }
+
+            Object supportsSignatures = request.getOptions().get(GeneralConstants.SUPPORTS_SIGNATURES);
+            if (supportsSignatures != null && !Boolean.TRUE.equals(supportsSignatures)) {
+                return false;
+            }
+
+            if (!isPostBinding(httpContext)) {
+                return false;
+            }
+
+            Document requestDocument = request.getRequestDocument();
+            if (requestDocument == null || requestDocument.getDocumentElement() == null) {
+                return false;
+            }
+
+            return !AssertionUtil.isSignedElement(requestDocument.getDocumentElement());
+        }
+
+        private boolean isPostBinding(HTTPContext httpContext) {
+            return !httpContext.getRequest().getParameterMap().containsKey(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
         }
 
         private Principal handleSAMLResponse(ResponseType responseType, SAML2HandlerResponse response)
