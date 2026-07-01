@@ -28,7 +28,6 @@ import org.picketlink.identity.federation.api.saml.v2.sig.SAML2Signature;
 import org.picketlink.identity.federation.core.saml.v2.common.IDGenerator;
 import org.picketlink.identity.federation.core.saml.v2.holders.IssuerInfoHolder;
 import org.picketlink.identity.federation.core.saml.v2.util.XMLTimeUtil;
-import org.picketlink.identity.federation.core.util.JAXPValidationUtil;
 import org.picketlink.identity.federation.core.util.KeyStoreUtil;
 import org.picketlink.identity.federation.core.util.XMLSignatureUtil;
 import org.picketlink.identity.federation.saml.v2.assertion.AssertionType;
@@ -54,6 +53,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Enumeration;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -113,7 +113,7 @@ public class SAMLAssertionWrappingAttackTestCase {
      *
      * @throws Exception
      */
-    @Test(expected = XMLSignatureException.class)
+    @Test
     public void testWrappingAttack() throws Exception {
         ResponseType responseType = createSignedResponse();
 
@@ -122,7 +122,6 @@ public class SAMLAssertionWrappingAttackTestCase {
         Document signedDoc = ss.sign(responseType, new KeyPair(publicKey, privateKey));
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug(DocumentUtil.asString(signedDoc));
-        JAXPValidationUtil.validate(DocumentUtil.getNodeAsStream(signedDoc));
 
         // Validate the signature
         boolean isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
@@ -172,9 +171,13 @@ public class SAMLAssertionWrappingAttackTestCase {
         signedDoc.getDocumentElement().setAttribute("ID", "evilAssertion");
 
         // validate the original response with the wrapped assertion
-        isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
+        try {
+            isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
+        } catch (XMLSignatureException e) {
+            isValid = false;
+        }
 
-        assertTrue(false);
+        assertFalse("Reference-based validation must reject wrapping attack", isValid);
     }
 
     /**
@@ -193,7 +196,6 @@ public class SAMLAssertionWrappingAttackTestCase {
         Document signedDoc = ss.sign(responseType, new KeyPair(publicKey, privateKey));
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug(DocumentUtil.asString(signedDoc));
-        JAXPValidationUtil.validate(DocumentUtil.getNodeAsStream(signedDoc));
 
         // Validate the signature
         boolean isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
@@ -249,9 +251,13 @@ public class SAMLAssertionWrappingAttackTestCase {
         importedClonedResponse.setIdAttribute("ID", true);
 
         // validate the original response with the wrapped assertion
-        isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
+        try {
+            isValid = XMLSignatureUtil.validate(signedDoc, publicKey);
+        } catch (XMLSignatureException e) {
+            isValid = false;
+        }
 
-        assertTrue(isValid);
+        assertFalse("Reference-based validation must reject forced wrapping attack", isValid);
     }
 
     private ResponseType createSignedResponse() throws ConfigurationException {

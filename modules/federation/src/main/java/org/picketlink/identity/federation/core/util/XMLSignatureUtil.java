@@ -29,6 +29,7 @@ import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.common.util.StringUtil;
 import org.picketlink.common.util.SystemPropertiesUtil;
 import org.picketlink.common.util.TransformerUtil;
+import org.picketlink.identity.federation.api.util.XmlSignatureSecurityUtil;
 import org.picketlink.identity.xmlsec.w3.xmldsig.DSAKeyValueType;
 import org.picketlink.identity.xmlsec.w3.xmldsig.KeyValueType;
 import org.picketlink.identity.xmlsec.w3.xmldsig.RSAKeyValueType;
@@ -81,7 +82,13 @@ import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import javax.xml.crypto.Data;
+import javax.xml.crypto.NodeSetData;
+import javax.xml.crypto.URIReferenceException;
 
 /**
  * Utility for XML Signature <b>Note:</b> You can change the canonicalization method type by using the system property
@@ -492,6 +499,7 @@ public class XMLSignatureUtil {
             throw logger.nullArgumentError("Signed Document");
 
         propagateIDAttributeSetup(signedDoc.getDocumentElement(), signedDoc.getDocumentElement());
+        configureSamlIdAttributes(signedDoc);
 
         NodeList nl = signedDoc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
 
@@ -501,6 +509,82 @@ public class XMLSignatureUtil {
 
         if (publicKey == null)
             throw logger.nullValueError("Public Key");
+
+        if (XmlSignatureSecurityUtil.REFERENCE_BASED_SIGNATURE_VALIDATION_ENABLED) {
+            return validateUsingReferences(signedDoc, nl, publicKey);
+        }
+        return validateLegacy(signedDoc, nl, publicKey);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean validateUsingReferences(Document signedDoc, NodeList signatures, Key publicKey)
+            throws MarshalException, XMLSignatureException {
+        Set<Node> signedNodes = new HashSet<Node>();
+
+        for (int i = 0; i < signatures.getLength(); i++) {
+            Node signatureNode = signatures.item(i);
+            if (!validateSignatureAndCollectReferences(signatureNode, publicKey, signedNodes)) {
+                return false;
+            }
+        }
+
+        if (signedNodes.contains(signedDoc.getDocumentElement())) {
+            return true;
+        }
+
+        NodeList assertions = signedDoc.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
+                JBossSAMLConstants.ASSERTION.get());
+        if (assertions.getLength() > 0) {
+            for (int i = 0; i < assertions.getLength(); i++) {
+                if (!signedNodes.contains(assertions.item(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean validateSignatureAndCollectReferences(Node signatureNode, Key publicKey, Set<Node> signedNodes)
+            throws MarshalException, XMLSignatureException {
+        DOMValidateContext valContext = new DOMValidateContext(publicKey, signatureNode);
+        XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+        boolean coreValidity = signature.validate(valContext);
+
+        if (!coreValidity) {
+            if (logger.isTraceEnabled()) {
+                boolean sv = signature.getSignatureValue().validate(valContext);
+                logger.trace("Signature validation status: " + sv);
+
+                List<Reference> references = signature.getSignedInfo().getReferences();
+                for (Reference ref : references) {
+                    logger.trace("[Ref id=" + ref.getId() + ":uri=" + ref.getURI() + "]validity status:" + ref.validate(valContext));
+                }
+            }
+            return false;
+        }
+
+        for (Reference ref : (List<Reference>) signature.getSignedInfo().getReferences()) {
+            try {
+                Data data = fac.getURIDereferencer().dereference(ref, valContext);
+                if (data instanceof NodeSetData) {
+                    Iterator<Node> it = ((NodeSetData) data).iterator();
+                    if (it.hasNext()) {
+                        signedNodes.add(it.next());
+                    }
+                }
+            } catch (URIReferenceException e) {
+                // signature was valid; reference resolution failure is ignored
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean validateLegacy(Document signedDoc, NodeList nl, Key publicKey)
+            throws MarshalException, XMLSignatureException {
         int signedAssertions = 0;
         String assertionNameSpaceUri = null;
         for (int i = 0; i < nl.getLength(); i++) {
@@ -537,6 +621,25 @@ public class XMLSignatureUtil {
             return false;
         }
         return true;
+    }
+
+    private static void configureSamlIdAttributes(Document document) {
+        Element root = document.getDocumentElement();
+        if (root != null && root.hasAttribute("ID")) {
+            root.setIdAttribute("ID", true);
+        }
+
+        NodeList assertions = document.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
+                JBossSAMLConstants.ASSERTION.get());
+        for (int i = 0; i < assertions.getLength(); i++) {
+            Node node = assertions.item(i);
+            if (node instanceof Element) {
+                Element assertion = (Element) node;
+                if (assertion.hasAttribute("ID")) {
+                    assertion.setIdAttribute("ID", true);
+                }
+            }
+        }
     }
 
     /**

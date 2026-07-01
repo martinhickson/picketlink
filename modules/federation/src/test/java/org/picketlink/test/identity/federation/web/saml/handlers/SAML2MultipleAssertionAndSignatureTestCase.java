@@ -75,6 +75,8 @@ import org.picketlink.test.identity.federation.web.mock.MockHttpSession;
 import org.picketlink.test.identity.federation.web.mock.MockServletContext;
 import org.w3c.dom.Document;
 
+import javax.xml.crypto.dsig.XMLSignatureException;
+
 /**
  * Unit test the {@code SAML2SignatureHandler}
  *
@@ -94,7 +96,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(true, new DefaultSAML2HandlerConfig(), true, false, false);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -106,7 +108,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(true, new DefaultSAML2HandlerConfig(), false, true, false);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -118,7 +120,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(true, new DefaultSAML2HandlerConfig(), false, false, true);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -136,7 +138,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(false, new DefaultSAML2HandlerConfig(), false, false, true);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -148,7 +150,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(false, new DefaultSAML2HandlerConfig(), false, true, false);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -160,7 +162,7 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         try {
             doSignatureTest(false, new DefaultSAML2HandlerConfig(), false, false, true);
         } catch (ProcessingException e) {
-            Assert.assertTrue(typeOfIntroducedProblem+"SignatureValidationException should be the cause", e.getCause() instanceof SignatureValidationException);
+            Assert.assertTrue(typeOfIntroducedProblem + "signature validation should fail", isSignatureValidationFailure(e));
             return;
         }
         Assert.fail(typeOfIntroducedProblem+"ProcessingException expected");
@@ -352,6 +354,11 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
         Principal userPrincipal = (Principal) session.getAttribute(PRINCIPAL_ID);
 
         assertEquals("testuser", userPrincipal.getName());
+    }
+
+    private boolean isSignatureValidationFailure(ProcessingException exception) {
+        Throwable cause = exception.getCause();
+        return cause instanceof SignatureValidationException || cause instanceof XMLSignatureException;
     }
 
     private void addBadAssertionWithoutSignature(ResponseType responseType) {
