@@ -22,6 +22,7 @@ import org.picketlink.common.PicketLinkLoggerFactory;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.exceptions.ProcessingException;
+import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
 import org.picketlink.identity.federation.api.saml.v2.response.SAML2Response;
 import org.picketlink.identity.federation.api.util.SamlCryptoSecurityUtil;
@@ -241,37 +242,39 @@ public class SAML2Signature {
         SAML2Response saml2Response = new SAML2Response();
         Document doc = saml2Response.convert(response);
         doc.normalize();
-
-        Node theSibling = getNextSiblingOfIssuer(doc);
-        if (theSibling != null) {
-            this.sibling = theSibling;
-        }
-
         return sign(doc, idValueOfAssertion, keypair, referenceURI);
     }
 
     /**
-     * Sign a document
-     *
-     * @param doc
-     * @param idValueOfAssertion
-     * @param keypair
-     * @param referenceURI
-     *
-     * @return
-     *
-     * @throws ParserConfigurationException
-     * @throws XPathException
-     * @throws TransformerFactoryConfigurationError
-     * @throws TransformerException
-     * @throws GeneralSecurityException
-     * @throws MarshalException
-     * @throws XMLSignatureException
+     * Sign a single assertion within a SAML document by ID.
      */
     public Document sign(Document doc, String idValueOfAssertion, KeyPair keypair, String referenceURI)
             throws ParserConfigurationException, XPathException, TransformerFactoryConfigurationError, TransformerException,
             GeneralSecurityException, MarshalException, XMLSignatureException {
-        return sign(doc, idValueOfAssertion, keypair);
+        configureIdAttribute(doc);
+
+        Element assertionElement = (Element) DocumentUtil.getNodeWithAttribute(doc,
+                JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get(),
+                ID_ATTRIBUTE_NAME, idValueOfAssertion);
+        if (assertionElement == null) {
+            throw logger.nullValueError("Assertion with ID " + idValueOfAssertion);
+        }
+
+        String resolvedReferenceURI = referenceURI != null && !referenceURI.isEmpty()
+                ? referenceURI : "#" + idValueOfAssertion;
+
+        Node issuer = assertionElement.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
+                JBossSAMLConstants.ISSUER.get()).item(0);
+        Node nextSibling = issuer != null ? issuer.getNextSibling() : null;
+
+        if (x509Certificate != null) {
+            XMLSignatureUtil.sign(assertionElement, nextSibling, keypair, digestMethod, signatureMethod,
+                    resolvedReferenceURI, x509Certificate);
+        } else {
+            XMLSignatureUtil.sign(assertionElement, nextSibling, keypair, digestMethod, signatureMethod,
+                    resolvedReferenceURI);
+        }
+        return doc;
     }
 
     /**

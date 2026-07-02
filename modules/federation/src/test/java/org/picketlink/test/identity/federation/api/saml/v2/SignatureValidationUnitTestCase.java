@@ -18,7 +18,10 @@
 package org.picketlink.test.identity.federation.api.saml.v2;
 
 import org.jboss.logging.Logger;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.picketlink.test.identity.federation.LegacyCryptoTestSupport;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
 import org.picketlink.common.util.DocumentUtil;
 import org.picketlink.identity.federation.api.saml.v2.request.SAML2Request;
@@ -39,12 +42,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.crypto.dsig.SignatureMethod;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -59,6 +60,16 @@ import static org.junit.Assert.assertTrue;
  * @since Dec 15, 2008
  */
 public class SignatureValidationUnitTestCase {
+
+    @Before
+    public void enableLegacyCryptoForTests() {
+        LegacyCryptoTestSupport.enableLegacyCrypto();
+    }
+
+    @After
+    public void clearLegacyCryptoForTests() {
+        LegacyCryptoTestSupport.clearLegacyCrypto();
+    }
 
     /**
      * Test the creation of AuthnRequestType with signature creation with a private key and then validate the signature
@@ -76,11 +87,9 @@ public class SignatureValidationUnitTestCase {
         String issuerValue = "http://sp";
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        KeyPair kp = kpg.genKeyPair();
+        KeyPair kp = LegacyCryptoTestSupport.generateLegacyDsaKeyPair();
 
-        SAML2Signature ss = new SAML2Signature();
-        ss.setSignatureMethod(SignatureMethod.DSA_SHA1);
+        SAML2Signature ss = LegacyCryptoTestSupport.newLegacyDsaSignature();
         Document signedDoc = ss.sign(authnRequest, kp);
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug("Signed Doc:" + DocumentUtil.asString(signedDoc));
@@ -108,13 +117,10 @@ public class SignatureValidationUnitTestCase {
         String issuerValue = "http://sp";
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        KeyPair kp = kpg.genKeyPair();
+        KeyPair kp = LegacyCryptoTestSupport.generateLegacyDsaKeyPair();
 
-        SAML2Signature ss = new SAML2Signature();
+        SAML2Signature ss = LegacyCryptoTestSupport.newLegacyDsaSignature();
         ss.setSignatureIncludeKeyInfo(false);
-
-        ss.setSignatureMethod(SignatureMethod.DSA_SHA1);
         Document signedDoc = ss.sign(authnRequest, kp);
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug("Signed Doc:" + DocumentUtil.asString(signedDoc));
@@ -147,14 +153,12 @@ public class SignatureValidationUnitTestCase {
         AssertionType assertion = response.createAssertion(id, issuerInfo.getIssuer());
         assertion.addStatement(authnStatement);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        KeyPair kp = kpg.genKeyPair();
+        KeyPair kp = LegacyCryptoTestSupport.generateLegacyDsaKeyPair();
 
         id = IDGenerator.create("ID_"); // regenerate
         ResponseType responseType = response.createResponseType(id, issuerInfo, assertion);
 
-        SAML2Signature ss = new SAML2Signature();
-        ss.setSignatureMethod(SignatureMethod.DSA_SHA1);
+        SAML2Signature ss = LegacyCryptoTestSupport.newLegacyDsaSignature();
         Document signedDoc = ss.sign(responseType, kp);
 
         Logger.getLogger(SignatureValidationUnitTestCase.class).debug(DocumentUtil.asString(signedDoc));
@@ -198,9 +202,9 @@ public class SignatureValidationUnitTestCase {
         Node signedNode = DocumentUtil.getNodeWithAttribute(signedDoc, "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion",
                 "ID", id);
 
-        // Let us just validate the signature of the assertion
+        // Validate the signature of the extracted signed assertion only
         Document validatingDoc = DocumentUtil.createDocument();
-        Node importedSignedNode = validatingDoc.importNode(signedNode.getOwnerDocument().getFirstChild(), true);
+        Node importedSignedNode = validatingDoc.importNode(signedNode, true);
         validatingDoc.appendChild(importedSignedNode);
 
         // set IDness in validating document
@@ -223,7 +227,7 @@ public class SignatureValidationUnitTestCase {
 
         // The client creates a validating document, importing the signed assertion.
         validatingDoc = DocumentUtil.createDocument();
-        importedSignedNode = validatingDoc.importNode(signedNode.getOwnerDocument().getFirstChild(), true);
+        importedSignedNode = validatingDoc.importNode(signedNode, true);
         validatingDoc.appendChild(importedSignedNode);
 
         // set IDness in validating document
@@ -242,8 +246,7 @@ public class SignatureValidationUnitTestCase {
      */
     @Test
     public void testStringContentSignature() throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        KeyPair kp = kpg.genKeyPair();
+        KeyPair kp = LegacyCryptoTestSupport.generateLegacyDsaKeyPair();
 
         String arbitContent = "I am A String";
 
@@ -262,14 +265,12 @@ public class SignatureValidationUnitTestCase {
         String issuerValue = "http://sp";
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         KeyPair kp = kpg.genKeyPair();
-        PublicKey publicKey = kp.getPublic();
 
         X509Certificate x509 = getCertificate();
 
         SAML2Signature ss = new SAML2Signature();
-        ss.setSignatureMethod(SignatureMethod.DSA_SHA1);
         ss.setX509Certificate(x509);
         Document signedDoc = ss.sign(authnRequest, kp);
 

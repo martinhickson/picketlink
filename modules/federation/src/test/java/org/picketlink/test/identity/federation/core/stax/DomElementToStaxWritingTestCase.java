@@ -25,6 +25,8 @@ import org.w3c.dom.Document;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayOutputStream;
 
+import static org.junit.Assert.assertNotNull;
+
 /**
  * Test how we write a DOM Element to Stax writer
  *
@@ -43,8 +45,12 @@ public class DomElementToStaxWritingTestCase {
 
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(baos);
         StaxUtil.writeDOMElement(writer, doc.getDocumentElement());
+        StaxUtil.flush(writer);
+        writer.close();
 
         String writtenDoc = new String(baos.toByteArray());
+        assertNotNull(writtenDoc);
         doc = DocumentUtil.getDocument(writtenDoc);
+        assertNotNull(doc.getDocumentElement());
     }
 }

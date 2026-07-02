@@ -341,10 +341,12 @@ public class StaxUtil {
 
         writeStartElement(writer, domElementPrefix, domElement.getLocalName(), domElementNS);
 
+        int namespacesPushed = 0;
         // Should we register namespace
         if (domElementPrefix != "" && !registeredNSStack.get().contains(domElementNS)) {
             // writeNameSpace(writer, domElementPrefix, domElementNS );
             registeredNSStack.get().push(domElementNS);
+            namespacesPushed++;
         } else if (domElementPrefix == "" && domElementNS != null) {
             writeNameSpace(writer, "xmlns", domElementNS);
         }
@@ -375,6 +377,10 @@ public class StaxUtil {
         }
 
         writeEndElement(writer);
+
+        while (namespacesPushed-- > 0) {
+            registeredNSStack.get().pop();
+        }
     }
 
     /**

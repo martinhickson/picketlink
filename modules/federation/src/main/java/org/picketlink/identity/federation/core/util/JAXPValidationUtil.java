@@ -127,7 +127,7 @@ public class JAXPValidationUtil {
             URL url = SecurityActions.loadResource(JAXPValidationUtil.class, schema);
             if (url == null)
                 throw logger.nullValueError("schema url:" + schema);
-            sourceArr[i++] = new StreamSource(url.openStream());
+            sourceArr[i++] = new StreamSource(url.openStream(), url.toExternalForm());
         }
         return sourceArr;
     }

@@ -75,8 +75,9 @@
     <jboss.logging.version>3.1.1.GA</jboss.logging.version>
     <jboss.logging.processor.version>2.2.1.Final</jboss.logging.processor.version>
     <junit.version>4.10</junit.version>
-    <mockito.version>1.9.0</mockito.version>
+    <mockito.version>4.11.0</mockito.version>
     <xalan.version>2.7.3</xalan.version>
+    <version.cxf>4.1.7</version.cxf>
   </properties>
 
   <dependencyManagement>
@@ -235,6 +236,12 @@
         <scope>provided</scope>
       </dependency>
 
+      <dependency>
+        <groupId>org.apache.cxf</groupId>
+        <artifactId>cxf-core</artifactId>
+        <version>${version.cxf}</version>
+      </dependency>
+
       <!-- Not going to upgrade to org.glassfish:javax.el:3.0.0 for now, since it is only Java 7 compatible -->
       <dependency>
         <groupId>javax.el</groupId>
@@ -275,7 +282,7 @@
 
       <dependency>
         <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
+        <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
         <scope>test</scope>
       </dependency>

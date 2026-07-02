@@ -21,6 +21,8 @@
  */
 package org.picketlink.test.identity.federation.web.workflow.saml2;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.picketlink.common.constants.GeneralConstants;
 import org.picketlink.common.util.Base64;
@@ -69,11 +71,21 @@ public class SAML2LogoutWorkflowUnitTestCase {
 
     private final String profile = "saml2/logout";
 
-    private ClassLoader tcl;
+    private ClassLoader originalTcl;
 
     private final String employee = "http://localhost:8080/employee/";
 
     private final String sales = "http://localhost:8080/sales/";
+
+    @Before
+    public void setUp() {
+        originalTcl = Thread.currentThread().getContextClassLoader();
+    }
+
+    @After
+    public void tearDown() {
+        Thread.currentThread().setContextClassLoader(originalTcl);
+    }
 
     /**
      * Test that the SP web filter generates the logout request to the IDP when there is a parameter "GLO" set to true
@@ -83,8 +95,6 @@ public class SAML2LogoutWorkflowUnitTestCase {
      */
     @Test
     public void testSPFilterLogOutRequestGeneration() throws Exception {
-        tcl = Thread.currentThread().getContextClassLoader();
-
         MockHttpSession session = new MockHttpSession();
         session.setAttribute(GeneralConstants.PRINCIPAL_ID, new Principal() {
             public String getName() {
@@ -146,7 +156,6 @@ public class SAML2LogoutWorkflowUnitTestCase {
      */
     @Test
     public void testSAML2LogOutFromIDPServlet() throws Exception {
-        tcl = Thread.currentThread().getContextClassLoader();
         MockHttpSession session = new MockHttpSession();
 
         MockContextClassLoader mclIDP = setupTCL(profile + "/idp");
@@ -297,10 +306,12 @@ public class SAML2LogoutWorkflowUnitTestCase {
     }
 
     private MockContextClassLoader setupTCL(String resource) {
-        URL[] urls = new URL[]{tcl.getResource(resource)};
+        ClassLoader base = SAML2LogoutWorkflowUnitTestCase.class.getClassLoader();
+        URL url = base.getResource(resource);
+        URL[] urls = url != null ? new URL[] { url } : new URL[0];
 
         MockContextClassLoader mcl = new MockContextClassLoader(urls);
-        mcl.setDelegate(tcl);
+        mcl.setDelegate(base);
         mcl.setProfile(resource);
         return mcl;
     }
