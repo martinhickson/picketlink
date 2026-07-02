@@ -21,10 +21,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
 import org.junit.After;
-import org.picketbox.test.ldap.LDAPTestUtil;
 import org.picketlink.oauth.PicketLinkOAuthApplication;
 
-import java.io.File;
 import java.net.URL;
 
 /**
@@ -35,19 +33,14 @@ import java.net.URL;
  */
 public class EndpointTestBase extends EmbeddedWebServerBase {
 
-    protected LDAPTestUtil testUtil = null;
-
     @After
     public void tearDown() throws Exception {
         super.tearDown();
-        if (testUtil != null) {
-            testUtil.tearDown();
-        }
         Thread.sleep(1000); // 1sec
     }
 
     @Override
-    protected void establishUserApps() {
+    protected void establishUserApps() throws Exception {
         ClassLoader tcl = Thread.currentThread().getContextClassLoader();
         if (tcl == null) {
             tcl = getClass().getClassLoader();
@@ -69,60 +62,9 @@ public class EndpointTestBase extends EmbeddedWebServerBase {
 
         context.setContextPath("/");
         ServletHolder servletHolder = new ServletHolder(new HttpServletDispatcher());
-        servletHolder.setInitParameter("javax.ws.rs.Application", PicketLinkOAuthApplication.class.getName());
+        servletHolder.setInitParameter("jakarta.ws.rs.Application", PicketLinkOAuthApplication.class.getName());
         context.addServlet(servletHolder, "/*");
 
-        // context.setParentLoaderPriority(true);
-
         server.setHandler(context);
-        if (needLDAP()) {
-            // Deal with LDAP Server
-            try {
-                deleteApacheDSTmp();
-                testUtil = new LDAPTestUtil();
-                testUtil.setup();
-                testUtil.createBaseDN("jboss", "dc=jboss,dc=org");
-                testUtil.importLDIF("ldap/users.ldif");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    /**
-     * Override if the test case needs LDAP Support
-     *
-     * @return
-     */
-    protected boolean needLDAP() {
-        return false;
-    }
-
-    protected void deleteApacheDSTmp() {
-        String tempDir = System.getProperty("java.io.tmpdir");
-        System.out.println("java.io.tmpdir=" + tempDir);
-
-        System.out.println("Going to delete the server-work directory");
-        File workDir = new File(tempDir + "/server-work");
-        if (workDir != null) {
-            recursiveDeleteDir(workDir);
-        }
-    }
-
-    protected boolean recursiveDeleteDir(File dirPath) {
-        if (dirPath.exists()) {
-            File[] files = dirPath.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].isDirectory()) {
-                    recursiveDeleteDir(files[i]);
-                } else {
-                    files[i].delete();
-                }
-            }
-        }
-        if (dirPath.exists())
-            return dirPath.delete();
-        else
-            return true;
     }
 }

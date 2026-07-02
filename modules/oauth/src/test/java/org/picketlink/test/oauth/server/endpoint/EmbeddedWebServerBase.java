@@ -19,7 +19,7 @@ package org.picketlink.test.oauth.server.endpoint;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.webapp.WebAppContext;
@@ -34,9 +34,11 @@ import org.junit.Before;
  */
 public abstract class EmbeddedWebServerBase {
     protected Server server = null;
+    private ClassLoader originalContextClassLoader;
 
     @Before
     public void setUp() throws Exception {
+        originalContextClassLoader = Thread.currentThread().getContextClassLoader();
 
         // Start the Jetty embedded container
         server = new Server();
@@ -55,6 +57,7 @@ public abstract class EmbeddedWebServerBase {
             server.destroy();
             server = null;
         }
+        Thread.currentThread().setContextClassLoader(originalContextClassLoader);
     }
 
     /**
@@ -63,7 +66,7 @@ public abstract class EmbeddedWebServerBase {
      * @return
      */
     protected Connector[] getConnectors() {
-        Connector connector = new SocketConnector();
+        ServerConnector connector = new ServerConnector(server);
         connector.setPort(11080);
         return new Connector[] { connector };
     }
@@ -71,7 +74,7 @@ public abstract class EmbeddedWebServerBase {
     /**
      * Establish the user applications - context, servlets etc
      */
-    protected abstract void establishUserApps();
+    protected abstract void establishUserApps() throws Exception;
 
     protected FilterMapping createFilterMapping(String pathSpec, FilterHolder filterHolder) {
         FilterMapping filterMapping = new FilterMapping();
