@@ -21,70 +21,29 @@
  */
 package org.picketlink.test.weld;
 
-import org.jboss.weld.context.unbound.RequestContextImpl;
-import org.jboss.weld.manager.BeanManagerImpl;
-
-import javax.enterprise.context.RequestScoped;
-import javax.enterprise.context.SessionScoped;
-import javax.enterprise.context.spi.Context;
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.Extension;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.context.SessionScoped;
+import jakarta.enterprise.context.spi.Context;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
+import org.jboss.weld.context.ManagedContext;
 
 /**
- * An ugly hacked up {@link javax.enterprise.inject.spi.Extension} for Weld so that RequestScoped and SessionScoped are active
- * in the JUnit/JavaSE environment.
- *
- * Remember, weld-se does not support either the request scope or the session scope.
- *
- * This is used for JUnit testing only. So no harm done.
- *
- * This extension is loaded via the JDK Service Loader Mechanism and look for a file in META-INF/services directory called
- * javax.enterprise.inject.spi.Extension
- *
- * @author Anil Saldhana
- * @since March 20, 2014
+ * Activates request and session scopes in Weld SE for servlet-oriented tests.
  */
 public class WeldServletScopesSupportForSe implements Extension {
-    public void afterDeployment(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
 
-        try {
-            setContextActive(beanManager, SessionScoped.class);
-            setContextActive(beanManager, RequestScoped.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void afterDeployment(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
+        activateContext(beanManager, RequestScoped.class);
+        activateContext(beanManager, SessionScoped.class);
     }
 
-    private void setContextActive(BeanManager beanManager, Class<? extends Annotation> cls) throws Exception {
-        BeanManagerImpl beanManagerImpl = (BeanManagerImpl) beanManager;
-        // Ugly hack to make the "contexts" map inside the BeanManagerImpl accessible
-        Field f = beanManagerImpl.getClass().getDeclaredField("contexts"); // NoSuchFieldException
-        f.setAccessible(true);
-        Map<Class<? extends Annotation>, List<Context>> contexts = (Map<Class<? extends Annotation>, List<Context>>) f
-            .get(beanManagerImpl);
-
-        List<Context> registeredContexts = contexts.get(cls);
-        RequestContextImpl context = new RequestContextImpl();
-
-        context.activate();
-
-        List<Context> newList = new ArrayList<Context>();
-
-        newList.add(context);
-
-        contexts.put(cls, newList);
-
-        boolean active = context.isActive();
-
-        if (!active) {
-            throw new Exception(cls.getName() + " scope is not active");
+    private void activateContext(BeanManager beanManager, Class<? extends java.lang.annotation.Annotation> scope) {
+        Context context = beanManager.getContext(scope);
+        if (context instanceof ManagedContext) {
+            ((ManagedContext) context).activate();
         }
     }
 }

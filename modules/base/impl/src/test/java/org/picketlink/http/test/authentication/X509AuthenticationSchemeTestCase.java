@@ -30,15 +30,15 @@ import org.picketlink.http.test.AbstractSecurityFilterTestCase;
 import org.picketlink.test.weld.Deployment;
 import org.picketlink.http.test.SecurityInitializer;
 
-import javax.enterprise.event.Observes;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.enterprise.event.Observes;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 

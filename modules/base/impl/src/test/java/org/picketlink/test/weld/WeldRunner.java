@@ -21,10 +21,15 @@
  */
 package org.picketlink.test.weld;
 
+import org.jboss.weld.context.bound.BoundRequestContext;
+import org.jboss.weld.context.bound.BoundSessionContext;
 import org.jboss.weld.environment.se.WeldContainer;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.TestClass;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Pedro Igor
@@ -33,13 +38,6 @@ public class WeldRunner extends BlockJUnit4ClassRunner {
 
     private WeldContainer container;
 
-    /**
-     * Creates a BlockJUnit4ClassRunner to run {@code klass}
-     *
-     * @param klass
-     *
-     * @throws org.junit.runners.model.InitializationError if the test class is malformed.
-     */
     public WeldRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
@@ -69,8 +67,21 @@ public class WeldRunner extends BlockJUnit4ClassRunner {
         }
 
         this.container = weld.initialize();
+        activateRequestAndSessionScopes(this.container);
 
         return container.instance().select(klass).get();
     }
 
+    private static void activateRequestAndSessionScopes(WeldContainer container) {
+        Map<String, Object> requestMap = new HashMap<>();
+        Map<String, Object> sessionMap = new HashMap<>();
+
+        BoundRequestContext requestContext = container.select(BoundRequestContext.class).get();
+        requestContext.associate(requestMap);
+        requestContext.activate();
+
+        BoundSessionContext sessionContext = container.select(BoundSessionContext.class).get();
+        sessionContext.associate(sessionMap);
+        sessionContext.activate();
+    }
 }

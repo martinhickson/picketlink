@@ -21,37 +21,36 @@
  */
 package org.picketlink.log;
 
-import org.jboss.logging.Cause;
-import org.jboss.logging.LogMessage;
+import org.jboss.logging.BasicLogger;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Message;
-import org.jboss.logging.MessageLogger;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
 import org.picketlink.Identity;
-import org.picketlink.common.logging.Log;
-import org.picketlink.common.logging.LogFactory;
 
 /**
  * @author Pedro Igor
  */
 @MessageLogger(projectCode = BaseLog.PICKETLINK_BASE_PROJECT_CODE)
-public interface BaseLog extends Log {
+public interface BaseLog extends BasicLogger {
 
     String PICKETLINK_BASE_PROJECT_CODE = "PLINK";
 
     /**
      * <p>This is the root logger. General messages should be logged using it.</p>
      */
-    BaseLog ROOT_LOGGER = LogFactory.getLog(BaseLog.class, Identity.class.getPackage().getName());
+    BaseLog ROOT_LOGGER = Logger.getMessageLogger(BaseLog.class, Identity.class.getPackage().getName());
 
     /**
      * <p>This is the authentication logger. Authentication messages should be logged using it.</p>
      */
-    BaseLog AUTHENTICATION_LOGGER = LogFactory.getLog(BaseLog.class, Identity.class.getPackage().getName() + ".authentication");
+    BaseLog AUTHENTICATION_LOGGER = Logger.getMessageLogger(BaseLog.class, Identity.class.getPackage().getName() + ".authentication");
 
     /**
      * <p>This is the Http logger. All messages related with Http Security should be looged using it.</p>
      */
-    BaseLog HTTP_LOGGER = LogFactory.getLog(BaseLog.class, Identity.class.getPackage().getName() + ".http");
+    BaseLog HTTP_LOGGER = Logger.getMessageLogger(BaseLog.class, Identity.class.getPackage().getName() + ".http");
 
     // General logging messages. Ids 2000-2099.
     @LogMessage(level = Logger.Level.INFO)

@@ -94,7 +94,7 @@ public class PicketLinkExtension implements Extension {
 
         SecurityConfigurationEvent securityConfigurationEvent = new SecurityConfigurationEvent();
 
-        beanManager.fireEvent(securityConfigurationEvent);
+        beanManager.getEvent().fire(securityConfigurationEvent);
 
         // TODO: best is fire an event. We're not doing that because of issues in EAP and WildFly when using PL jars from modules.
         this.securityConfigurationBuilder = securityConfigurationEvent.getBuilder();

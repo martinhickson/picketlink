@@ -16,6 +16,7 @@ import org.picketlink.internal.CDIEventBridge;
 import org.picketlink.internal.EntityManagerContextInitializer;
 import org.picketlink.internal.EntityManagerProvider;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import static org.picketlink.log.BaseLog.ROOT_LOGGER;
  * @author Shane Bryzak
  * @author Pedro Igor
  */
+@ApplicationScoped
 public class IdentityManagementConfiguration {
 
     private static final String DEFAULT_CONFIGURATION_NAME = "default";

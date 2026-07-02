@@ -38,22 +38,10 @@
     <plugins>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.7.1</version>
         <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${basedir}/src/test/resources/endorsed/xercesImpl.jar
-            </additionalClasspathElement>
-          </additionalClasspathElements>
-          <printSummary>true</printSummary>
-          <disableXmlReport>false</disableXmlReport>
-          <testFailureIgnore>false</testFailureIgnore>
           <includes>
             <include>**/**TestCase.java</include>
           </includes>
-          <forkMode>pertest</forkMode>
-          <argLine>-Djava.endorsed.dirs=${basedir}/src/test/resources/endorsed</argLine>
-          <useFile>false</useFile>
-          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
@@ -105,8 +93,8 @@
 
     <dependency>
       <groupId>org.openid4java</groupId>
-      <artifactId>openid4java-nodeps</artifactId>
-      <version>0.9.6</version>
+      <artifactId>openid4java</artifactId>
+      <version>0.9.8</version>
     </dependency>
 
     <!-- OAuth integration with Google -->
@@ -154,13 +142,6 @@
     </dependency>
 
     <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-      <version>5.0.0</version>
-      <optional>true</optional>
-    </dependency>
-
-    <dependency>
       <groupId>org.mortbay.jetty</groupId>
       <artifactId>jetty</artifactId>
       <version>6.1.18</version>
@@ -175,9 +156,9 @@
     </dependency>
 
     <dependency>
-      <groupId>nekohtml</groupId>
+      <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
-      <version>1.9.12</version>
+      <version>1.9.22</version>
       <scope>test</scope>
     </dependency>
 

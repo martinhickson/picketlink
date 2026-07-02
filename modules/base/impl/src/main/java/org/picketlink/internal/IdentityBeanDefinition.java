@@ -60,7 +60,7 @@ public class IdentityBeanDefinition implements Bean<DefaultIdentity>, Serializab
         this.beanManager = beanManager;
 
         AnnotatedType<DefaultIdentity> annotatedType = this.beanManager.createAnnotatedType(getBeanClass());
-        this.injectionTarget = this.beanManager.createInjectionTarget(annotatedType);
+        this.injectionTarget = this.beanManager.getInjectionTargetFactory(annotatedType).createInjectionTarget(null);
     }
 
     public void setSecurityConfiguration(SecurityConfiguration securityConfiguration) {
@@ -119,11 +119,6 @@ public class IdentityBeanDefinition implements Bean<DefaultIdentity>, Serializab
 
     @Override
     public boolean isAlternative() {
-        return false;
-    }
-
-    @Override
-    public boolean isNullable() {
         return false;
     }
 

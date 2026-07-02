@@ -47,6 +47,6 @@ public class CDIEventBridge implements EventBridge {
             ROOT_LOGGER.debugf("Firing event [%s].", event);
         }
 
-        this.beanManager.fireEvent(event);
+        this.beanManager.getEvent().fire(event);
     }
 }

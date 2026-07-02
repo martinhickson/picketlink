@@ -29,7 +29,7 @@ import org.picketlink.http.test.AbstractSecurityFilterTestCase;
 import org.picketlink.http.test.SecurityInitializer;
 import org.picketlink.test.weld.Deployment;
 
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.event.Observes;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

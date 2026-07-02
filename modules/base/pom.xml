@@ -14,6 +14,11 @@
 
   <name>PicketLink Base Parent</name>
 
+  <properties>
+    <jboss.logging.version>3.5.3.Final</jboss.logging.version>
+    <jboss.logging.processor.version>3.0.4.Final</jboss.logging.processor.version>
+  </properties>
+
   <modules>
     <module>api</module>
     <module>impl</module>
@@ -22,7 +27,15 @@
   <dependencies>
     <dependency>
       <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging-annotations</artifactId>
+      <version>${jboss.logging.processor.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
       <artifactId>jboss-logging-processor</artifactId>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
@@ -33,6 +46,34 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.jboss.logging</groupId>
+              <artifactId>jboss-logging-processor</artifactId>
+              <version>${jboss.logging.processor.version}</version>
+            </path>
+            <path>
+              <groupId>org.jboss.logging</groupId>
+              <artifactId>jboss-logging-annotations</artifactId>
+              <version>${jboss.logging.processor.version}</version>
+            </path>
+            <path>
+              <groupId>org.jboss.logging</groupId>
+              <artifactId>jboss-logging</artifactId>
+              <version>${jboss.logging.version}</version>
+            </path>
+            <path>
+              <groupId>org.jboss.jdeparser</groupId>
+              <artifactId>jdeparser</artifactId>
+              <version>2.0.3.Final</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>

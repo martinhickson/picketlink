@@ -28,16 +28,16 @@ import org.picketlink.http.test.AbstractSecurityFilterTestCase;
 import org.picketlink.test.weld.Deployment;
 import org.picketlink.http.test.SecurityInitializer;
 
-import javax.enterprise.event.Observes;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.enterprise.event.Observes;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

@@ -27,6 +27,7 @@ import org.picketlink.credential.DefaultLoginCredentials;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.internal.el.ELProcessor;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.Typed;
@@ -39,6 +40,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /**
  * @author Pedro Igor
  */
+@ApplicationScoped
 @WebListener
 public class HttpServletRequestListener implements ServletRequestListener {
 

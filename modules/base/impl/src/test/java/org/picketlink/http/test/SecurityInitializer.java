@@ -32,7 +32,7 @@ import org.picketlink.idm.model.basic.User;
 import org.picketlink.idm.query.IdentityQuery;
 import org.picketlink.http.test.model.Acme;
 
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.event.Observes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CertificateFactory;
