@@ -738,18 +738,28 @@ public class DefaultPartitionManager implements PartitionManager, StoreSelector 
 
     @Override
     public <T extends AttributeStore<?>> T getStoreForAttributeOperation(IdentityContext context) {
-        if (attributeManagementConfig != null) {
-            Map<IdentityStoreConfiguration, IdentityStore<?>> configStores = stores.get(attributeManagementConfig);
+        IdentityConfiguration configuration = null;
 
-            for (IdentityStoreConfiguration cfg : configStores.keySet()) {
-                if (cfg.supportsAttribute()) {
-                    T store = getIdentityStoreAndInitializeContext(context, this.attributeManagementConfig, cfg);
+        if (context.getPartition() != null) {
+            configuration = getConfigurationForPartition(context.getPartition());
+        } else if (attributeManagementConfig != null) {
+            configuration = attributeManagementConfig;
+        }
 
-                    if (!AttributeStore.class.isInstance(store)) {
-                        throw MESSAGES.storeUnexpectedType(store.getClass(), AttributeStore.class);
+        if (configuration != null) {
+            Map<IdentityStoreConfiguration, IdentityStore<?>> configStores = stores.get(configuration);
+
+            if (configStores != null) {
+                for (IdentityStoreConfiguration cfg : configStores.keySet()) {
+                    if (cfg.supportsAttribute()) {
+                        T store = getIdentityStoreAndInitializeContext(context, configuration, cfg);
+
+                        if (!AttributeStore.class.isInstance(store)) {
+                            throw MESSAGES.storeUnexpectedType(store.getClass(), AttributeStore.class);
+                        }
+
+                        return store;
                     }
-
-                    return store;
                 }
             }
         }

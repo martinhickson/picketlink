@@ -32,12 +32,18 @@ public class EntityPermissionHandler extends BaseAbstractPermissionHandler {
             new ConcurrentHashMap<Class<?>, List<Property<Serializable>>>();
 
     public EntityPermissionHandler() {
-        try {
-            entityAnnotationClass = classForName("javax.persistence.Entity");
-            idAnnotationClass = classForName("javax.persistence.Id");
-        } catch (ClassNotFoundException ex) {
-            // Entity permissions not supported
+        entityAnnotationClass = resolveAnnotationClass("jakarta.persistence.Entity", "javax.persistence.Entity");
+        idAnnotationClass = resolveAnnotationClass("jakarta.persistence.Id", "javax.persistence.Id");
+    }
+
+    private static Class<? extends Annotation> resolveAnnotationClass(String... classNames) {
+        for (String className : classNames) {
+            try {
+                return classForName(className);
+            } catch (ClassNotFoundException ignored) {
+            }
         }
+        return null;
     }
 
     @Override

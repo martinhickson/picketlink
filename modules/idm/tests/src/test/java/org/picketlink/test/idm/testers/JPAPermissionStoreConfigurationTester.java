@@ -33,8 +33,8 @@ import org.picketlink.idm.model.basic.Realm;
 import org.picketlink.test.idm.permission.entity.TypedPermissionTypeEntity;
 import org.picketlink.test.idm.util.JPAContextInitializer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import static org.picketlink.test.idm.util.PersistenceUtil.createEntityManagerFactory;
 

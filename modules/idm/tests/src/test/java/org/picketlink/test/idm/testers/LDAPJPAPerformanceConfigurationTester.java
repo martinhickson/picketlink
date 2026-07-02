@@ -38,12 +38,12 @@ import org.picketlink.test.idm.relationship.CustomRelationshipTypeEntity;
 import org.picketlink.test.idm.relationship.RelationshipIdentityTypeReferenceEntity;
 import org.picketlink.test.idm.util.JPAContextInitializer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
 
 import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
+import static org.picketlink.test.idm.util.LDAPEmbeddedServer.OPERATIONAL_CREATE_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.EMAIL;
 import static org.picketlink.common.constants.LDAPConstants.GROUP_OF_NAMES;
 import static org.picketlink.common.constants.LDAPConstants.SN;
@@ -102,11 +102,11 @@ public class LDAPJPAPerformanceConfigurationTester implements IdentityConfigurat
                             .attribute("firstName", CN)
                             .attribute("lastName", SN)
                             .attribute("email", EMAIL)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(Group.class)
                             .objectClasses(GROUP_OF_NAMES)
                             .attribute("name", CN, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                             .parentMembershipAttributeName("member")
                         .mapping(GroupMembership.class)
                             .forMapping(Group.class)

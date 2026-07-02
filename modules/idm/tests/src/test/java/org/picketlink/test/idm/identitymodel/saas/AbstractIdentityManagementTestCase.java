@@ -54,9 +54,10 @@ import org.picketlink.test.idm.identitymodel.saas.model.entity.RelationshipTypeE
 import org.picketlink.test.idm.identitymodel.saas.model.entity.RoleTypeEntity;
 import org.picketlink.test.idm.identitymodel.saas.model.entity.UserTypeEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import org.picketlink.test.idm.util.PersistenceUtil;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -183,7 +184,7 @@ public abstract class AbstractIdentityManagementTestCase {
     }
 
     private void initializeEntityManager() {
-        this.entityManagerFactory = Persistence.createEntityManagerFactory("picketlink-saas-identity-model-pu");
+        this.entityManagerFactory = PersistenceUtil.createEntityManagerFactory("picketlink-saas-identity-model-pu");
         this.entityManager = entityManagerFactory.createEntityManager();
         this.entityManager.getTransaction().begin();
     }

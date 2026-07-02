@@ -39,7 +39,7 @@ import org.picketlink.test.idm.testers.JPAStoreConfigurationTester;
 import org.picketlink.test.idm.testers.LDAPStoreConfigurationTester;
 import org.picketlink.test.idm.util.JPAContextInitializer;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;

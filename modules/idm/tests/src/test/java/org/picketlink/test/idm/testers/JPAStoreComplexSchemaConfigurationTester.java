@@ -39,8 +39,8 @@ import org.picketlink.test.idm.identitymodel.complex.model.entity.UserAccountCon
 import org.picketlink.test.idm.identitymodel.complex.model.entity.UserAttribute;
 import org.picketlink.test.idm.util.JPAContextInitializer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import static org.picketlink.test.idm.util.PersistenceUtil.createEntityManagerFactory;
 

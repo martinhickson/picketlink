@@ -22,9 +22,9 @@
 
 package org.picketlink.idm;
 
-import org.jboss.logging.Cause;
-import org.jboss.logging.Message;
-import org.jboss.logging.MessageBundle;
+import org.jboss.logging.annotations.Cause;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageBundle;
 import org.jboss.logging.Messages;
 import org.picketlink.common.exceptions.NotImplementedException;
 import org.picketlink.idm.config.IdentityStoreConfiguration;
@@ -108,7 +108,7 @@ public interface IDMMessages {
     IdentityManagementException credentialUnsupportedType(Class<?> type, CredentialHandler handler);
 
     @Message(id = 204, value = "Credentials could not be retrieved for account [%s] and storage [%s].")
-    <T extends CredentialStorage> IdentityManagementException credentialRetrievalFailed(Account account, Class<T> storageClass, @Cause Throwable t);
+    IdentityManagementException credentialRetrievalFailed(Account account, Class<?> storageClass, @Cause Throwable t);
 
     @Message(id = 205, value = "The IdentityType returned is not an Account: [%s]")
     IdentityManagementException credentialInvalidAccountType(Class<? extends IdentityType> aClass);

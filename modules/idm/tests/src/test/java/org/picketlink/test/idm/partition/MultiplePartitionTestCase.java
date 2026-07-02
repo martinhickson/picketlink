@@ -35,10 +35,10 @@ import org.picketlink.test.idm.model.entity.MyCustomAccountEntity;
 import org.picketlink.test.idm.relationship.CustomRelationshipTypeEntity;
 import org.picketlink.test.idm.util.JPAContextInitializer;
 import org.picketlink.test.idm.util.LDAPEmbeddedServer;
+import org.picketlink.test.idm.util.PersistenceUtil;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import java.io.Serializable;
 
 import static junit.framework.Assert.assertFalse;
@@ -46,11 +46,11 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.EMAIL;
 import static org.picketlink.common.constants.LDAPConstants.GROUP_OF_NAMES;
 import static org.picketlink.common.constants.LDAPConstants.SN;
 import static org.picketlink.common.constants.LDAPConstants.UID;
+import static org.picketlink.test.idm.util.LDAPEmbeddedServer.OPERATIONAL_CREATE_TIMESTAMP;
 
 /**
  * @author pedroigor
@@ -158,7 +158,7 @@ public class MultiplePartitionTestCase {
             throw new RuntimeException("Error starting Embedded LDAP server.", e);
         }
 
-        this.emf = Persistence.createEntityManagerFactory("jpa-identity-store-tests-pu");
+        this.emf = PersistenceUtil.createEntityManagerFactory("jpa-identity-store-tests-pu");
         this.entityManager = emf.createEntityManager();
         this.entityManager.getTransaction().begin();
     }
@@ -192,7 +192,7 @@ public class MultiplePartitionTestCase {
                             .baseDN(embeddedServer.getAgentDnSuffix())
                             .objectClasses("account")
                             .attribute("loginName", UID, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(User.class)
                             .baseDN(embeddedServer.getUserDnSuffix())
                             .objectClasses("inetOrgPerson", "organizationalPerson")
@@ -200,17 +200,17 @@ public class MultiplePartitionTestCase {
                             .attribute("firstName", CN)
                             .attribute("lastName", SN)
                             .attribute("email", EMAIL)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(Role.class)
                             .baseDN(embeddedServer.getRolesDnSuffix())
                             .objectClasses(GROUP_OF_NAMES)
                             .attribute("name", CN, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(Group.class)
                             .baseDN(embeddedServer.getGroupDnSuffix())
                             .objectClasses(GROUP_OF_NAMES)
                             .attribute("name", CN, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                             .parentMembershipAttributeName("member")
                             .parentMapping("QA Group", "ou=QA," + embeddedServer.getGroupDnSuffix())
                         .mapping(Grant.class)

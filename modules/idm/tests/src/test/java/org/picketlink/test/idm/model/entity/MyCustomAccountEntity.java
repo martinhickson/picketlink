@@ -22,7 +22,7 @@ import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.idm.jpa.model.sample.simple.IdentityTypeEntity;
 import org.picketlink.test.idm.model.MyCustomAccount;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 /**
  * @author pedroigor

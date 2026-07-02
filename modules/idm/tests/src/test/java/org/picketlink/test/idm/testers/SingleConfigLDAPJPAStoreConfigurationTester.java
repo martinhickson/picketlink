@@ -34,11 +34,11 @@ import org.picketlink.test.idm.relationship.RelationshipIdentityTypeReferenceEnt
 import org.picketlink.test.idm.util.JPAContextInitializer;
 import org.picketlink.test.idm.util.LDAPEmbeddedServer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
+import static org.picketlink.test.idm.util.LDAPEmbeddedServer.OPERATIONAL_CREATE_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.EMAIL;
 import static org.picketlink.common.constants.LDAPConstants.GROUP_OF_NAMES;
 import static org.picketlink.common.constants.LDAPConstants.SN;
@@ -90,7 +90,7 @@ public class SingleConfigLDAPJPAStoreConfigurationTester implements IdentityConf
                             .baseDN(embeddedServer.getAgentDnSuffix())
                             .objectClasses("account")
                             .attribute("loginName", UID, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(User.class)
                             .baseDN(embeddedServer.getUserDnSuffix())
                             .objectClasses("inetOrgPerson", "organizationalPerson")
@@ -98,18 +98,18 @@ public class SingleConfigLDAPJPAStoreConfigurationTester implements IdentityConf
                             .attribute("firstName", CN)
                             .attribute("lastName", SN)
                             .attribute("email", EMAIL)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(Role.class)
                             .baseDN(embeddedServer.getRolesDnSuffix())
                             .objectClasses(GROUP_OF_NAMES)
                             .attribute("name", CN, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(Group.class)
                             .baseDN(embeddedServer.getGroupDnSuffix())
                             .hierarchySearchDepth(5)
                             .objectClasses(GROUP_OF_NAMES)
                             .attribute("name", CN, true)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                             .parentMembershipAttributeName("member")
                             .parentMapping("QA Group", "ou=QA," + embeddedServer.getGroupDnSuffix());
 

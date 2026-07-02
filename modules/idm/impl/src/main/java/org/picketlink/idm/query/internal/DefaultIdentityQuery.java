@@ -82,7 +82,8 @@ public class DefaultIdentityQuery<T extends IdentityType> implements IdentityQue
 
         parameters.put(queryParameter, value);
 
-        if (IdentityType.CREATED_AFTER.equals(queryParameter) || IdentityType.EXPIRY_AFTER.equals(queryParameter)) {
+        if (IdentityType.CREATED_AFTER.equals(queryParameter) || IdentityType.EXPIRY_AFTER.equals(queryParameter)
+                || IdentityType.MODIFIED_AFTER.equals(queryParameter)) {
             this.conditions.add(queryBuilder.greaterThanOrEqualTo(queryParameter, value[0]));
         } else if (IdentityType.CREATED_BEFORE.equals(queryParameter) || IdentityType.EXPIRY_BEFORE.equals(queryParameter)) {
             this.conditions.add(queryBuilder.lessThanOrEqualTo(queryParameter, value[0]));

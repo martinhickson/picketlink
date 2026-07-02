@@ -24,7 +24,7 @@ package org.picketlink.test.idm.identitymodel.saas.model.entity;
 import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.test.idm.identitymodel.saas.model.ApplicationRealm;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 /**
  * <p>Entity with the mapping for {@link org.picketlink.test.idm.identitymodel.saas.model.ApplicationRealm}.</p>

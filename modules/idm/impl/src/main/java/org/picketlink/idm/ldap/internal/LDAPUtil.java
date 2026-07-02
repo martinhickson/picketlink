@@ -25,7 +25,7 @@ public class LDAPUtil {
             throw new IllegalArgumentException("You must provide a date.");
         }
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss'.0Z'");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
 
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
@@ -48,16 +48,18 @@ public class LDAPUtil {
      * @return the Date.
      */
     public static final Date parseDate(String date) {
+        String normalized = date.replaceAll("\\.\\d+", "");
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
         try {
-            if (date.endsWith("Z")) {
+            if (normalized.endsWith("Z")) {
                 dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
             } else {
                 dateFormat.setTimeZone(TimeZone.getDefault());
             }
 
-            return dateFormat.parse(date);
+            return dateFormat.parse(normalized);
         } catch (Exception e) {
             throw new IdentityManagementException("Error converting ldap date.", e);
         }

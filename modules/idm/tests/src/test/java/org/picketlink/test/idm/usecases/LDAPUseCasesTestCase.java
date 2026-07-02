@@ -39,9 +39,7 @@ import org.picketlink.idm.query.IdentityQuery;
 import org.picketlink.test.idm.util.LDAPEmbeddedServer;
 
 import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.EMAIL;
-import static org.picketlink.common.constants.LDAPConstants.MODIFY_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.SN;
 import static org.picketlink.common.constants.LDAPConstants.UID;
 
@@ -51,6 +49,8 @@ import static org.picketlink.common.constants.LDAPConstants.UID;
 public class LDAPUseCasesTestCase {
 
     public static final String SIMPLE_LDAP_STORE_CONFIG = "SIMPLE_LDAP_STORE_CONFIG";
+    private static final String CREATE_TIMESTAMP = LDAPEmbeddedServer.OPERATIONAL_CREATE_TIMESTAMP;
+    private static final String MODIFY_TIMESTAMP = LDAPEmbeddedServer.OPERATIONAL_MODIFY_TIMESTAMP;
     private final LDAPEmbeddedServer embeddedServer = new LDAPEmbeddedServer();
     private PartitionManager partitionManager;
 
@@ -197,16 +197,12 @@ public class LDAPUseCasesTestCase {
     }
 
     private PartitionManager getPartitionManager() {
-        Properties connectionProps = new Properties();
-        connectionProps.put("com.sun.jndi.ldap.connect.pool", "true");
-
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
         builder
             .named(SIMPLE_LDAP_STORE_CONFIG)
                 .stores()
                     .ldap()
-                        .connectionProperties(connectionProps)
                         .baseDN(embeddedServer.getBaseDn())
                         .bindDN(embeddedServer.getBindDn())
                         .bindCredential(embeddedServer.getBindCredential())

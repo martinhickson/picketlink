@@ -89,7 +89,7 @@ public class XMLConfigurationTestCase {
         assertTrue(config.getStoreConfiguration().get(0) instanceof LDAPIdentityStoreConfiguration);
         LDAPIdentityStoreConfiguration ldapStoreConfig = (LDAPIdentityStoreConfiguration)config.getStoreConfiguration().get(0);
         assertEquals("dc=jboss,dc=org", ldapStoreConfig.getBaseDN());
-        assertEquals("uid=admin,ou=system", ldapStoreConfig.getBindDN());
+        assertEquals("uid=admin,ou=system,dc=jboss,dc=org", ldapStoreConfig.getBindDN());
         assertEquals("secret", ldapStoreConfig.getBindCredential());
         assertEquals("ldap://localhost:10389", ldapStoreConfig.getLdapURL());
 

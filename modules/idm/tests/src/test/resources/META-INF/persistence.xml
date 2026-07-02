@@ -1,7 +1,7 @@
-<persistence xmlns="http://java.sun.com/xml/ns/persistence"
+<persistence version="3.0"
+             xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_1_0.xsd"
-             version="1.0">
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
   <persistence-unit name="jpa-identity-store-tests-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity</class>
     <class>org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity</class>
@@ -25,26 +25,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:jpa_identity_store_tests_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="jpa-permission-store-tests-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity</class>
     <class>org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity</class>
@@ -62,26 +55,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-        <property name="hibernate.connection.url" value="jdbc:h2:mem:test"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:jpa_permission_store_tests_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-        <!-- EclipseLink Properties-->
-        <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="ldap-usergroup-jpa-role-tests-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity</class>
     <class>org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity</class>
@@ -104,26 +90,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ldap_usergroup_jpa_role_tests_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="ldap-jpa-store-test-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity</class>
     <class>org.picketlink.idm.jpa.model.sample.simple.RelationshipTypeEntity</class>
@@ -134,26 +113,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:ldap_jpa_store_test_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="complex-schema-tests-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.test.idm.identitymodel.complex.model.entity.Address</class>
     <class>org.picketlink.test.idm.identitymodel.complex.model.entity.UserAccount</class>
@@ -180,26 +152,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:complex_schema_tests_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="shanes-test-suite-scenario1-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.test.idm.other.shane.model.scenario1.entity.AccountLogin</class>
     <class>org.picketlink.test.idm.other.shane.model.scenario1.entity.City</class>
@@ -228,26 +193,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:shanes_test_suite_scenario1_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-  
   <persistence-unit name="shanes-test-suite-scenario2-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.test.idm.other.shane.model.scenario2.entity.IdentityObject</class>
     <class>org.picketlink.test.idm.other.shane.model.scenario2.entity.IdentityObjectAttribute</class>
@@ -260,26 +218,19 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-      <property name="hibernate.connection.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:shanes_test_suite_scenario2_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-      <!-- EclipseLink Properties-->
-      <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="jpa-identity-store-custom-types-pu" transaction-type="RESOURCE_LOCAL">
     <class>org.picketlink.idm.jpa.model.sample.simple.AttributedTypeEntity</class>
     <class>org.picketlink.idm.jpa.model.sample.simple.IdentityTypeEntity</class>
@@ -293,29 +244,22 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
     <properties>
-      <!-- Hibernate Properties -->
-        <property name="hibernate.connection.url" value="jdbc:h2:mem:test"/>
-      <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-      <property name="hibernate.connection.username" value="sa"/>
-      <property name="hibernate.connection.password" value=""/>
+      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:jpa_identity_store_custom_types_pu"/>
+      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+      <property name="jakarta.persistence.jdbc.password" value=""/>
       <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+      <property name="hibernate.globally_quoted_identifiers" value="true"/>
       <property name="hibernate.show_sql" value="false"/>
       <property name="hibernate.format_sql" value="true"/>
-
-        <!-- EclipseLink Properties-->
-        <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:test;MVCC=TRUE"/>
-      <property name="javax.persistence.jdbc.user" value="sa"/>
-      <property name="javax.persistence.jdbc.password" value=""/>
       <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
       <property name="eclipselink.deploy-on-startup" value="true" />
       <property name="eclipselink.logging.level" value="INFO" />
     </properties>
   </persistence-unit>
-
   <persistence-unit name="picketlink-saas-identity-model-pu">
 
-        <provider>org.hibernate.ejb.HibernatePersistence</provider>
+        <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
         <class>org.picketlink.test.idm.identitymodel.saas.model.entity.ApplicationAccessTypeEntity</class>
         <class>org.picketlink.test.idm.identitymodel.saas.model.entity.ApplicationTypeEntity</class>
@@ -335,20 +279,14 @@
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>
-            <property name="hibernate.connection.driver_class" value="org.h2.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:picketlink-saas-identity-model-pu"/>
-            <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
-			<property name="hibernate.hbm2ddl.auto" value="create-drop" />
-			<property name="hibernate.show_sql" value="true" />
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:picketlink-saas-identity-model-pu"/>
+            <property name="jakarta.persistence.jdbc.user" value="sa"/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
+            <property name="hibernate.hbm2ddl.auto" value="create-drop"/>
+            <property name="hibernate.globally_quoted_identifiers" value="true"/>
+			<property name="hibernate.show_sql" value="false" />
             <property name="hibernate.format_sql" value="true"/>
-
-            <!-- EclipseLink Properties-->
-            <property name="javax.persistence.jdbc.driver" value="org.h2.Driver"/>
-            <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:picketlink-saas-identity-model-pu;MVCC=TRUE"/>
-            <property name="javax.persistence.jdbc.user" value="sa"/>
-            <property name="javax.persistence.jdbc.password" value=""/>
             <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
             <property name="eclipselink.deploy-on-startup" value="true" />
             <property name="eclipselink.logging.level" value="INFO" />

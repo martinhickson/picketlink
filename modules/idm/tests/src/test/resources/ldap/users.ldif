@@ -33,3 +33,18 @@ dn: ou=QA,ou=Groups,dc=jboss,dc=org
 objectclass: top
 objectclass: organizationalUnit
 ou: QA
+
+dn: ou=system,dc=jboss,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: system
+
+dn: uid=admin,ou=system,dc=jboss,dc=org
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: admin
+sn: admin
+uid: admin
+userPassword: secret

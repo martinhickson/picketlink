@@ -6,7 +6,7 @@
       <stores>
         <ldap>
           <baseDN value="dc=jboss,dc=org" />
-          <bindDN value="uid=admin,ou=system" />
+          <bindDN value="uid=admin,ou=system,dc=jboss,dc=org" />
           <bindCredential value="secret" />
           <url value="ldap://localhost:10389" />
           <supportType value="org.picketlink.idm.model.IdentityType" />
@@ -18,7 +18,7 @@
             <baseDN value="ou=Agent,dc=jboss,dc=org" />
             <objectClasses value="account" />
             <attribute propertyName="loginName" ldapAttributeName="uid" identifier="true" />
-            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimeStamp" />
+            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimestamp" />
           </mapping>
 
           <mapping value="org.picketlink.idm.model.basic.User">
@@ -28,21 +28,21 @@
             <attribute propertyName="firstName" ldapAttributeName="cn" />
             <attribute propertyName="lastName" ldapAttributeName="sn" />
             <attribute propertyName="email" ldapAttributeName="mail" />
-            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimeStamp" />
+            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimestamp" />
           </mapping>
 
           <mapping value="org.picketlink.idm.model.basic.Role">
             <baseDN value="ou=Roles,dc=jboss,dc=org" />
             <objectClasses value="groupOfNames" />
             <attribute propertyName="name" ldapAttributeName="cn" identifier="true" />
-            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimeStamp" />
+            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimestamp" />
           </mapping>
 
           <mapping value="org.picketlink.idm.model.basic.Group">
             <baseDN value="ou=Groups,dc=jboss,dc=org" />
             <objectClasses value="groupOfNames" />
             <attribute propertyName="name" ldapAttributeName="cn" identifier="true" />
-            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimeStamp" />
+            <readOnlyAttribute propertyName="createdDate" ldapAttributeName="createTimestamp" />
             <parentMembershipAttributeName value="member" />
             <parentMapping parentId="QA Group" baseDN="ou=QA,dc=jboss,dc=org" />
           </mapping>

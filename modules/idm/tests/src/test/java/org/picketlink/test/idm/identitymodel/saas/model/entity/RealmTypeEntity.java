@@ -25,8 +25,8 @@ import org.picketlink.idm.jpa.annotations.AttributeValue;
 import org.picketlink.idm.jpa.annotations.entity.IdentityManaged;
 import org.picketlink.test.idm.identitymodel.saas.model.Realm;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 /**
  * <p>Entity with the mapping for {@link org.picketlink.test.idm.identitymodel.saas.model.Realm}.</p>
@@ -45,11 +45,11 @@ public class RealmTypeEntity extends PartitionTypeEntity {
     private int numberFailedLoginAttempts;
 
     @AttributeValue
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 100000)
     private byte[] publickKey;
 
     @AttributeValue
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 100000)
     private byte[] privateKey;
 
     public int getNumberFailedLoginAttempts() {

@@ -25,6 +25,8 @@ import org.picketlink.idm.credential.storage.TokenCredentialStorage;
 import org.picketlink.idm.jpa.annotations.CredentialProperty;
 import org.picketlink.idm.jpa.annotations.entity.ManagedCredential;
 
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 
@@ -35,22 +37,23 @@ import jakarta.persistence.Entity;
  */
 @ManagedCredential(TokenCredentialStorage.class)
 @Entity
+@Access(AccessType.FIELD)
 public class TokenCredentialTypeEntity extends AbstractCredentialTypeEntity {
 
-    @CredentialProperty
-    @Column
-    private String type;
+    @CredentialProperty(name = "type")
+    @Column(name = "token_type")
+    private String tokenType;
 
     @CredentialProperty
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 100000)
     private String token;
 
     public String getType() {
-        return this.type;
+        return this.tokenType;
     }
 
     public void setType(String type) {
-        this.type = type;
+        this.tokenType = type;
     }
 
     public String getToken() {

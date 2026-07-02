@@ -30,9 +30,10 @@ import org.picketlink.test.idm.other.shane.model.scenario1.entity.StreetType;
 import org.picketlink.test.idm.other.shane.model.scenario1.entity.UserAddress;
 import org.picketlink.test.idm.other.shane.model.scenario2.entity.Customer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import org.picketlink.test.idm.util.PersistenceUtil;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -52,7 +53,7 @@ public class ShanesBigSanityCheckTestCase {
      */
     @Test
     public void testScenario1() throws InterruptedException {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("shanes-test-suite-scenario1-pu");
+        EntityManagerFactory emf = PersistenceUtil.createEntityManagerFactory("shanes-test-suite-scenario1-pu");
         final EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
@@ -376,7 +377,7 @@ public class ShanesBigSanityCheckTestCase {
 
         // Confirm that a RoleDetail entity was created
         List<RoleDetail> id = em.createQuery(
-                "select r from RoleDetail r where r.roleName = ?",
+                "select r from RoleDetail r where r.roleName = ?1",
                 RoleDetail.class)
                 .setParameter(1, role.getName())
                 .getResultList();
@@ -388,7 +389,7 @@ public class ShanesBigSanityCheckTestCase {
 
     @Test
     public void testScenario2() throws InterruptedException {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("shanes-test-suite-scenario2-pu");
+        EntityManagerFactory emf = PersistenceUtil.createEntityManagerFactory("shanes-test-suite-scenario2-pu");
         final EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 

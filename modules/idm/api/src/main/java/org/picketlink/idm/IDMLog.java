@@ -22,12 +22,12 @@
 
 package org.picketlink.idm;
 
-import org.jboss.logging.LogMessage;
+import org.jboss.logging.BasicLogger;
+import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-import org.jboss.logging.Message;
-import org.jboss.logging.MessageLogger;
-import org.picketlink.common.logging.Log;
-import org.picketlink.common.logging.LogFactory;
+import org.jboss.logging.annotations.LogMessage;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.basic.Realm;
@@ -40,24 +40,24 @@ import static org.picketlink.idm.IDMLog.PICKETLINK_IDM_PROJECT_CODE;
  *
  */
 @MessageLogger(projectCode = PICKETLINK_IDM_PROJECT_CODE)
-public interface IDMLog extends Log {
+public interface IDMLog extends BasicLogger {
 
     String PICKETLINK_IDM_PROJECT_CODE = "PLIDM";
 
     /**
      * <p>This is the root logger. General messages should be logged using it.</p>
      */
-    IDMLog ROOT_LOGGER = LogFactory.getLog(IDMLog.class, IDMLog.class.getPackage().getName());
+    IDMLog ROOT_LOGGER = Logger.getMessageLogger(IDMLog.class, IDMLog.class.getPackage().getName());
 
     /**
      * <p>This is the root logger for identity stores. General and implementation agnostic messages should be logged using it.</p>
      */
-    IDMLog IDENTITY_STORE_LOGGER = LogFactory.getLog(IDMLog.class, IDMLog.class.getPackage().getName() + ".identity.store");
+    IDMLog IDENTITY_STORE_LOGGER = Logger.getMessageLogger(IDMLog.class, IDMLog.class.getPackage().getName() + ".identity.store");
 
     /**
      * <p>This is the root logger for credential management. General and implementation agnostic messages should be logged using it.</p>
      */
-    IDMLog CREDENTIAL_LOGGER = LogFactory.getLog(IDMLog.class, IDMLog.class.getPackage().getName() + ".credential");
+    IDMLog CREDENTIAL_LOGGER = Logger.getMessageLogger(IDMLog.class, IDMLog.class.getPackage().getName() + ".credential");
 
     // General logging messages. Ids 1000-1099.
     @LogMessage(level = Level.INFO)

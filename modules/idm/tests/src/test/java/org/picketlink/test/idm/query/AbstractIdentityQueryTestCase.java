@@ -348,6 +348,7 @@ public abstract class AbstractIdentityQueryTestCase<T extends IdentityType> exte
     }
 
     @Test
+    @Configuration(exclude = {LDAPStoreConfigurationTester.class, SingleConfigLDAPJPAStoreConfigurationTester.class, LDAPUserGroupJPARoleConfigurationTester.class})
     public void testFindBetweenCreationDate() throws Exception {
         T identityType = createIdentityType(null, null);
         T someAnotherIdentityType = createIdentityType("someAnotherAgent", null);

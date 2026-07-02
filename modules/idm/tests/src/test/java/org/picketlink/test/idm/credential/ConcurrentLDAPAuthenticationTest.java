@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.picketlink.common.constants.LDAPConstants.CN;
-import static org.picketlink.common.constants.LDAPConstants.CREATE_TIMESTAMP;
+import static org.picketlink.test.idm.util.LDAPEmbeddedServer.OPERATIONAL_CREATE_TIMESTAMP;
 import static org.picketlink.common.constants.LDAPConstants.EMAIL;
 import static org.picketlink.common.constants.LDAPConstants.SN;
 import static org.picketlink.common.constants.LDAPConstants.UID;
@@ -128,7 +128,7 @@ public class ConcurrentLDAPAuthenticationTest {
                             .baseDN(embeddedServer.getAgentDnSuffix())
                 .objectClasses("account")
                 .attribute("loginName", UID, true)
-                .readOnlyAttribute("createdDate", CREATE_TIMESTAMP)
+                .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP)
                         .mapping(User.class)
                             .baseDN(embeddedServer.getUserDnSuffix())
                             .objectClasses("inetOrgPerson", "organizationalPerson")
@@ -136,7 +136,7 @@ public class ConcurrentLDAPAuthenticationTest {
                             .attribute("firstName", CN)
                             .attribute("lastName", SN)
                             .attribute("email", EMAIL)
-                            .readOnlyAttribute("createdDate", CREATE_TIMESTAMP);
+                            .readOnlyAttribute("createdDate", OPERATIONAL_CREATE_TIMESTAMP);
 
         return new DefaultPartitionManager(builder.buildAll());
     }

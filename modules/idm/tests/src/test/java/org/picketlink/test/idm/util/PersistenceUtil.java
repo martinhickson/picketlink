@@ -1,12 +1,12 @@
 package org.picketlink.test.idm.util;
 
-import org.hibernate.ejb.HibernatePersistence;
+import org.hibernate.jpa.HibernatePersistenceProvider;
 
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.spi.PersistenceProvider;
-import javax.persistence.spi.PersistenceProviderResolver;
-import javax.persistence.spi.PersistenceProviderResolverHolder;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.Persistence;
+import jakarta.persistence.spi.PersistenceProvider;
+import jakarta.persistence.spi.PersistenceProviderResolver;
+import jakarta.persistence.spi.PersistenceProviderResolverHolder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +28,7 @@ public final class PersistenceUtil {
                 if (enableEclipseLinkProvider != null && Boolean.valueOf(enableEclipseLinkProvider)) {
                     providers.add(new org.eclipse.persistence.jpa.PersistenceProvider());
                 } else {
-                    providers.add(new HibernatePersistence());
+                    providers.add(new HibernatePersistenceProvider());
                 }
 
                 return providers;

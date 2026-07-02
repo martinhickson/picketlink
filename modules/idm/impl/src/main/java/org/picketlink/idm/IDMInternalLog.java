@@ -1,10 +1,9 @@
 package org.picketlink.idm;
 
-import org.jboss.logging.LogMessage;
+import org.jboss.logging.annotations.LogMessage;
 import org.jboss.logging.Logger;
-import org.jboss.logging.Message;
-import org.jboss.logging.MessageLogger;
-import org.picketlink.common.logging.LogFactory;
+import org.jboss.logging.annotations.Message;
+import org.jboss.logging.annotations.MessageLogger;
 import org.picketlink.idm.model.AttributedType;
 
 import static org.picketlink.idm.IDMInternalLog.PICKETLINK_IDM_PROJECT_CODE;
@@ -18,21 +17,21 @@ public interface IDMInternalLog extends IDMLog {
     /**
      * <p>This is the logger for the {@link org.picketlink.idm.file.internal.FileIdentityStore}.</p>
      */
-    IDMInternalLog FILE_STORE_LOGGER = LogFactory.getLog(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.file");
+    IDMInternalLog FILE_STORE_LOGGER = Logger.getMessageLogger(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.file");
 
     /**
      * <p>This is the logger for the {@link org.picketlink.idm.jpa.internal.JPAIdentityStore}.</p>
      */
-    IDMInternalLog JPA_STORE_LOGGER = LogFactory.getLog(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.jpa");
+    IDMInternalLog JPA_STORE_LOGGER = Logger.getMessageLogger(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.jpa");
 
     /**
      * <p>This is the logger for the {@link org.picketlink.idm.ldap.internal.LDAPIdentityStore}.</p>
      */
-    IDMInternalLog LDAP_STORE_LOGGER = LogFactory.getLog(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.ldap");
+    IDMInternalLog LDAP_STORE_LOGGER = Logger.getMessageLogger(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.ldap");
     /**
      * <p>This is the logger for the {@link org.picketlink.idm.ldap.internal.JDBCIdentityStore}.</p>
      */
-    IDMInternalLog JDBC_STORE_LOGGER = LogFactory.getLog(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.jdbc");
+    IDMInternalLog JDBC_STORE_LOGGER = Logger.getMessageLogger(IDMInternalLog.class, IDMInternalLog.class.getPackage().getName() + ".identity.store.jdbc");
 
     // File store logging messages. Ids 1100-1199.
     @LogMessage(level = Logger.Level.INFO)
