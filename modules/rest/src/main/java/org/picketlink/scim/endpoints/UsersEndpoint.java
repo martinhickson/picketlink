@@ -52,19 +52,7 @@ public class UsersEndpoint extends AbstractSCIMEndpoint {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUser(@Context HttpServletRequest request, @Context ServletContext sc, @PathParam("id") String userId) {
-        if (dataProvider == null) {
-            BeanManager beanManager = getBeanManager(sc);
-            if (beanManager == null) {
-                throw new IllegalStateException("BM null");
-            }
-            dataProvider = getContextualInstance(beanManager, DataProvider.class);
-        }
-        if (dataProvider == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("dataProvider is not injected. Creating a default IDM driven data provider.");
-            }
-            dataProvider = createDefaultDataProvider();
-        }
+        resolveDataProvider(sc);
         try {
             dataProvider.initializeConnection();
             SCIMUser user = dataProvider.getUser(userId);
@@ -86,19 +74,7 @@ public class UsersEndpoint extends AbstractSCIMEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response createUser(@Context HttpServletRequest request, @Context ServletContext sc) {
-        if (dataProvider == null) {
-            BeanManager beanManager = getBeanManager(sc);
-            if (beanManager == null) {
-                throw new IllegalStateException("BM null");
-            }
-            dataProvider = getContextualInstance(beanManager, DataProvider.class);
-        }
-        if (dataProvider == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("dataProvider is not injected. Creating a default IDM driven data provider.");
-            }
-            dataProvider = createDefaultDataProvider();
-        }
+        resolveDataProvider(sc);
         try {
             // Parse the data
             SCIMParser parser = new SCIMParser();

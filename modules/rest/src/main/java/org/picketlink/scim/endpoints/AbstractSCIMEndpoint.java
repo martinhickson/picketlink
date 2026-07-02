@@ -53,13 +53,16 @@ public class AbstractSCIMEndpoint {
             initialContext = new InitialContext();
             beanManager = (BeanManager) initialContext.lookup("java:comp/BeanManager");
         } catch (NamingException e) {
-            try {
-                beanManager = (BeanManager) initialContext.lookup("java:comp/env/BeanManager");
-            } catch (NamingException e1) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Couldn't get BeanManager through JNDI");
+            if (initialContext != null) {
+                try {
+                    beanManager = (BeanManager) initialContext.lookup("java:comp/env/BeanManager");
+                } catch (NamingException e1) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Couldn't get BeanManager through JNDI");
+                    }
                 }
-
+            } else if (log.isTraceEnabled()) {
+                log.trace("Couldn't get BeanManager through JNDI");
             }
         }
         return beanManager;
@@ -81,5 +84,20 @@ public class AbstractSCIMEndpoint {
     protected DataProvider createDefaultDataProvider() {
         PicketLinkIDMDataProvider plidmp = new PicketLinkIDMDataProvider();
         return plidmp;
+    }
+
+    protected void resolveDataProvider(ServletContext sc) {
+        if (dataProvider == null) {
+            BeanManager beanManager = getBeanManager(sc);
+            if (beanManager != null) {
+                dataProvider = getContextualInstance(beanManager, DataProvider.class);
+            }
+        }
+        if (dataProvider == null) {
+            if (log.isTraceEnabled()) {
+                log.trace("dataProvider is not injected. Creating a default IDM driven data provider.");
+            }
+            dataProvider = createDefaultDataProvider();
+        }
     }
 }

@@ -19,7 +19,7 @@ package org.picketlink.test.scim;
 
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.webapp.WebAppContext;
@@ -34,16 +34,15 @@ import org.junit.Before;
  */
 public abstract class EmbeddedWebServerBase {
     protected Server server = null;
+    private ClassLoader originalContextClassLoader;
 
     @Before
     public void setUp() throws Exception {
-        // Start the Jetty embedded container
+        originalContextClassLoader = Thread.currentThread().getContextClassLoader();
+
         server = new Server();
-
         server.setConnectors(getConnectors());
-
         this.establishUserApps();
-
         server.start();
     }
 
@@ -58,23 +57,16 @@ public abstract class EmbeddedWebServerBase {
             }
             server = null;
         }
+        Thread.currentThread().setContextClassLoader(originalContextClassLoader);
     }
 
-    /**
-     * Return the connectors that need to be configured on the server. Subclasses can create as many connectors as they want
-     *
-     * @return
-     */
     protected Connector[] getConnectors() {
-        Connector connector = new SocketConnector();
+        ServerConnector connector = new ServerConnector(server);
         connector.setPort(11080);
         return new Connector[] { connector };
     }
 
-    /**
-     * Establish the user applications - context, servlets etc
-     */
-    protected abstract void establishUserApps();
+    protected abstract void establishUserApps() throws Exception;
 
     protected FilterMapping createFilterMapping(String pathSpec, FilterHolder filterHolder) {
         FilterMapping filterMapping = new FilterMapping();

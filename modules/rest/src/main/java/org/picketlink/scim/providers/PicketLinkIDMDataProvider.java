@@ -180,22 +180,46 @@ public class PicketLinkIDMDataProvider implements DataProvider {
     }
 
     protected void createJPADrivenIdentityManager() {
-        // Use JPA
         entityManagerFactory = Persistence.createEntityManagerFactory("picketlink-scim-pu");
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        entityManager.getTransaction().begin();
+        entityManagerThreadLocal.set(entityManager);
 
         IdentityConfigurationBuilder builder = new IdentityConfigurationBuilder();
 
         builder
             .named("default")
                 .stores()
-                    .file()
-                        .supportAllFeatures();
+                    .jpa().mappedEntity(
+                org.picketlink.idm.jpa.model.sample.simple.AccountTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.RoleTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.GroupTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.IdentityTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.RelationshipTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.RelationshipIdentityTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.PartitionTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.PasswordCredentialTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.DigestCredentialTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.X509CredentialTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.OTPCredentialTypeEntity.class,
+                org.picketlink.idm.jpa.model.sample.simple.AttributeTypeEntity.class
+            ).addContextInitializer(new org.picketlink.idm.spi.ContextInitializer() {
+                @Override
+                public void initContextForStore(org.picketlink.idm.spi.IdentityContext ctx, org.picketlink.idm.spi.IdentityStore<?> store) {
+                    if (store instanceof org.picketlink.idm.jpa.internal.JPAIdentityStore) {
+                        if (!ctx.isParameterSet(org.picketlink.idm.jpa.internal.JPAIdentityStore.INVOCATION_CTX_ENTITY_MANAGER)) {
+                            ctx.setParameter(org.picketlink.idm.jpa.internal.JPAIdentityStore.INVOCATION_CTX_ENTITY_MANAGER, entityManager);
+                        }
+                    }
+                }
+            }).supportAllFeatures();
 
         PartitionManager partitionManager = new DefaultPartitionManager(builder.build());
 
-        partitionManager.add(new Realm(Realm.DEFAULT_REALM));
+        if (partitionManager.getPartition(Realm.class, Realm.DEFAULT_REALM) == null) {
+            partitionManager.add(new Realm(Realm.DEFAULT_REALM));
+        }
 
-        // FIXME: IdentityManager is not threadsafe
         identityManager = partitionManager.createIdentityManager();
     }
 }

@@ -17,7 +17,6 @@
  */
 package org.picketlink.scim.endpoints;
 
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
@@ -49,19 +48,7 @@ public class GroupsEndpoint extends AbstractSCIMEndpoint {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUser(@Context HttpServletRequest request, @Context ServletContext sc, @PathParam("id") String groupId) {
-        if (dataProvider == null) {
-            BeanManager beanManager = getBeanManager(sc);
-            if (beanManager == null) {
-                throw new IllegalStateException("BM null");
-            }
-            dataProvider = getContextualInstance(beanManager, DataProvider.class);
-        }
-        if (dataProvider == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("dataProvider is not injected. Create a default IDM driven data provider.");
-            }
-            dataProvider = createDefaultDataProvider();
-        }
+        resolveDataProvider(sc);
         try {
             dataProvider.initializeConnection();
             SCIMGroups group = dataProvider.getGroups(groupId);
@@ -83,19 +70,7 @@ public class GroupsEndpoint extends AbstractSCIMEndpoint {
     @POST
     @Produces(MediaType.APPLICATION_JSON)
     public Response createGroup(@Context HttpServletRequest request, @Context ServletContext sc) {
-        if (dataProvider == null) {
-            BeanManager beanManager = getBeanManager(sc);
-            if (beanManager == null) {
-                throw new IllegalStateException("BM null");
-            }
-            dataProvider = getContextualInstance(beanManager, DataProvider.class);
-        }
-        if (dataProvider == null) {
-            if (log.isTraceEnabled()) {
-                log.trace("dataProvider is not injected. Creating a default IDM driven data provider.");
-            }
-            dataProvider = createDefaultDataProvider();
-        }
+        resolveDataProvider(sc);
         try {
             // Parse the data
             SCIMParser parser = new SCIMParser();
