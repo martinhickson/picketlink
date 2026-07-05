@@ -55,7 +55,7 @@
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/GITHUB_REPO_OWNER/GITHUB_REPO_NAME</url>
+      <url>https://maven.pkg.github.com/martinhickson/picketlink</url>
     </repository>
   </distributionManagement>
 
