@@ -1,0 +1,1 @@
+                        <attribute-role-mapper name="PicketLinkOidcAsRoleMapper" attribute="groups"/>

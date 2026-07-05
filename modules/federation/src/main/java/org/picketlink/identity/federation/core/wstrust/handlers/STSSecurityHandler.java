@@ -28,8 +28,8 @@ import org.picketlink.identity.federation.core.wstrust.STSClientPool;
 import org.picketlink.identity.federation.core.wstrust.STSClientFactory;
 import org.w3c.dom.Element;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import javax.xml.namespace.QName;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPFactory;

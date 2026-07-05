@@ -1,0 +1,7 @@
+                        <security-domain name="PicketLinkTestElytronDomain"
+                                         default-realm="PicketLinkTestRealm"
+                                         permission-mapper="default-permission-mapper"
+                                         role-mapper="PicketLinkTestRoleMapper">
+                            <realm name="PicketLinkTestRealm"/>
+                            <realm name="PicketLinkSamlRealm"/>
+                        </security-domain>

@@ -1,0 +1,2 @@
+                        <constant-realm-mapper name="picketlink-saml-realm-mapper"
+                                               realm-name="PicketLinkSamlRealm"/>

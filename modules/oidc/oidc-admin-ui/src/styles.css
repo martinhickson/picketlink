@@ -1,0 +1,13 @@
+body { font-family: system-ui, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
+a { color: #2563eb; }
+nav { background: #14532d; color: white; padding: 1rem 1.5rem; display: flex; gap: 1rem; align-items: center; }
+nav a { color: #bbf7d0; text-decoration: none; }
+nav a.active { color: white; font-weight: 600; }
+main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+.card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 1rem; }
+.grid { display: grid; gap: .75rem; }
+button, .btn { display: inline-block; background: #15803d; color: white; border: 0; padding: .6rem 1rem; border-radius: 8px; cursor: pointer; text-decoration: none; }
+.btn-secondary { background: #4b5563; }
+nav .nav-spacer { flex: 1; }
+nav .btn-nav { margin-left: auto; padding: .45rem .85rem; font-size: .9rem; }
+pre { background: #111827; color: #e5e7eb; padding: 1rem; border-radius: 8px; overflow: auto; }

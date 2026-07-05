@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+  <display-name>PicketLink IDM Admin IT</display-name>
+
+  <servlet>
+    <servlet-name>idmAdminUi</servlet-name>
+    <servlet-class>org.picketlink.auth.oauth.servlet.VirtualResourcesServlet</servlet-class>
+    <init-param>
+      <param-name>urlBase</param-name>
+      <param-value>/idm-admin</param-value>
+    </init-param>
+    <init-param>
+      <param-name>resourceBase</param-name>
+      <param-value>META-INF/resources/idm-admin-ui</param-value>
+    </init-param>
+    <init-param>
+      <param-name>adminUiEnabled</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>idmAdminUi</servlet-name>
+    <url-pattern>/idm-admin/*</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>standaloneConfig</servlet-name>
+    <servlet-class>org.picketlink.idm.admin.servlet.StandaloneConfigServlet</servlet-class>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet>
+    <servlet-name>idmRealmConfig</servlet-name>
+    <servlet-class>org.picketlink.idm.admin.servlet.IdmRealmConfigServlet</servlet-class>
+    <load-on-startup>3</load-on-startup>
+  </servlet>
+  <servlet>
+    <servlet-name>idmUserAdmin</servlet-name>
+    <servlet-class>org.picketlink.idm.admin.servlet.IdmUserAdminServlet</servlet-class>
+    <load-on-startup>4</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>standaloneConfig</servlet-name>
+    <url-pattern>/api/idm/standalone/profiles</url-pattern>
+    <url-pattern>/api/idm/standalone/apply</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>idmRealmConfig</servlet-name>
+    <url-pattern>/api/idm/realm/config</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>idmUserAdmin</servlet-name>
+    <url-pattern>/api/idm/realm/users</url-pattern>
+  </servlet-mapping>
+</web-app>

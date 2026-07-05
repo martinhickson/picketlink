@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<arquillian xmlns="http://jboss.org/schema/arquillian"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://jboss.org/schema/arquillian http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
+
+    <defaultProtocol type="Servlet 5.0"/>
+
+    <group qualifier="auth-api-servers" default="true">
+        <container qualifier="auth-server">
+            <configuration>
+                <property name="jbossHome">${jboss.home.auth}</property>
+                <property name="allowConnectingToRunningServer">false</property>
+                <property name="host">${test.auth.host}</property>
+                <property name="port">${test.http.port}</property>
+                <property name="managementAddress">${test.auth.host}</property>
+                <property name="managementPort">9990</property>
+                <property name="javaVmArguments">-Xms512m -Xmx512m -Djboss.bind.address=${test.auth.host} -Djboss.bind.address.management=${test.auth.host} -Djboss.node.name=auth-server -Dtest.http.port=${test.http.port} -Dpicketlink.auth.base.url=${picketlink.auth.base.url} -Dpicketlink.auth.jwt.issuer=${picketlink.auth.jwt.issuer} -Dpicketlink.auth.jwt.secret=${picketlink.auth.jwt.secret}</property>
+            </configuration>
+        </container>
+        <container qualifier="api-server">
+            <configuration>
+                <property name="jbossHome">${jboss.home.api}</property>
+                <property name="allowConnectingToRunningServer">false</property>
+                <property name="host">${test.api.host}</property>
+                <property name="port">${test.http.port}</property>
+                <property name="managementAddress">${test.api.host}</property>
+                <property name="managementPort">9990</property>
+                <property name="javaVmArguments">-Xms512m -Xmx512m -Djboss.bind.address=${test.api.host} -Djboss.bind.address.management=${test.api.host} -Djboss.node.name=api-server -Dpicketlink.auth.jwt.issuer=${picketlink.auth.jwt.issuer} -Dpicketlink.auth.jwt.secret=${picketlink.auth.jwt.secret}</property>
+            </configuration>
+        </container>
+    </group>
+</arquillian>

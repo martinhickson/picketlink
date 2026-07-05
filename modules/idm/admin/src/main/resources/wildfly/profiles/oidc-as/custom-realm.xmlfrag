@@ -1,0 +1,3 @@
+                        <custom-realm name="PicketLinkOidcIdmRealm"
+                                      module="org.picketlink"
+                                      class-name="org.picketlink.idm.admin.realm.elytron.PicketLinkIdmDocumentSecurityRealm"/>

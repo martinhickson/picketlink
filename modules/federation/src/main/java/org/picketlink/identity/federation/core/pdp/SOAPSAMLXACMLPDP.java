@@ -30,7 +30,7 @@ import org.picketlink.identity.federation.saml.v2.protocol.ResponseType;
 import org.picketlink.identity.federation.saml.v2.protocol.XACMLAuthzDecisionQueryType;
 import org.w3c.dom.Document;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;

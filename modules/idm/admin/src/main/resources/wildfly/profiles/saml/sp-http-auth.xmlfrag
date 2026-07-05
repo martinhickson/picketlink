@@ -1,0 +1,10 @@
+                        <http-authentication-factory name="PicketLinkSPHttpAuth"
+                                                     security-domain="PicketLinkTestElytronDomain"
+                                                     http-server-mechanism-factory="picketlink-http-mechanism-factory">
+                            <mechanism-configuration>
+                                <mechanism mechanism-name="PICKETLINK-SAML">
+                                    <mechanism-realm realm-name="PicketLinkSamlRealm"
+                                                     realm-mapper="picketlink-saml-realm-mapper"/>
+                                </mechanism>
+                            </mechanism-configuration>
+                        </http-authentication-factory>

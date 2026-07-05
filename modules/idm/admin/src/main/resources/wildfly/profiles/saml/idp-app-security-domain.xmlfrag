@@ -1,0 +1,2 @@
+                        <application-security-domain name="PicketLinkTestDomain"
+                                                     http-authentication-factory="PicketLinkTestHttpAuth"/>

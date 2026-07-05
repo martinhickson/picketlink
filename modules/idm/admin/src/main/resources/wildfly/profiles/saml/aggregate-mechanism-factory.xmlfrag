@@ -1,0 +1,4 @@
+                        <aggregate-http-server-mechanism-factory name="picketlink-http-mechanism-factory">
+                            <http-server-mechanism-factory name="picketlink-saml-mechanism-factory"/>
+                            <http-server-mechanism-factory name="global"/>
+                        </aggregate-http-server-mechanism-factory>

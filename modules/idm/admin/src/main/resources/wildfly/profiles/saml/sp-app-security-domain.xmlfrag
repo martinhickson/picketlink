@@ -1,0 +1,2 @@
+                        <application-security-domain name="PicketLinkSPDomain"
+                                                     http-authentication-factory="PicketLinkSPHttpAuth"/>

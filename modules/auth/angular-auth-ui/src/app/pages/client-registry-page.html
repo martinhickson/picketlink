@@ -1,0 +1,113 @@
+<main class="page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">PicketLink Auth</p>
+      <h1>OAuth Client Registration</h1>
+      <p class="lede">
+        Register confidential OAuth 2.1 client-credentials clients. Registrations are
+        persisted through a pluggable store (JSON file by default).
+      </p>
+    </div>
+  </header>
+
+  @if (actionError()) {
+    <section class="banner error">{{ actionError() }}</section>
+  }
+
+  @if (loadError()) {
+    <section class="banner error">{{ loadError() }}</section>
+  }
+
+  @if (createdSecret()) {
+    <section class="banner success">
+      Client registered. Save this secret now; it will not be shown again:
+      <code>{{ createdSecret() }}</code>
+    </section>
+  }
+
+  <section class="panel">
+    <h2>Register client</h2>
+    <form class="form-grid" (submit)="onSubmit($event)">
+      <label>
+        Client ID
+        <input type="text" [formField]="registrationForm.clientId" />
+        @if (registrationForm.clientId().invalid()) {
+          <span class="field-error">{{ registrationForm.clientId().errors()[0]?.message }}</span>
+        }
+      </label>
+
+      <label>
+        Token endpoint auth method
+        <select [formField]="registrationForm.tokenEndpointAuthMethod">
+          <option value="client_secret_basic">client_secret_basic</option>
+          <option value="client_secret_post">client_secret_post</option>
+        </select>
+      </label>
+
+      <label class="full-width">
+        Scopes
+        <input
+          type="text"
+          [formField]="registrationForm.scopesText"
+          placeholder="api.read api.write"
+        />
+      </label>
+
+      <label class="checkbox full-width">
+        <input type="checkbox" [formField]="registrationForm.generateSecret" />
+        Generate client secret automatically
+      </label>
+
+      @if (!registrationForm.generateSecret().value()) {
+        <label class="full-width">
+          Client secret
+          <input type="password" [formField]="registrationForm.clientSecret" />
+        </label>
+      }
+
+      <div class="actions full-width">
+        <button type="submit">Register client</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel-header">
+      <h2>Registered clients</h2>
+      <button type="button" class="secondary" (click)="refreshClients()">Refresh</button>
+    </div>
+
+    @if (loading()) {
+      <p>Loading clients...</p>
+    } @else if (clients().length === 0) {
+      <p>No clients registered yet.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client ID</th>
+              <th>Auth method</th>
+              <th>Scopes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (client of clients(); track client.clientId) {
+              <tr>
+                <td><code>{{ client.clientId }}</code></td>
+                <td>{{ client.tokenEndpointAuthMethod }}</td>
+                <td>{{ client.scopes.join(' ') }}</td>
+                <td>
+                  <button type="button" class="danger" (click)="deleteClient(client.clientId)">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</main>

@@ -34,9 +34,9 @@ SAML metadata, redirect URLs, and cookie scoping depend on **stable, distinct ho
 - Ambiguous `EntityID` and `Audience` values in metadata
 - Redirect validation failures when each party must identify the other uniquely
 
-Assigning each WildFly instance its own loopback alias (`127.0.0.101` for the SP, `127.0.0.102` for the IDP) while keeping the **default port 8080** gives you two logical hosts on one machine without DNS or TLS complexity. This is a common pattern for local federation development.
+Assigning each WildFly instance its own loopback IP address in the `127.0.0.0/8` subnet (`127.0.0.101` for the SP, `127.0.0.102` for the IDP) while keeping the **default port 8080** gives you two logical hosts on one machine without DNS or TLS complexity. This is a common pattern for local federation development.
 
-### Configure loopback aliases (once per machine)
+### Configure loopback IP addresses (once per machine)
 
 Linux:
 
@@ -63,7 +63,7 @@ These addresses persist until reboot unless you add them to your network configu
 | **Maven 3.8+** | Build PicketLink and package WARs |
 | **WildFly 36** | Downloaded automatically by the demo IT module, or install manually |
 | **PicketLink build** | Federation core + WildFly Elytron bindings (`picketlink-bindings`) |
-| **Loopback aliases** | As above |
+| **Loopback IPs** | As above |
 
 Demo credentials (reference only):
 
@@ -520,8 +520,8 @@ The demo WARs use Maven resource filtering for host and base URL tokens:
 
 | Token | Default | Example filtered value |
 |-------|---------|-------------------------|
-| `@demo.sp.host@` | `127.0.0.101` | Loopback alias for SP |
-| `@demo.idp.host@` | `127.0.0.102` | Loopback alias for IDP |
+| `@demo.sp.host@` | `127.0.0.101` | Loopback IP for SP |
+| `@demo.idp.host@` | `127.0.0.102` | Loopback IP for IDP |
 | `@demo.sp.base.url@` | `http://127.0.0.101:8080/demo-sp/` | SP public base URL |
 | `@demo.idp.base.url@` | `http://127.0.0.102:8080/demo-idp/` | IDP public base URL |
 
@@ -566,7 +566,7 @@ Override defaults when running the IT or scripting your own launch:
 -Ddemo.keep.alive.minutes=45
 ```
 
-For production, replace loopback aliases with real DNS names, enable HTTPS on both endpoints, and use CA-issued certificates in metadata and keystores.
+For production, replace loopback IPs with real DNS names, enable HTTPS on both endpoints, and use CA-issued certificates in metadata and keystores.
 
 ---
 
@@ -576,7 +576,7 @@ For production, replace loopback aliases with real DNS names, enable HTTPS on bo
 |---------|----------------|
 | Redirect loop or instant 403 | `ServiceURL` / `IdentityURL` mismatch; check trailing slashes and context root |
 | `Audience` or signature validation error | SP and IDP metadata out of sync; wrong `ValidatingAlias` or keystore alias |
-| Cookie/session confusion | Both servers on same host name; confirm loopback aliases and bind addresses |
+| Cookie/session confusion | Both servers on same host name; confirm loopback IPs and bind addresses |
 | SAML mechanism not offered | Elytron not configured; `org.picketlink` module missing; wrong `security-domain` in `jboss-web.xml` |
 | 404 on `/metadata` | Metadata servlet not mapped or `picketlink.xml` / `metadata-config.xml` missing |
 

@@ -1,0 +1,7 @@
+                        <properties-realm name="PicketLinkTestRealm">
+                            <users-properties path="picketlink-users.properties"
+                                              relative-to="jboss.server.config.dir"
+                                              plain-text="true"/>
+                            <groups-properties path="picketlink-roles.properties"
+                                               relative-to="jboss.server.config.dir"/>
+                        </properties-realm>

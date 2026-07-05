@@ -1,0 +1,3 @@
+                        <custom-realm name="PicketLinkSamlRealm"
+                                      module="org.picketlink"
+                                      class-name="org.picketlink.identity.federation.bindings.wildfly.elytron.PicketLinkSamlSecurityRealm"/>

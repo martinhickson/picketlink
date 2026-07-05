@@ -132,6 +132,18 @@
 
       <dependency>
         <groupId>org.picketlink</groupId>
+        <artifactId>picketlink-oidc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.picketlink</groupId>
+        <artifactId>picketlink-auth</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.picketlink</groupId>
         <artifactId>picketlink-federation</artifactId>
         <version>${project.version}</version>
         <exclusions>
@@ -524,6 +536,8 @@
         <module>modules/base</module>
 
         <module>modules/federation</module>
+        <module>modules/oidc</module>
+        <module>modules/auth</module>
 
         <!-- module>bom</module -->
       </modules>
@@ -536,6 +550,33 @@
         <module>modules/idm</module>
         <module>modules/base</module>
         <module>modules/federation</module>
+        <module>modules/oidc</module>
+        <module>modules/auth</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>auth-ui-it</id>
+      <modules>
+        <module>modules/auth</module>
+        <module>modules/auth/angular-auth-ui/angular-auth-ui-it</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>idm-admin-ui-it</id>
+      <modules>
+        <module>modules/auth</module>
+        <module>modules/idm/api</module>
+        <module>modules/idm/admin</module>
+        <module>modules/idm/admin/idm-admin-ui-it</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>oidc-admin-ui-it</id>
+      <modules>
+        <module>modules/auth</module>
+        <module>modules/common</module>
+        <module>modules/oidc</module>
+        <module>modules/oidc/oidc-admin-ui-it</module>
       </modules>
     </profile>
     <profile>

@@ -1,0 +1,2 @@
+                        <service-loader-http-server-mechanism-factory name="picketlink-saml-mechanism-factory"
+                                                                      module="org.picketlink"/>

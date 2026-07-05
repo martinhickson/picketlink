@@ -41,7 +41,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPHeader;
 import jakarta.xml.soap.SOAPMessage;

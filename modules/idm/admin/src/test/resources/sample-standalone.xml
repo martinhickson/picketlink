@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server xmlns="urn:jboss:domain:community:20.0">
+    <profile>
+        <subsystem xmlns="urn:wildfly:elytron:community:17.0">
+            <security-domains>
+                <security-domain name="ApplicationDomain" default-realm="ApplicationRealm">
+                    <realm name="ApplicationRealm"/>
+                </security-domain>
+            </security-domains>
+            <security-realms>
+                <properties-realm name="ApplicationRealm">
+                    <users-properties path="application-users.properties" relative-to="jboss.server.config.dir"/>
+                </properties-realm>
+            </security-realms>
+            <mappers>
+                <constant-role-mapper name="groups-to-roles">
+                    <role name="group"/>
+                </constant-role-mapper>
+            </mappers>
+            <http>
+                <provider-http-server-mechanism-factory name="global"/>
+            </http>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:undertow:community:14.0">
+            <application-security-domains>
+                <application-security-domain name="other" security-domain="ApplicationDomain"/>
+            </application-security-domains>
+        </subsystem>
+    </profile>
+</server>

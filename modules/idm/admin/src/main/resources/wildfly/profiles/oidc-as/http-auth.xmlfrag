@@ -1,0 +1,9 @@
+                        <http-authentication-factory name="PicketLinkOidcAsHttpAuth"
+                                                     security-domain="PicketLinkOidcAsElytronDomain"
+                                                     http-server-mechanism-factory="global">
+                            <mechanism-configuration>
+                                <mechanism mechanism-name="FORM">
+                                    <mechanism-realm realm-name="PicketLinkOidcIdmRealm"/>
+                                </mechanism>
+                            </mechanism-configuration>
+                        </http-authentication-factory>
