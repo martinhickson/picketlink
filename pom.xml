@@ -4,7 +4,7 @@
 
   <groupId>org.picketlink</groupId>
   <artifactId>picketlink-parent</artifactId>
-  <version>2.5.5.jdk17.1</version>
+  <version>3.0.5</version>
   <packaging>pom</packaging>
 
   <name>PicketLink Parent</name>
@@ -37,13 +37,14 @@
     <connection>scm:git:git://github.com/picketlink/picketlink.git</connection>
     <developerConnection>scm:git:git@github.com:picketlink/picketlink.git</developerConnection>
     <url>http://github.com/picketlink/picketlink</url>
+    <tag>3.0.5</tag>
   </scm>
 
   <distributionManagement>
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/GITHUB_REPO_OWNER/GITHUB_REPO_NAME</url>
+      <url>https://maven.pkg.github.com/martinhickson/picketlink</url>
     </repository>
   </distributionManagement>
 
@@ -331,7 +332,7 @@
     <repository>
       <id>github</id>
       <name>GitHub Packages</name>
-      <url>https://maven.pkg.github.com/GITHUB_REPO_OWNER/GITHUB_REPO_NAME</url>
+      <url>https://maven.pkg.github.com/martinhickson/picketlink</url>
       <releases>
         <enabled>true</enabled>
       </releases>
