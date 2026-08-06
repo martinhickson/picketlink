@@ -24,11 +24,10 @@ import org.picketlink.config.federation.KeyValueType;
 import org.picketlink.config.federation.PicketLinkType;
 import org.picketlink.config.federation.ProviderType;
 import org.picketlink.config.federation.handler.Handler;
-import org.picketlink.common.PicketLinkLogger;
-import org.picketlink.common.PicketLinkLoggerFactory;
 import org.picketlink.common.exceptions.ParsingException;
 import org.picketlink.common.constants.JBossSAMLConstants;
 import org.picketlink.common.constants.JBossSAMLURIConstants;
+import org.picketlink.common.util.StringUtil;
 import org.picketlink.identity.federation.core.interfaces.IMetadataProvider;
 import org.picketlink.identity.federation.saml.v2.metadata.AttributeConsumingServiceType;
 import org.picketlink.identity.federation.saml.v2.metadata.EndpointType;
@@ -55,7 +54,6 @@ import java.util.Map;
 public class SPMetadataProvider extends AbstractMetadataProvider implements
         IMetadataProvider<EntityDescriptorType> {
 
-    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
     private static final String ENTITY_ID_KEY="EntityId";
     private static final String PROTOCOL = "urn:oasis:names:tc:SAML:2.0:protocol";
     private static final String ATTRIBUTE_KEYS = "ATTRIBUTE_KEYS";
@@ -72,9 +70,6 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
     @Override
     public void init(Map<String, String> options) {
         super.init(options);
-        entityId = options.get(ENTITY_ID_KEY);
-        if (entityId == null)
-            throw logger.optionNotSet("EntityId");
         ProviderType providerType = MetadataProviderUtils.getProviderType(picketLinkType);
         String bindingURI = MetadataProviderUtils.getBindingURI(providerType);
         if (bindingURI == null) throw new RuntimeException("bindingURI cannot be null");
@@ -83,6 +78,16 @@ public class SPMetadataProvider extends AbstractMetadataProvider implements
         sloResponseLocation = MetadataProviderUtils.getSingleLogoutServiceResponseLocation(providerType);
         bindingUri = bindingURI;
         serviceUrl = MetadataProviderUtils.getServiceURL(providerType);
+        if (serviceUrl == null) {
+            throw new RuntimeException("ServiceURL cannot be null");
+        }
+
+        entityId = options.get(ENTITY_ID_KEY);
+        if (StringUtil.isNullOrEmpty(entityId)) {
+            // Default entityID to ServiceURL so metadata matches the SP ACS / Issuer URL.
+            entityId = serviceUrl;
+        }
+
         serviceName = options.get(SERVICE_NAME);
         nameIdFormat = getNameIdFormat();
 

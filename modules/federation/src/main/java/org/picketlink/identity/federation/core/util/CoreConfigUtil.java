@@ -30,12 +30,15 @@ import org.picketlink.config.federation.IDPType;
 import org.picketlink.config.federation.KeyProviderType;
 import org.picketlink.config.federation.KeyValueType;
 import org.picketlink.config.federation.MetadataProviderType;
+import org.picketlink.config.federation.PicketLinkType;
 import org.picketlink.config.federation.ProviderType;
 import org.picketlink.config.federation.SPType;
 import org.picketlink.config.federation.TokenProviderType;
 import org.picketlink.identity.federation.core.constants.PicketLinkFederationConstants;
 import org.picketlink.identity.federation.core.interfaces.IMetadataProvider;
 import org.picketlink.identity.federation.core.interfaces.TrustKeyManager;
+import org.picketlink.identity.federation.core.saml.md.providers.IDPMetadataProvider;
+import org.picketlink.identity.federation.core.saml.md.providers.SPMetadataProvider;
 import org.picketlink.identity.federation.saml.v2.metadata.EndpointType;
 import org.picketlink.identity.federation.saml.v2.metadata.EntitiesDescriptorType;
 import org.picketlink.identity.federation.saml.v2.metadata.EntityDescriptorType;
@@ -604,6 +607,19 @@ public class CoreConfigUtil {
             for (KeyValueType kvt : keyValues)
                 options.put(kvt.getKey(), kvt.getValue());
         }
+
+        // Generative providers need the IdP/SP config (IdentityURL / ServiceURL) before init.
+        // Match MetadataServlet / MetadataPublishingLoader wiring.
+        if (isIdpMetadataProvider(metadataProvider)) {
+            PicketLinkType picketLinkType = new PicketLinkType();
+            picketLinkType.setIdpOrSP(providerType);
+            ((IDPMetadataProvider) metadataProvider).setPicketLinkConf(picketLinkType);
+        } else if (isSpMetadataProvider(metadataProvider)) {
+            PicketLinkType picketLinkType = new PicketLinkType();
+            picketLinkType.setIdpOrSP(providerType);
+            ((SPMetadataProvider) metadataProvider).setPicketLinkConf(picketLinkType);
+        }
+
         metadataProvider.init(options);
 
         String fileInjectionStr = metadataProvider.requireFileInjection();
@@ -634,5 +650,15 @@ public class CoreConfigUtil {
                 throw new IllegalArgumentException("Wrong type: " + o.getClass());
             }
         }
+    }
+
+    private static boolean isIdpMetadataProvider(IMetadataProvider<?> provider) {
+        return provider instanceof IDPMetadataProvider
+                || IDPMetadataProvider.class.getName().equals(provider.getClass().getName());
+    }
+
+    private static boolean isSpMetadataProvider(IMetadataProvider<?> provider) {
+        return provider instanceof SPMetadataProvider
+                || SPMetadataProvider.class.getName().equals(provider.getClass().getName());
     }
 }

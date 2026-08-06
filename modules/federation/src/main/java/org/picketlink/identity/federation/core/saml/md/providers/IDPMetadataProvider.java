@@ -19,8 +19,7 @@ package org.picketlink.identity.federation.core.saml.md.providers;
 
 import org.picketlink.config.federation.PicketLinkType;
 import org.picketlink.config.federation.ProviderType;
-import org.picketlink.common.PicketLinkLogger;
-import org.picketlink.common.PicketLinkLoggerFactory;
+import org.picketlink.common.util.StringUtil;
 import org.picketlink.identity.federation.core.interfaces.IMetadataProvider;
 import org.picketlink.identity.federation.saml.v2.metadata.EndpointType;
 import org.picketlink.identity.federation.saml.v2.metadata.EntityDescriptorType;
@@ -34,10 +33,13 @@ import java.util.Map;
 
 /**
  * Metadata provider that generates IDP metadata from {@code picketlink.xml} configuration.
+ * <p>
+ * When {@code EntityId} is omitted, it defaults to {@code IdentityURL}. PicketLink IdP runtime
+ * assertions use {@code IdentityURL} as Issuer, so published metadata must match unless an
+ * explicit {@code EntityId} override is supplied.
  */
 public class IDPMetadataProvider extends AbstractMetadataProvider implements IMetadataProvider<EntityDescriptorType> {
 
-    private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
     private static final String ENTITY_ID_KEY = "EntityId";
     private static final String BINDING_TYPE_KEY = "BindingType";
     private static final String WANT_AUTHN_REQUESTS_SIGNED_KEY = "WantAuthnRequestsSigned";
@@ -53,10 +55,6 @@ public class IDPMetadataProvider extends AbstractMetadataProvider implements IMe
     @Override
     public void init(Map<String, String> options) {
         super.init(options);
-        entityId = options.get(ENTITY_ID_KEY);
-        if (entityId == null) {
-            throw logger.optionNotSet("EntityId");
-        }
 
         ProviderType providerType = MetadataProviderUtils.getProviderType(picketLinkType);
         if (providerType == null) {
@@ -66,6 +64,12 @@ public class IDPMetadataProvider extends AbstractMetadataProvider implements IMe
         identityUrl = MetadataProviderUtils.getIdentityURL(providerType);
         if (identityUrl == null) {
             throw new RuntimeException("IdentityURL cannot be null");
+        }
+
+        entityId = options.get(ENTITY_ID_KEY);
+        if (StringUtil.isNullOrEmpty(entityId)) {
+            // PicketLink IdP Issuer is IdentityURL; keep published entityID aligned by default.
+            entityId = identityUrl;
         }
 
         String bindingType = options.get(BINDING_TYPE_KEY);
