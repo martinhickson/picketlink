@@ -1,13 +1,21 @@
 package org.picketlink.oidc.provider;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 import org.picketlink.auth.oauth.client.store.ClientRegistrationStore;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 
@@ -88,8 +96,60 @@ public class LogoutEndpointServlet extends HttpServlet {
             redirect += (redirect.contains("?") ? "&" : "?") + "state="
                     + java.net.URLEncoder.encode(state, StandardCharsets.UTF_8);
         }
+        notifyBackChannelLogout(clientId, tokenClientId, idTokenHint);
         response.setHeader("Location", redirect);
         response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /**
+     * OIDC Back-Channel Logout 1.0: when the client being logged out has a registered
+     * callback URL, POST a signed logout_token (events claim per the spec, no nonce) to it.
+     * Best-effort: callback failures never block the front-channel logout.
+     */
+    private void notifyBackChannelLogout(String clientId, String tokenClientId, String idTokenHint) {
+        if (clientId == null || tokenClientId == null || !clientId.equals(tokenClientId)) {
+            return;
+        }
+        ClientRegistrationStore store = server.getIssuanceServer().getClientStore();
+        Optional<RegisteredClient> registered = store.findByClientId(clientId);
+        if (!registered.isPresent() || registered.get().getBackchannelLogoutUrl() == null) {
+            return;
+        }
+        String subject = null;
+        try {
+            subject = String.valueOf(server.getIssuanceServer().getIssuanceManager()
+                    .validate(idTokenHint).getSubject());
+        } catch (RuntimeException ex) {
+            return; // no usable hint, no logout token
+        }
+        try {
+            String logoutToken = server.getIssuanceServer().getSigningService()
+                    .sign(logoutTokenClaims(clientId, subject), null);
+            HttpRequest request = HttpRequest.newBuilder(URI.create(registered.get().getBackchannelLogoutUrl()))
+                    .timeout(java.time.Duration.ofSeconds(5))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            "logout_token=" + java.net.URLEncoder.encode(logoutToken, StandardCharsets.UTF_8)))
+                    .build();
+            HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (Exception ex) {
+            // best-effort: front-channel logout proceeds regardless of callback outcome
+        }
+    }
+
+    private JwtClaims logoutTokenClaims(String clientId, String subject) {
+        long now = Clock.systemUTC().instant().getEpochSecond();
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(server.getIssuer());
+        claims.setSubject(subject);
+        claims.setAudience(clientId);
+        claims.setIssuedAt(now);
+        claims.setExpiryTime(now + 120);
+        claims.setTokenId(java.util.UUID.randomUUID().toString());
+        Map<String, Object> events = new LinkedHashMap<>();
+        events.put("http://schemas.openid.net/event/backchannel-logout", new LinkedHashMap<>());
+        claims.setClaim("events", events);
+        return claims;
     }
 
     private String resolveRedirect(String clientId, String postLogoutRedirectUri, String tokenClientId) {

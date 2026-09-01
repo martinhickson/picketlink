@@ -128,7 +128,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             throw oauthError(OAuthConstants.INVALID_GRANT, "code was not issued to this client");
         }
         return issueTokens(client, consumed.getSubject(), parseScopes(consumed.getScopes()),
-                consumed.getNonce());
+                consumed.getNonce(), consumed.getAuthTime());
     }
 
     private String refreshToken(TokenRequest request, Map<String, String> form) {
@@ -163,8 +163,14 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     private String issueTokens(RegisteredClient client, String subject, Set<String> scopes,
-            String nonce) {
+            String nonce, long authTime) {
         IssuedToken access = issueAccess(client, subject, scopes);
+        // interop claims most client libraries verify: auth_time and at_hash (RFC 9126 /
+        // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family)
+        java.util.Map<String, String> idTokenClaims = new java.util.LinkedHashMap<>(
+                server.getClaimSource().claimsFor(subject));
+        idTokenClaims.put("auth_time", String.valueOf(authTime));
+        idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
         // ID token: same signing chokepoint, subject + nonce, audience is the client
         IssuedToken idToken = server.getIssuanceServer().getIssuanceManager()
                 .issue(IssuanceRequest.forClient(client)
@@ -172,7 +178,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                         .scopes(new LinkedHashSet<>())
                         .subject(subject)
                         .nonce(nonce)
-                        .extraClaims(server.getClaimSource().claimsFor(subject))
+                        .extraClaims(idTokenClaims)
                         .requestedLifetimeSeconds(3600L)
                         .build());
         StringBuilder json = new StringBuilder("{");
@@ -189,6 +195,19 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
         json.append('}');
         return json.toString();
+    }
+
+    /** Base64url of the leftmost 128 bits of SHA-256 over the access token. */
+    private static String atHash(String accessToken) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(accessToken.getBytes(StandardCharsets.UTF_8));
+            byte[] leftHalf = new byte[16];
+            System.arraycopy(digest, 0, leftHalf, 0, 16);
+            return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(leftHalf);
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 unavailable", ex);
+        }
     }
 
     private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes) {

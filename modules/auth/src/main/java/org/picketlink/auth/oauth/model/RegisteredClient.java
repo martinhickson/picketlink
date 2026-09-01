@@ -14,6 +14,7 @@ public final class RegisteredClient {
     private final Set<String> allowedAudiences;
     private final Set<String> allowedRedirectUris;
     private final String jwks;
+    private final String backchannelLogoutUrl;
     private final long maxTokenLifetimeSeconds;
 
     private RegisteredClient(Builder builder) {
@@ -24,6 +25,7 @@ public final class RegisteredClient {
         this.allowedAudiences = Collections.unmodifiableSet(new LinkedHashSet<>(builder.allowedAudiences));
         this.allowedRedirectUris = Collections.unmodifiableSet(new LinkedHashSet<>(builder.allowedRedirectUris));
         this.jwks = builder.jwks;
+        this.backchannelLogoutUrl = builder.backchannelLogoutUrl;
         this.maxTokenLifetimeSeconds = builder.maxTokenLifetimeSeconds;
     }
 
@@ -62,6 +64,11 @@ public final class RegisteredClient {
         return jwks;
     }
 
+    /** OIDC Back-Channel Logout 1.0 callback URL; null when the client does not support it. */
+    public String getBackchannelLogoutUrl() {
+        return backchannelLogoutUrl;
+    }
+
     /** Per-client token lifetime cap; zero means "use the server default/maximum". */
     public long getMaxTokenLifetimeSeconds() {
         return maxTokenLifetimeSeconds;
@@ -79,6 +86,7 @@ public final class RegisteredClient {
         private final Set<String> allowedAudiences = new LinkedHashSet<>();
         private final Set<String> allowedRedirectUris = new LinkedHashSet<>();
         private String jwks;
+        private String backchannelLogoutUrl;
         private long maxTokenLifetimeSeconds;
 
         private Builder(String clientId, String clientSecret) {
@@ -123,6 +131,11 @@ public final class RegisteredClient {
 
         public Builder jwks(String jwks) {
             this.jwks = jwks;
+            return this;
+        }
+
+        public Builder backchannelLogoutUrl(String url) {
+            this.backchannelLogoutUrl = url;
             return this;
         }
 

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.picketlink.auth.oauth.client.store.ClientRegistrationStore;
+import org.picketlink.auth.oauth.issuance.ClientAssertionValidator;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 
 /**
@@ -24,6 +25,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private transient OidcProviderServer server;
+    private transient ClientAssertionValidator requestObjectValidator;
 
     public AuthorizationEndpointServlet() {
     }
@@ -124,13 +126,68 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             error(response, 400, "PKCE code_challenge_method must be S256");
             return null;
         }
-        // request objects are not supported; reject explicitly per OIDC Core 6.3 rather than
-        // silently ignoring a parameter the relying party expects to be honored
-        if (request.getParameter("request") != null || request.getParameter("request_uri") != null) {
-            error(response, 400, "request_not_supported");
+        // request objects: signed JWT authorization requests (OIDC Core 6.1/6.3). The JWT's
+        // parameters take precedence over the query parameters. Unsigned request objects are
+        // rejected (they carry no integrity); request_uri is not fetched (SSRF-safe).
+        String requestObject = request.getParameter("request");
+        if (request.getParameter("request_uri") != null) {
+            error(response, 400, "request_uri not supported");
             return null;
         }
-        return new RequestParams(clientId, redirectUri, scope, state, nonce, codeChallenge);
+        RequestParams params =
+                new RequestParams(clientId, redirectUri, scope, state, nonce, codeChallenge);
+        if (requestObject != null) {
+            params = applyRequestObject(requestObject, params, registered.get(), response);
+        }
+        return params;
+    }
+
+    /**
+     * Verifies a signed request object against the client's registered JWKS (issuer/subject
+     * must be the client, audience this issuer — same guarantees as RFC 7523 assertions) and
+     * overlays its authorization parameters on the query parameters.
+     */
+    private RequestParams applyRequestObject(String requestObject, RequestParams query,
+            RegisteredClient client, HttpServletResponse response) throws IOException {
+        if (requestObjectValidator == null) {
+            requestObjectValidator = new ClientAssertionValidator(server.getIssuer(),
+                    java.time.Clock.systemUTC());
+        }
+        org.apache.cxf.rs.security.jose.jwt.JwtClaims claims;
+        try {
+            claims = requestObjectValidator.validate(requestObject, client);
+        } catch (org.picketlink.auth.oauth.OAuthException ex) {
+            error(response, 400, "invalid request object: " + ex.getError().getErrorDescription());
+            return null;
+        }
+        String responseType = stringClaim(claims, "response_type");
+        String redirectUri = stringClaim(claims, "redirect_uri");
+        String scope = stringClaim(claims, "scope");
+        String state = stringClaim(claims, "state");
+        String nonce = stringClaim(claims, "nonce");
+        String codeChallenge = stringClaim(claims, "code_challenge");
+        if (responseType != null && !"code".equals(responseType)) {
+            error(response, 400, "unsupported_response_type");
+            return null;
+        }
+        if (redirectUri != null && !client.getAllowedRedirectUris().contains(redirectUri)) {
+            error(response, 400, "invalid redirect_uri");
+            return null;
+        }
+        // overlay: request-object values take precedence per OIDC Core 6.1
+        return new RequestParams(
+                query.clientId,
+                redirectUri != null ? redirectUri : query.redirectUri,
+                scope != null ? scope : query.scope,
+                state != null ? state : query.state,
+                nonce != null ? nonce : query.nonce,
+                codeChallenge != null ? codeChallenge : query.codeChallenge);
+    }
+
+    private static String stringClaim(org.apache.cxf.rs.security.jose.jwt.JwtClaims claims,
+            String name) {
+        Object value = claims.getClaim(name);
+        return value == null ? null : String.valueOf(value);
     }
 
     private ClientRegistrationStore store() {

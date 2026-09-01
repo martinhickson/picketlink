@@ -106,7 +106,12 @@ For the admin API and admin UI, additionally mount
 ## Security properties (verified by tests)
 
 - Authorization codes: single-use, 60s, client+redirect bound, PKCE S256 mandatory
+- ID tokens: `at_hash` (OIDC Core 3.1.3.6) and `auth_time` claims, `nonce` echoed,
+  OIDC profile claims from IDM (email, name, ...)
+- Request objects: signed `request` JWTs verified against the client's registered JWKS
+  (iss/sub = client, aud = issuer; parameters take precedence per OIDC Core 6.1);
+  unsigned request objects and `request_uri` are rejected (SSRF-safe)
 - Refresh tokens: rotation on use, family revocation on replay, JDBC-persistent (hashed)
-- Logout: registered post-logout URIs only; no open redirect
-- `request`/`request_uri`: explicitly rejected (`request_not_supported`)
+- Logout: registered post-logout URIs only; no open redirect; Back-Channel Logout 1.0
+  for clients with a registered `backchannelLogoutUrl` (signed logout_token POST)
 - All tokens issued through the policy/audit/revocation chokepoint

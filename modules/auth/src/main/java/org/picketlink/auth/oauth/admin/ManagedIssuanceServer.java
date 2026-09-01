@@ -162,6 +162,10 @@ public final class ManagedIssuanceServer {
         return issuanceManager;
     }
 
+    public org.picketlink.auth.oauth.issuance.JwtSigningService getSigningService() {
+        return issuanceManager.getSigningService();
+    }
+
     public JwtClientCredentialsTokenService getTokenService() {
         return tokenService;
     }

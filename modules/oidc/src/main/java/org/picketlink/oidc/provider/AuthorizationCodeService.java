@@ -86,9 +86,16 @@ public final class AuthorizationCodeService {
         final String nonce;
         final String codeChallenge;
         final long expiresAt;
+        final long authTime;
 
         PendingCode(String clientId, String redirectUri, String subject, String scopes,
                 String nonce, String codeChallenge, long expiresAt) {
+            this(clientId, redirectUri, subject, scopes, nonce, codeChallenge, expiresAt,
+                    java.time.Instant.now().getEpochSecond());
+        }
+
+        PendingCode(String clientId, String redirectUri, String subject, String scopes,
+                String nonce, String codeChallenge, long expiresAt, long authTime) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.subject = subject;
@@ -96,6 +103,7 @@ public final class AuthorizationCodeService {
             this.nonce = nonce;
             this.codeChallenge = codeChallenge;
             this.expiresAt = expiresAt;
+            this.authTime = authTime;
         }
 
         public String getClientId() {
@@ -116,6 +124,11 @@ public final class AuthorizationCodeService {
 
         public String getNonce() {
             return nonce;
+        }
+
+        /** End-user authentication time (epoch seconds) for the ID token's auth_time. */
+        public long getAuthTime() {
+            return authTime;
         }
     }
 }
