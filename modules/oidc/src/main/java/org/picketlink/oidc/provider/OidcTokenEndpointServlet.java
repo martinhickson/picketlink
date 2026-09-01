@@ -39,6 +39,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
 
     private transient OidcProviderServer server;
     private transient ClientCredentialsAuthenticator authenticator;
+    private transient DpopProofValidator dpopValidator;
 
     public OidcTokenEndpointServlet() {
     }
@@ -74,6 +75,9 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String body = new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         Map<String, String> form = FormParameters.parse(body);
+        if (request.getHeader("DPoP") != null) {
+            form.put("DPoP", request.getHeader("DPoP"));
+        }
         TokenRequest tokenRequest = TokenRequest.builder()
                 .grantType(form.get(OAuthConstants.GRANT_TYPE))
                 .scope(form.get(OAuthConstants.SCOPE))
@@ -128,7 +132,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             throw oauthError(OAuthConstants.INVALID_GRANT, "code was not issued to this client");
         }
         return issueTokens(client, consumed.getSubject(), parseScopes(consumed.getScopes()),
-                consumed.getNonce(), consumed.getAuthTime());
+                consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request));
     }
 
     private String refreshToken(TokenRequest request, Map<String, String> form) {
@@ -154,20 +158,15 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         ClientAuthentication authentication = authenticator.authenticate(request);
         RegisteredClient client = authentication.getClient();
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(client, request.getScope());
-        IssuedToken issued = server.getIssuanceServer().getIssuanceManager()
-                .issue(IssuanceRequest.forClient(client)
-                        .grantType(OAuthConstants.CLIENT_CREDENTIALS_GRANT)
-                        .scopes(scopes)
-                        .build());
+        IssuedToken issued = issueAccess(client, client.getClientId(), scopes, dpopJkt(request));
         return tokenResponse(issued, null, scopes);
     }
 
     private String issueTokens(RegisteredClient client, String subject, Set<String> scopes,
-            String nonce, long authTime) {
-        IssuedToken access = issueAccess(client, subject, scopes);
-        // interop claims most client libraries verify: auth_time and at_hash (RFC 9126 /
+            String nonce, long authTime, String dpopJkt) {
+        IssuedToken access = issueAccess(client, subject, scopes, dpopJkt);
         // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family)
-        java.util.Map<String, String> idTokenClaims = new java.util.LinkedHashMap<>(
+        java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
                 server.getClaimSource().claimsFor(subject));
         idTokenClaims.put("auth_time", String.valueOf(authTime));
         idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
@@ -211,12 +210,58 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes) {
+        return issueAccess(client, subject, scopes, null);
+    }
+
+    private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes,
+            String dpopJkt) {
+        java.util.Map<String, Object> extra = null;
+        if (dpopJkt != null) {
+            // RFC 9449: proof-of-possession binding — the token is only usable with the
+            // client's key whose thumbprint matches
+            java.util.Map<String, Object> cnf = new java.util.LinkedHashMap<>();
+            cnf.put("jkt", dpopJkt);
+            extra = new java.util.LinkedHashMap<>();
+            extra.put("cnf", cnf);
+        }
         return server.getIssuanceServer().getIssuanceManager()
                 .issue(IssuanceRequest.forClient(client)
                         .grantType("authorization_code")
                         .scopes(scopes)
                         .subject(subject)
+                        .extraClaims(extra)
                         .build());
+    }
+
+    /**
+     * DPoP (RFC 9449): when the request carries a DPoP proof header, validate it against
+     * this request (method + URI) and return the thumbprint to bind into the access token.
+     */
+    private String dpopJkt(TokenRequest request) {
+        String proof = dpopHeader(request);
+        if (proof == null) {
+            return null;
+        }
+        if (dpopValidator == null) {
+            dpopValidator = new DpopProofValidator(java.time.Clock.systemUTC());
+        }
+        try {
+            return dpopValidator.validate(proof, "POST", tokenEndpointUri(request));
+        } catch (DpopProofValidator.DpopValidationException ex) {
+            throw oauthError(OAuthConstants.INVALID_CLIENT, "invalid DPoP proof: " + ex.getMessage());
+        }
+    }
+
+    private String tokenEndpointUri(TokenRequest request) {
+        // the htu the proof binds to; deployments behind a proxy can force it via property
+        String configured = System.getProperty("picketlink.oidc.token.endpoint.uri");
+        return configured != null ? configured : server.getIssuer() + "/token";
+    }
+
+    private static String dpopHeader(TokenRequest request) {
+        // DPoP arrives as an HTTP header; TokenRequest carries form params, so the endpoint
+        // servlet forwards it through the form-parameters map under a reserved key
+        return request.getFormParameter("DPoP");
     }
 
     private String tokenResponse(IssuedToken issued, String refreshToken, Set<String> scopes) {

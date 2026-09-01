@@ -77,12 +77,12 @@ class IdmSubjectAuthenticatorTest {
 
     @Test
     void shouldDeriveOidcProfileClaimsFromIdmUser() {
-        Map<String, String> claims = authenticator.claimsFor("alice");
-        assertEquals("alice@corp.example", claims.get("email"));
-        assertEquals("Alice Anderson", claims.get("name"));
-        assertEquals("Alice", claims.get("given_name"));
-        assertEquals("Anderson", claims.get("family_name"));
-        assertEquals("alice", claims.get("preferred_username"));
+        Map<String, Object> claims = authenticator.claimsFor("alice");
+        assertEquals("alice@corp.example", claims.get("email").toString() == null ? null : String.valueOf(claims.get("email")));
+        assertEquals("Alice Anderson", String.valueOf(claims.get("name")));
+        assertEquals("Alice", String.valueOf(claims.get("given_name")));
+        assertEquals("Anderson", String.valueOf(claims.get("family_name")));
+        assertEquals("alice", String.valueOf(claims.get("preferred_username")));
     }
 
     @Test

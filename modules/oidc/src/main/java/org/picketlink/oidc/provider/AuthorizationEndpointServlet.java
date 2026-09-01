@@ -126,6 +126,17 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             error(response, 400, "PKCE code_challenge_method must be S256");
             return null;
         }
+        // prompt=none demands silent SSO, which a session-less provider cannot grant —
+        // respond per OIDC Core 3.1.2.1 with the login_required error code
+        String prompt = request.getParameter("prompt");
+        if (prompt != null && prompt.contains("none")) {
+            response.setHeader("Location", redirectUri
+                    + (redirectUri.contains("?") ? "&" : "?")
+                    + "error=login_required"
+                    + (state == null ? "" : "&state=" + urlEncode(state)));
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            return null;
+        }
         // request objects: signed JWT authorization requests (OIDC Core 6.1/6.3). The JWT's
         // parameters take precedence over the query parameters. Unsigned request objects are
         // rejected (they carry no integrity); request_uri is not fetched (SSRF-safe).

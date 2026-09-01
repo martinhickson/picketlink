@@ -95,7 +95,7 @@ public final class JwtIssuanceManager {
         if (request.getNonce() != null) {
             claims.setClaim("nonce", request.getNonce());
         }
-        for (java.util.Map.Entry<String, String> extra : request.getExtraClaims().entrySet()) {
+        for (java.util.Map.Entry<String, Object> extra : request.getExtraClaims().entrySet()) {
             claims.setClaim(extra.getKey(), extra.getValue());
         }
         if (!request.getAudiences().isEmpty()) {

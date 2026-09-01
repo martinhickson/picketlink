@@ -82,7 +82,7 @@ public final class OidcProviderServer {
     /** Claim source used when none is configured and the authenticator is not one. */
     public static final ClaimSource NO_CLAIMS = new ClaimSource() {
         @Override
-        public java.util.Map<String, String> claimsFor(String subject) {
+        public java.util.Map<String, Object> claimsFor(String subject) {
             return java.util.Collections.emptyMap();
         }
     };

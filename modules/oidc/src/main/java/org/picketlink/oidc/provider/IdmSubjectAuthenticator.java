@@ -40,9 +40,9 @@ public final class IdmSubjectAuthenticator implements SubjectAuthenticator, Clai
     }
 
     @Override
-    public Map<String, String> claimsFor(String subject) {
+    public Map<String, Object> claimsFor(String subject) {
         User user = BasicModel.getUser(identityManager, subject);
-        Map<String, String> claims = new LinkedHashMap<>();
+        Map<String, Object> claims = new LinkedHashMap<>();
         if (user == null) {
             return claims;
         }
@@ -58,7 +58,7 @@ public final class IdmSubjectAuthenticator implements SubjectAuthenticator, Clai
         return claims;
     }
 
-    private static void putIfSet(Map<String, String> claims, String name, String value) {
+    private static void putIfSet(Map<String, Object> claims, String name, String value) {
         if (value != null && !value.isBlank()) {
             claims.put(name, value);
         }

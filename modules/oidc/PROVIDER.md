@@ -114,4 +114,9 @@ For the admin API and admin UI, additionally mount
 - Refresh tokens: rotation on use, family revocation on replay, JDBC-persistent (hashed)
 - Logout: registered post-logout URIs only; no open redirect; Back-Channel Logout 1.0
   for clients with a registered `backchannelLogoutUrl` (signed logout_token POST)
+- DPoP (RFC 9449): requests carrying a DPoP proof bind the access token to the proof key's
+  RFC 7638 thumbprint (`cnf.jkt`); DPoP-bound tokens are rejected at protected endpoints
+  (e.g. UserInfo) without a fresh, matching proof — stolen bearer strings are useless
+- prompt=none answers `login_required` per OIDC Core 3.1.2.1 (session-less provider);
+  `ProviderCorsFilter` (allow-listed origins, DPoP header aware) enables SPA clients
 - All tokens issued through the policy/audit/revocation chokepoint

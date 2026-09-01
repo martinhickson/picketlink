@@ -17,7 +17,7 @@ public final class IssuanceRequest {
     private final Long requestedLifetimeSeconds;
     private final String subject;
     private final String nonce;
-    private final Map<String, String> extraClaims;
+    private final Map<String, Object> extraClaims;
 
     private IssuanceRequest(Builder builder) {
         this.client = builder.client;
@@ -61,8 +61,8 @@ public final class IssuanceRequest {
         return nonce;
     }
 
-    /** Additional claims (e.g. OIDC profile claims) merged into the token. */
-    public Map<String, String> getExtraClaims() {
+    /** Additional claims (e.g. OIDC profile claims, DPoP cnf) merged into the token. */
+    public Map<String, Object> getExtraClaims() {
         return extraClaims;
     }
 
@@ -78,7 +78,7 @@ public final class IssuanceRequest {
         private Long requestedLifetimeSeconds;
         private String subject;
         private String nonce;
-        private final Map<String, String> extraClaims = new LinkedHashMap<>();
+        private final Map<String, Object> extraClaims = new LinkedHashMap<>();
 
         private Builder(RegisteredClient client) {
             this.client = client;
@@ -118,7 +118,7 @@ public final class IssuanceRequest {
             return this;
         }
 
-        public Builder extraClaims(Map<String, String> claims) {
+        public Builder extraClaims(Map<String, ?> claims) {
             if (claims != null) {
                 extraClaims.putAll(claims);
             }

@@ -19,6 +19,7 @@ public class UserInfoServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private transient OidcProviderServer server;
+    private transient DpopProofValidator dpopValidator;
 
     public UserInfoServlet() {
     }
@@ -50,6 +51,7 @@ public class UserInfoServlet extends HttpServlet {
         try {
             JwtClaims claims = server.getIssuanceServer().getIssuanceManager()
                     .validate(authorization.substring(7).trim());
+            requireMatchingDpopProof(claims, request, response);
             StringBuilder json = new StringBuilder("{");
             field(json, "sub", claims.getSubject(), true);
             Object scope = claims.getClaim("scope");
@@ -60,9 +62,9 @@ public class UserInfoServlet extends HttpServlet {
             if (clientId != null) {
                 field(json, "client_id", clientId.toString(), false);
             }
-            for (java.util.Map.Entry<String, String> entry
+            for (java.util.Map.Entry<String, Object> entry
                     : server.getClaimSource().claimsFor(claims.getSubject()).entrySet()) {
-                field(json, entry.getKey(), entry.getValue(), false);
+                field(json, entry.getKey(), String.valueOf(entry.getValue()), false);
             }
             json.append('}');
             response.setStatus(HttpServletResponse.SC_OK);
@@ -72,6 +74,53 @@ public class UserInfoServlet extends HttpServlet {
         } catch (RuntimeException ex) {
             error(response, 401, ex.getMessage());
         }
+    }
+
+    /**
+     * RFC 9449 resource-server side: an access token with a cnf.jkt confirmation claim is
+     * DPoP-bound and only usable together with a fresh DPoP proof signed by the bound key.
+     */
+    private void requireMatchingDpopProof(JwtClaims claims, HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        Object cnf = claims.getClaim("cnf");
+        if (cnf == null) {
+            return;
+        }
+        String expectedJkt = cnf instanceof java.util.Map
+                ? String.valueOf(((java.util.Map<?, ?>) cnf).get("jkt"))
+                : null;
+        String proof = request.getHeader("DPoP");
+        if (expectedJkt == null || proof == null) {
+            error(response, 401, "DPoP-bound token requires a DPoP proof");
+            return;
+        }
+        if (dpopValidator == null) {
+            dpopValidator = new DpopProofValidator(java.time.Clock.systemUTC());
+        }
+        String actualJkt;
+        try {
+            actualJkt = dpopValidator.validate(proof, "GET", userinfoUri(request));
+        } catch (DpopProofValidator.DpopValidationException ex) {
+            error(response, 401, ex.getMessage());
+            return;
+        }
+        if (!expectedJkt.equals(actualJkt)) {
+            error(response, 401, "DPoP proof key does not match the token binding");
+        }
+    }
+
+    private String userinfoUri(HttpServletRequest request) {
+        String configured = System.getProperty("picketlink.oidc.userinfo.uri");
+        if (configured != null) {
+            return configured;
+        }
+        StringBuilder uri = new StringBuilder(request.getScheme()).append("://")
+                .append(request.getServerName());
+        if (request.getServerPort() > 0) {
+            uri.append(':').append(request.getServerPort());
+        }
+        uri.append(request.getRequestURI());
+        return uri.toString();
     }
 
     private static void field(StringBuilder json, String name, String value, boolean first) {

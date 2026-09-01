@@ -152,7 +152,7 @@ class OidcProviderInteropTest {
                 + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
                 + "&code_verifier=verifier-1");
         when(request.getInputStream()).thenReturn(body(body.toString()));
-        when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
                 .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
         java.io.StringWriter writer = new java.io.StringWriter();
         when(response.getWriter()).thenReturn(new java.io.PrintWriter(writer));

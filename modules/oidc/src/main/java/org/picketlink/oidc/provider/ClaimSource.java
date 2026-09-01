@@ -10,5 +10,5 @@ import java.util.Map;
 public interface ClaimSource {
 
     /** @return claim name → value for the subject; empty when nothing is known */
-    Map<String, String> claimsFor(String subject);
+    Map<String, Object> claimsFor(String subject);
 }

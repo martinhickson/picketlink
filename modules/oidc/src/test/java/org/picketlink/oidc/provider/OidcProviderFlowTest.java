@@ -108,7 +108,7 @@ class OidcProviderFlowTest {
             body.append(name).append('=').append(java.net.URLEncoder.encode(value, StandardCharsets.UTF_8));
         });
         when(request.getInputStream()).thenReturn(body(body.toString()));
-        when(request.getHeader("Authorization")).thenReturn("Basic " + java.util.Base64.getEncoder()
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + java.util.Base64.getEncoder()
                 .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
         StringWriter stringWriter = writer();
         token.doPost(request, response);
@@ -144,7 +144,7 @@ class OidcProviderFlowTest {
         assertTrue(payload.contains("alice"));
 
         // userinfo resolves the subject from the access token
-        when(request.getHeader("Authorization")).thenReturn("Bearer " + json.get("access_token"));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + json.get("access_token"));
         StringWriter userinfoWriter = writer();
         userinfo.doGet(request, response);
         assertTrue(userinfoWriter.toString().contains("\"sub\":\"alice\""));
@@ -162,7 +162,7 @@ class OidcProviderFlowTest {
                 + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
                 + "&code_verifier=wrong-verifier");
         when(request.getInputStream()).thenReturn(body(body.toString()));
-        when(request.getHeader("Authorization")).thenReturn("Basic " + java.util.Base64.getEncoder()
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + java.util.Base64.getEncoder()
                 .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
         writer();
         token.doPost(request, response);
