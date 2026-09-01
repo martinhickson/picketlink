@@ -44,7 +44,7 @@
     <dependency>
       <groupId>org.apache.santuario</groupId>
       <artifactId>xmlsec</artifactId>
-      <version>1.5.1</version>
+      <version>3.0.5</version>
       <exclusions>
         <exclusion>
           <groupId>javax.servlet</groupId>
@@ -178,6 +178,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
         <configuration>
           <printSummary>true</printSummary>
           <disableXmlReport>false</disableXmlReport>
@@ -185,7 +186,7 @@
           <includes>
             <include>**/**TestCase.java</include>
           </includes>
-          <forkMode>pertest</forkMode>
+          <forkCount>1</forkCount><reuseForks>false</reuseForks>
           <useFile>false</useFile>
           <trimStackTrace>false</trimStackTrace>
         </configuration>

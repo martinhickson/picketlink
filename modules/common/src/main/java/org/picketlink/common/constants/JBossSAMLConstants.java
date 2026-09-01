@@ -68,7 +68,7 @@ public enum JBossSAMLConstants {
 
     private String name;
 
-    private JBossSAMLConstants(String val) {
+    JBossSAMLConstants(String val) {
         this.name = val;
     }
 

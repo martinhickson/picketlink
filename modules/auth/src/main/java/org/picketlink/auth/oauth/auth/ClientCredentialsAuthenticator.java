@@ -7,6 +7,7 @@ import org.picketlink.auth.oauth.OAuthConstants;
 import org.picketlink.auth.oauth.OAuthException;
 import org.picketlink.auth.oauth.client.ClientRegistry;
 import org.picketlink.auth.oauth.client.ClientSecretMatcher;
+import org.picketlink.auth.oauth.issuance.ClientAssertionValidator;
 import org.picketlink.auth.oauth.model.OAuthErrorResponse;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 import org.picketlink.auth.oauth.model.TokenEndpointAuthMethod;
@@ -16,13 +17,27 @@ public class ClientCredentialsAuthenticator {
 
     private final ClientRegistry clientRegistry;
     private final ClientSecretMatcher secretMatcher;
+    private final ClientAssertionValidator clientAssertionValidator;
 
     public ClientCredentialsAuthenticator(ClientRegistry clientRegistry, ClientSecretMatcher secretMatcher) {
+        this(clientRegistry, secretMatcher, null);
+    }
+
+    public ClientCredentialsAuthenticator(ClientRegistry clientRegistry,
+            ClientSecretMatcher secretMatcher,
+            ClientAssertionValidator clientAssertionValidator) {
         this.clientRegistry = clientRegistry;
         this.secretMatcher = secretMatcher;
+        this.clientAssertionValidator = clientAssertionValidator;
     }
 
     public ClientAuthentication authenticate(TokenRequest request) {
+        String assertionType = request.getFormParameter(OAuthConstants.CLIENT_ASSERTION_TYPE);
+        String assertion = request.getFormParameter(OAuthConstants.CLIENT_ASSERTION);
+        if (assertionType != null || assertion != null) {
+            return authenticateWithAssertion(assertionType, assertion);
+        }
+
         String authorizationHeader = request.getAuthorizationHeader();
         if (authorizationHeader != null && authorizationHeader.regionMatches(true, 0, "Basic ", 0, 6)) {
             return authenticateBasic(authorizationHeader.substring(6).trim(), request);
@@ -35,6 +50,31 @@ public class ClientCredentialsAuthenticator {
         }
 
         throw invalidClient("Client authentication failed");
+    }
+
+    /** RFC 7523 {@code private_key_jwt} client authentication for automated REST clients. */
+    private ClientAuthentication authenticateWithAssertion(String assertionType, String assertion) {
+        if (clientAssertionValidator == null) {
+            throw invalidClient("JWT client authentication is not enabled on this server");
+        }
+        if (!OAuthConstants.JWT_BEARER_CLIENT_ASSERTION_TYPE.equals(assertionType)) {
+            throw invalidClient("Unsupported client_assertion_type");
+        }
+        if (assertion == null || assertion.isBlank()) {
+            throw invalidClient("client_assertion is required");
+        }
+
+        String clientId = clientAssertionValidator.readIssuer(assertion);
+        Optional<RegisteredClient> registered = clientRegistry.findByClientId(clientId);
+        if (!registered.isPresent()) {
+            throw invalidClient("Unknown client");
+        }
+        RegisteredClient client = registered.get();
+        if (client.getTokenEndpointAuthMethod() != TokenEndpointAuthMethod.PRIVATE_KEY_JWT) {
+            throw invalidClient("Client is not registered for private_key_jwt authentication");
+        }
+        clientAssertionValidator.validate(assertion, client);
+        return new ClientAuthentication(client, TokenEndpointAuthMethod.PRIVATE_KEY_JWT);
     }
 
     private ClientAuthentication authenticateBasic(String encodedCredentials, TokenRequest request) {
@@ -58,7 +98,8 @@ public class ClientCredentialsAuthenticator {
         }
         RegisteredClient client = registeredClient.get();
 
-        if (!secretMatcher.matches(client.getClientSecret(), clientSecret)) {
+        if (client.getClientSecret() == null
+                || !secretMatcher.matches(client.getClientSecret(), clientSecret)) {
             throw invalidClient("Invalid client credentials");
         }
 

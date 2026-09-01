@@ -30,47 +30,46 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Shane Bryzak
  */
 public class ClassPermissionHandler extends BaseAbstractPermissionHandler implements PermissionHandler {
-    private Map<Class<?>, String> identifierNames = new ConcurrentHashMap<Class<?>, String>();
+   private Map<Class<?>, String> identifierNames = new ConcurrentHashMap<Class<?>, String>();
 
-    @Override
-    public boolean canHandle(Class<?> resourceClass) {
-        return Class.class.equals(resourceClass);
-    }
+   @Override
+   public boolean canHandle(Class<?> resourceClass) {
+       return Class.class.equals(resourceClass);
+   }
 
-    @Override
-    public Serializable getIdentifier(Object resource) {
-        if (!(resource instanceof Class<?>)) {
-            throw new IllegalArgumentException("Resource [" + resource + "] must be instance of Class");
-        }
+   @Override
+   public Serializable getIdentifier(Object resource) {
+       if (!(resource instanceof Class<?>)) {
+           throw new IllegalArgumentException("Resource [" + resource + "] must be instance of Class");
+       }
 
-        return ((Class<?>) resource).getName();
-    }
+       return ((Class<?>) resource).getName();
+   }
 
-    private String getIdentifierName(Class<?> cls) {
-        if (!identifierNames.containsKey(cls)) {
-            String name = null;
+   private String getIdentifierName(Class<?> cls) {
+       if (!identifierNames.containsKey(cls)) {
+           String name = null;
 
-            if (cls.isAnnotationPresent(PermissionsHandledBy.class)) {
-                PermissionsHandledBy handledBy = (PermissionsHandledBy) cls.getAnnotation(PermissionsHandledBy.class);
-                if (handledBy.name() != null && !"".equals(handledBy.name().trim()))
-                {
-                    name = handledBy.name();
-                }
-            }
+           if (cls.isAnnotationPresent(PermissionsHandledBy.class)) {
+               PermissionsHandledBy handledBy = (PermissionsHandledBy) cls.getAnnotation(PermissionsHandledBy.class);
+               if (handledBy.name() != null && !"".equals(handledBy.name().trim())) {
+                   name = handledBy.name();
+               }
+           }
 
-            if (name == null) {
-                name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
-            }
+           if (name == null) {
+               name = cls.getName().substring(cls.getName().lastIndexOf('.') + 1);
+           }
 
-            identifierNames.put(cls, name);
-            return name;
-        }
+           identifierNames.put(cls, name);
+           return name;
+       }
 
-        return identifierNames.get(cls);
-    }
+       return identifierNames.get(cls);
+   }
 
-    @Override
-    public Class<?> unwrapResourceClass(Object resource) {
-        return Class.class.isInstance(resource) ? (Class<?>) resource : resource.getClass();
-    }
+   @Override
+   public Class<?> unwrapResourceClass(Object resource) {
+       return Class.class.isInstance(resource) ? (Class<?>) resource : resource.getClass();
+   }
 }

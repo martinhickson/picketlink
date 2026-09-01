@@ -50,7 +50,7 @@ public interface SAML2Handler {
     /**
      * Processing Point - idp side or service side
      */
-    public enum HANDLER_TYPE {
+ enum HANDLER_TYPE {
         IDP, SP;
     }
 

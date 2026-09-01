@@ -30,17 +30,17 @@ import java.util.List;
  */
 public interface PartitionStore<T extends IdentityStoreConfiguration> extends IdentityStore<T> {
 
-    String getConfigurationName(IdentityContext identityContext, Partition partition);
+   String getConfigurationName(IdentityContext identityContext, Partition partition);
 
-    <P extends Partition> P get(IdentityContext identityContext, Class<P> partitionClass, String name);
+   <P extends Partition> P get(IdentityContext identityContext, Class<P> partitionClass, String name);
 
-    <P extends Partition> List<P> get(IdentityContext identityContext, Class<P> partitionClass);
+   <P extends Partition> List<P> get(IdentityContext identityContext, Class<P> partitionClass);
 
-    <P extends Partition> P lookupById(final IdentityContext context, final Class<P> partitionClass, String id);
+   <P extends Partition> P lookupById( IdentityContext context,  Class<P> partitionClass, String id);
 
-    void add(IdentityContext identityContext, Partition partition, String configurationName);
+   void add(IdentityContext identityContext, Partition partition, String configurationName);
 
-    void update(IdentityContext identityContext, Partition partition);
+   void update(IdentityContext identityContext, Partition partition);
 
-    void remove(IdentityContext identityContext, Partition partition);
+   void remove(IdentityContext identityContext, Partition partition);
 }

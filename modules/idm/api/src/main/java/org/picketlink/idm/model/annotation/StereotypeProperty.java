@@ -44,63 +44,63 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface StereotypeProperty {
 
-    Property value();
+   Property value();
 
-    public enum Property {
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the unique and never reassigned idenfifier.
-         * </p>
-         */
-        IDENTITY_ID,
+    enum Property {
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the unique and never reassigned idenfifier.
+        * </p>
+        */
+       IDENTITY_ID,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#ROLE} stereotype.
-         * </p>
-         */
-        IDENTITY_ROLE_NAME,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#ROLE} stereotype.
+        * </p>
+        */
+       IDENTITY_ROLE_NAME,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#GROUP} stereotype.
-         * </p>
-         */
-        IDENTITY_GROUP_NAME,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#GROUP} stereotype.
+        * </p>
+        */
+       IDENTITY_GROUP_NAME,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#USER} stereotype.
-         * </p>
-         */
-        IDENTITY_USER_NAME,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.IdentityType} as the name of a {@link org.picketlink.idm.model.annotation.IdentityStereotype.Stereotype#USER} stereotype.
+        * </p>
+        */
+       IDENTITY_USER_NAME,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the role of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GRANT} stereotype.
-         * </p>
-         */
-        RELATIONSHIP_GRANT_ROLE,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the role of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GRANT} stereotype.
+        * </p>
+        */
+       RELATIONSHIP_GRANT_ROLE,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the assignee of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GRANT} stereotype.
-         * </p>
-         */
-        RELATIONSHIP_GRANT_ASSIGNEE,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the assignee of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GRANT} stereotype.
+        * </p>
+        */
+       RELATIONSHIP_GRANT_ASSIGNEE,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the group of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GROUP_MEMBERSHIP} stereotype.
-         * </p>
-         */
-        RELATIONSHIP_GROUP_MEMBERSHIP_GROUP,
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the group of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GROUP_MEMBERSHIP} stereotype.
+        * </p>
+        */
+       RELATIONSHIP_GROUP_MEMBERSHIP_GROUP,
 
-        /**
-         * <p>
-         *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the member of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GROUP_MEMBERSHIP} stereotype.
-         * </p>
-         */
-        RELATIONSHIP_GROUP_MEMBERSHIP_MEMBER,
-    }
+       /**
+        * <p>
+        *     Should be used to mark a property of an {@link org.picketlink.idm.model.Relationship} as related with the member of a {@link org.picketlink.idm.model.annotation.RelationshipStereotype.Stereotype#GROUP_MEMBERSHIP} stereotype.
+        * </p>
+        */
+       RELATIONSHIP_GROUP_MEMBERSHIP_MEMBER,
+   }
 }

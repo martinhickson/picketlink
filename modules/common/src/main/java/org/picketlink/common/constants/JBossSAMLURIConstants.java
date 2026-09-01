@@ -119,7 +119,7 @@ public enum JBossSAMLURIConstants {
 
     private String uri = null;
 
-    private JBossSAMLURIConstants(String uristr) {
+    JBossSAMLURIConstants(String uristr) {
         this.uri = uristr;
     }
 

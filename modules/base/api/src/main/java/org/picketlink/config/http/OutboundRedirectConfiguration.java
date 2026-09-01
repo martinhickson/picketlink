@@ -49,7 +49,7 @@ public class OutboundRedirectConfiguration {
         return this.condition;
     }
 
-    public static enum Condition {
+    public enum Condition {
         FORBIDDEN,
         OK,
         ERROR

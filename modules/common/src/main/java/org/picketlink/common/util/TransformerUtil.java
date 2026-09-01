@@ -422,7 +422,7 @@ public class TransformerUtil {
 
             public boolean encounteredTextNode = false;
 
-            public CustomHolder(Document document, boolean bool) {
+            CustomHolder(Document document, boolean bool) {
                 this.doc = document;
                 this.encounteredTextNode = bool;
             }

@@ -552,7 +552,15 @@ public class XMLSignatureUtil {
             throws MarshalException, XMLSignatureException {
         DOMValidateContext valContext = new DOMValidateContext(publicKey, signatureNode);
         SamlCryptoSecurityUtil.configureSecureValidation(valContext);
-        XMLSignature signature = fac.unmarshalXMLSignature(valContext);
+        XMLSignature signature;
+        try {
+            signature = fac.unmarshalXMLSignature(valContext);
+        } catch (MarshalException ex) {
+            // a Signature element that cannot even be unmarshalled (e.g. wrapping-attack
+            // constructs) is by definition not a valid signature — reject, do not throw
+            logger.trace("Signature unmarshalling failed; treating as invalid", ex);
+            return false;
+        }
         if (SamlCryptoSecurityUtil.usesDisallowedAlgorithms(signature)) {
             return false;
         }

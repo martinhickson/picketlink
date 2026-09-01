@@ -36,12 +36,12 @@ import org.picketlink.idm.model.IdentityType;
  */
 public interface PermissionVoter {
 
-    public enum VotingResult {
-        ALLOW, DENY, NOT_APPLICABLE
-    }
+    enum VotingResult {
+       ALLOW, DENY, NOT_APPLICABLE
+   }
 
-    VotingResult hasPermission(IdentityType recipient, Object resource, String operation);
+   VotingResult hasPermission(IdentityType recipient, Object resource, String operation);
 
-    VotingResult hasPermission(IdentityType recipient, Class<?> resourceClass, Serializable identifier,
-            String operation);
+   VotingResult hasPermission(IdentityType recipient, Class<?> resourceClass, Serializable identifier,
+           String operation);
 }

@@ -33,7 +33,7 @@ import org.picketlink.idm.credential.Credentials;
 import org.picketlink.idm.credential.Token;
 import org.picketlink.idm.credential.encoder.PasswordEncoder;
 import org.picketlink.idm.credential.handler.CredentialHandler;
-import org.picketlink.idm.credential.storage.CredentialStorage;
+
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.AttributedType;
 import org.picketlink.idm.model.IdentityType;
@@ -70,150 +70,150 @@ import java.lang.annotation.Annotation;
 @MessageBundle(projectCode = IDMLog.PICKETLINK_IDM_PROJECT_CODE)
 public interface IDMMessages {
 
-    IDMMessages MESSAGES = Messages.getBundle(IDMMessages.class);
+   IDMMessages MESSAGES = Messages.getBundle(IDMMessages.class);
 
-    // General messages. Ids 1-99.
-    @Message(id = 1, value = "Error creating instance for type [%s].")
-    IdentityManagementException instantiationError(Class<?> type, @Cause Throwable t);
+   // General messages. Ids 1-99.
+   @Message(id = 1, value = "Error creating instance for type [%s].")
+   IdentityManagementException instantiationError(Class<?> type, @Cause Throwable t);
 
-    @Message(id = 2, value = "Null argument: [%s].")
-    IdentityManagementException nullArgument(String description);
+   @Message(id = 2, value = "Null argument: [%s].")
+   IdentityManagementException nullArgument(String description);
 
-    @Message(id = 3, value = "Error unmarshalling object.")
-    IdentityManagementException unmarshallingError(@Cause Throwable t);
+   @Message(id = 3, value = "Error unmarshalling object.")
+   IdentityManagementException unmarshallingError(@Cause Throwable t);
 
-    @Message(id = 4, value = "Error marshalling object.")
-    IdentityManagementException marshallingError(@Cause Throwable t);
+   @Message(id = 4, value = "Error marshalling object.")
+   IdentityManagementException marshallingError(@Cause Throwable t);
 
-    @Message(id = 5, value = "Unexpected type [%s].")
-    IdentityManagementException unexpectedType(Class<?> unexpectedType);
+   @Message(id = 5, value = "Unexpected type [%s].")
+   IdentityManagementException unexpectedType(Class<?> unexpectedType);
 
-    @Message(id = 6, value = "Could not initialize Partition Manager [%s].")
-    IdentityManagementException partitionManagerInitializationFailed(Class<? extends PartitionManager> partitionManagerType, @Cause Throwable t);
+   @Message(id = 6, value = "Could not initialize Partition Manager [%s].")
+   IdentityManagementException partitionManagerInitializationFailed(Class<? extends PartitionManager> partitionManagerType, @Cause Throwable t);
 
-    @Message(id = 7, value = "Not implemented.")
-    NotImplementedException notImplemented();
+   @Message(id = 7, value = "Not implemented.")
+   NotImplementedException notImplemented();
 
-    // credential API messages 200-299
-    @Message(id = 200, value = "Credential validation failed [%s].")
-    IdentityManagementException credentialValidationFailed(Credentials credentials, @Cause Throwable t);
+   // credential API messages 200-299
+   @Message(id = 200, value = "Credential validation failed [%s].")
+   IdentityManagementException credentialValidationFailed(Credentials credentials, @Cause Throwable t);
 
-    @Message(id = 201, value = "Credential update failed for account [%s] and type [%s].")
-    IdentityManagementException credentialUpdateFailed(Account account, Object credential, @Cause Throwable t);
+   @Message(id = 201, value = "Credential update failed for account [%s] and type [%s].")
+   IdentityManagementException credentialUpdateFailed(Account account, Object credential, @Cause Throwable t);
 
-    @Message(id = 202, value = "No IdentityStore found for credential class [%s]")
-    IdentityManagementException credentialNoStoreForCredentials(Class<?> credentialClass);
+   @Message(id = 202, value = "No IdentityStore found for credential class [%s]")
+   IdentityManagementException credentialNoStoreForCredentials(Class<?> credentialClass);
 
-    @Message(id = 203, value = "Credentials class [%s] not supported by this handler [%s].")
-    IdentityManagementException credentialUnsupportedType(Class<?> type, CredentialHandler handler);
+   @Message(id = 203, value = "Credentials class [%s] not supported by this handler [%s].")
+   IdentityManagementException credentialUnsupportedType(Class<?> type, CredentialHandler handler);
 
-    @Message(id = 204, value = "Credentials could not be retrieved for account [%s] and storage [%s].")
-    IdentityManagementException credentialRetrievalFailed(Account account, Class<?> storageClass, @Cause Throwable t);
+   @Message(id = 204, value = "Credentials could not be retrieved for account [%s] and storage [%s].")
+   IdentityManagementException credentialRetrievalFailed(Account account, Class<?> storageClass, @Cause Throwable t);
 
-    @Message(id = 205, value = "The IdentityType returned is not an Account: [%s]")
-    IdentityManagementException credentialInvalidAccountType(Class<? extends IdentityType> aClass);
+   @Message(id = 205, value = "The IdentityType returned is not an Account: [%s]")
+   IdentityManagementException credentialInvalidAccountType(Class<? extends IdentityType> aClass);
 
-    @Message(id = 206, value = "Multiple Account objects found with same login name [%s] for account type [%s].")
-    IdentityManagementException credentialMultipleAccountsFoundForType(String loginName, Class<? extends Account> accountType);
+   @Message(id = 206, value = "Multiple Account objects found with same login name [%s] for account type [%s].")
+   IdentityManagementException credentialMultipleAccountsFoundForType(String loginName, Class<? extends Account> accountType);
 
-    @Message(id = 207, value = "No Account type provided. You must provide at least one Account type in order to support credential management.")
-    IdentityManagementException credentialNoAccountTypeProvided();
+   @Message(id = 207, value = "No Account type provided. You must provide at least one Account type in order to support credential management.")
+   IdentityManagementException credentialNoAccountTypeProvided();
 
-    @Message(id = 208, value = "Account type [%s] does not provide a property annotated with @StereotypeProperty(IDENTITY_USER_NAME). Without this the account can not be retrieved from the store based on the user name.")
-    IdentityManagementException credentialUnknownUserNameProperty(Class<? extends Account> accountType);
+   @Message(id = 208, value = "Account type [%s] does not provide a property annotated with @StereotypeProperty(IDENTITY_USER_NAME). Without this the account can not be retrieved from the store based on the user name.")
+   IdentityManagementException credentialUnknownUserNameProperty(Class<? extends Account> accountType);
 
-    @Message(value = "Invalid Realm or it was not provided.")
-    IdentityManagementException credentialDigestInvalidRealm();
+   @Message(value = "Invalid Realm or it was not provided.")
+   IdentityManagementException credentialDigestInvalidRealm();
 
-    @Message(value = "Invalid Password or it was not provided.")
-    IdentityManagementException credentialInvalidPassword();
+   @Message(value = "Invalid Password or it was not provided.")
+   IdentityManagementException credentialInvalidPassword();
 
-    @Message(value = "Could not encode password.")
-    IdentityManagementException credentialCouldNotEncodePassword(@Cause UnsupportedEncodingException e);
+   @Message(value = "Could not encode password.")
+   IdentityManagementException credentialCouldNotEncodePassword(@Cause UnsupportedEncodingException e);
 
-    @Message(value = "No suitable CredentialHandler available for validating Credentials of type [%s].")
-    IdentityManagementException credentialHandlerNotFoundForCredentialType(Class<?> class1);
+   @Message(value = "No suitable CredentialHandler available for validating Credentials of type [%s].")
+   IdentityManagementException credentialHandlerNotFoundForCredentialType(Class<?> class1);
 
-    @Message(value = "No such algorithm [%s] for encoding passwords. Using PasswordEncoder [%s].")
-    IdentityManagementException credentialInvalidEncodingAlgorithm(String algorithm, PasswordEncoder encoder, @Cause Throwable t);
+   @Message(value = "No such algorithm [%s] for encoding passwords. Using PasswordEncoder [%s].")
+   IdentityManagementException credentialInvalidEncodingAlgorithm(String algorithm, PasswordEncoder encoder, @Cause Throwable t);
 
-    @Message(value = "There is no Token.Consumer that supports this token [%s].")
-    IdentityManagementException credentialNoConsumerForToken(Token token);
+   @Message(value = "There is no Token.Consumer that supports this token [%s].")
+   IdentityManagementException credentialNoConsumerForToken(Token token);
 
-    // configuration api messages 700-799
-    @Message(id = 700, value = "Could not create configuration.")
-    SecurityConfigurationException configCouldNotCreateConfiguration(@Cause Exception sce);
+   // configuration api messages 700-799
+   @Message(id = 700, value = "Could not create configuration.")
+   SecurityConfigurationException configCouldNotCreateConfiguration(@Cause Exception sce);
 
-    @Message(id = 701, value = "Invalid configuration [%s].")
-    SecurityConfigurationException configInvalidConfiguration(String name, @Cause Throwable t);
+   @Message(id = 701, value = "Invalid configuration [%s].")
+   SecurityConfigurationException configInvalidConfiguration(String name, @Cause Throwable t);
 
-    @Message(id = 702, value = "You must provide at least one configuration.")
-    SecurityConfigurationException configNoConfigurationProvided();
+   @Message(id = 702, value = "You must provide at least one configuration.")
+   SecurityConfigurationException configNoConfigurationProvided();
 
-    @Message(id = 703, value = "You have provided more than one configuration. Use the buildAll method instead.")
-    SecurityConfigurationException configBuildMultipleConfigurationExists();
+   @Message(id = 703, value = "You have provided more than one configuration. Use the buildAll method instead.")
+   SecurityConfigurationException configBuildMultipleConfigurationExists();
 
-    @Message(id = 704, value = "At least one IdentityConfiguration must be provided")
-    SecurityConfigurationException configNoIdentityConfigurationProvided();
+   @Message(id = 704, value = "At least one IdentityConfiguration must be provided")
+   SecurityConfigurationException configNoIdentityConfigurationProvided();
 
-    @Message(id = 705, value = "You must configure at least one identity store.")
-    SecurityConfigurationException configStoreNoIdentityStoreConfigProvided();
+   @Message(id = 705, value = "You must configure at least one identity store.")
+   SecurityConfigurationException configStoreNoIdentityStoreConfigProvided();
 
-    @Message(id = 706, value = "Duplicated supported types [%s] found for identity store configuration. Check your identity store configuration for duplicated types, considering their hierarchy.")
-    SecurityConfigurationException configStoreDuplicatedSupportedType(Class<?> supportedType);
+   @Message(id = 706, value = "Duplicated supported types [%s] found for identity store configuration. Check your identity store configuration for duplicated types, considering their hierarchy.")
+   SecurityConfigurationException configStoreDuplicatedSupportedType(Class<?> supportedType);
 
-    @Message(id = 707, value = "Multiple configuration with credential support.")
-    SecurityConfigurationException configMultipleConfigurationsFoundWithCredentialSupport();
+   @Message(id = 707, value = "Multiple configuration with credential support.")
+   SecurityConfigurationException configMultipleConfigurationsFoundWithCredentialSupport();
 
-    @Message(value = "Error initializing JpaIdentityStore - no entity classes configured.")
-    SecurityConfigurationException configJpaStoreNoEntityClassesProvided();
+   @Message(value = "Error initializing JpaIdentityStore - no entity classes configured.")
+   SecurityConfigurationException configJpaStoreNoEntityClassesProvided();
 
-    @Message(value = "Entity [%s] must have a field annotated with %s.")
-    SecurityConfigurationException configJpaStoreRequiredMappingAnnotation(Class<?> entityType,
-                                                                           Class<? extends Annotation> annotation);
+   @Message(value = "Entity [%s] must have a field annotated with %s.")
+   SecurityConfigurationException configJpaStoreRequiredMappingAnnotation(Class<?> entityType,
+                                                                          Class<? extends Annotation> annotation);
 
-    @Message(value = "Invalid mapping for type [%s]. No entity found with a field annotated with %s.")
-    SecurityConfigurationException configJpaStoreRequiredMappingAnnotationForAttributedType(Class<? extends AttributedType> attributedType,
-        Class<? extends Annotation> annotation);
+   @Message(value = "Invalid mapping for type [%s]. No entity found with a field annotated with %s.")
+   SecurityConfigurationException configJpaStoreRequiredMappingAnnotationForAttributedType(Class<? extends AttributedType> attributedType,
+       Class<? extends Annotation> annotation);
 
-    @Message(value = "Attribute support is enabled (ad-hoc). But no entity was found with the necessary mapping to store attributes.")
-    SecurityConfigurationException configJpaStoreMappedNoAttributeMappingFound();
+   @Message(value = "Attribute support is enabled (ad-hoc). But no entity was found with the necessary mapping to store attributes.")
+   SecurityConfigurationException configJpaStoreMappedNoAttributeMappingFound();
 
-    @Message(value = "Credential support is enabled. But no entity was found with the necessary mapping to store any CredentialStorage.")
-    SecurityConfigurationException configJpaStoreMappedNoCredentialStorageMappingFound();
+   @Message(value = "Credential support is enabled. But no entity was found with the necessary mapping to store any CredentialStorage.")
+   SecurityConfigurationException configJpaStoreMappedNoCredentialStorageMappingFound();
 
-    @Message(value = "Mapped attribute [%s.%s] does not map to any field for type [%s].")
-    SecurityConfigurationException configJpaStoreMappedPropertyNotFound(final Class<?> entityType, String propertyName, Class<?> type);
+   @Message(value = "Mapped attribute [%s.%s] does not map to any field for type [%s].")
+   SecurityConfigurationException configJpaStoreMappedPropertyNotFound( Class<?> entityType, String propertyName, Class<?> type);
 
-    @Message(value = "Unknown IdentityStore class for configuration [%s].")
-    SecurityConfigurationException configUnknownStoreForConfiguration(IdentityStoreConfiguration storeConfiguration);
+   @Message(value = "Unknown IdentityStore class for configuration [%s].")
+   SecurityConfigurationException configUnknownStoreForConfiguration(IdentityStoreConfiguration storeConfiguration);
 
-    @Message(value = "Error while creating IdentityStore [%s] instance for configuration [%s].")
-    SecurityConfigurationException configCouldNotCreateStore(Class<? extends IdentityStore> storeClass,
-                                                             IdentityStoreConfiguration storeConfiguration,
-                                                             @Cause Exception e);
+   @Message(value = "Error while creating IdentityStore [%s] instance for configuration [%s].")
+   SecurityConfigurationException configCouldNotCreateStore(Class<? extends IdentityStore> storeClass,
+                                                            IdentityStoreConfiguration storeConfiguration,
+                                                            @Cause Exception e);
 
-    @Message(value = "Only a single identity store config can support partitions. Found [%s] and [%s].")
-    SecurityConfigurationException configStoreMultiplePartitionConfigExists(IdentityStoreConfiguration config1,
-                                                                            IdentityStoreConfiguration config2);
+   @Message(value = "Only a single identity store config can support partitions. Found [%s] and [%s].")
+   SecurityConfigurationException configStoreMultiplePartitionConfigExists(IdentityStoreConfiguration config1,
+                                                                           IdentityStoreConfiguration config2);
 
-    @Message(value = "Multiple configuration with the same name [%s].")
-    SecurityConfigurationException configMultipleConfigurationsFoundWithSameName(String name);
+   @Message(value = "Multiple configuration with the same name [%s].")
+   SecurityConfigurationException configMultipleConfigurationsFoundWithSameName(String name);
 
-    // Permission management messages 800-899
+   // Permission management messages 800-899
 
-    @Message(value = "Could not grant permission to [%s] for resource [%s], operation [%s].")
-    IdentityManagementException permissionGrantFailed(IdentityType assignee, Object resource, String operation, @Cause Throwable t);
+   @Message(value = "Could not grant permission to [%s] for resource [%s], operation [%s].")
+   IdentityManagementException permissionGrantFailed(IdentityType assignee, Object resource, String operation, @Cause Throwable t);
 
-    @Message(value = "Could not grant Permissions [%s].")
-    IdentityManagementException permissionsGrantFailed(String permissions, @Cause Throwable t);
+   @Message(value = "Could not grant Permissions [%s].")
+   IdentityManagementException permissionsGrantFailed(String permissions, @Cause Throwable t);
 
-    @Message(value = "Could not revoke permission granted to [%s] for resource [%s], operation [%s].")
-    IdentityManagementException permissionRevokeFailed(IdentityType assignee, Object resource, String operation, @Cause Throwable t);
+   @Message(value = "Could not revoke permission granted to [%s] for resource [%s], operation [%s].")
+   IdentityManagementException permissionRevokeFailed(IdentityType assignee, Object resource, String operation, @Cause Throwable t);
 
-    @Message(value = "Could not revoke Permissions [%s].")
-    IdentityManagementException permissionsRevokeFailed(String permissions, @Cause Throwable t);
+   @Message(value = "Could not revoke Permissions [%s].")
+   IdentityManagementException permissionsRevokeFailed(String permissions, @Cause Throwable t);
 
-    @Message(value = "Failed to revoke all permissions for resource [%s].")
-    IdentityManagementException permissionRevokeAllFailed(Object resource, @Cause Throwable t);
+   @Message(value = "Failed to revoke all permissions for resource [%s].")
+   IdentityManagementException permissionRevokeAllFailed(Object resource, @Cause Throwable t);
 }

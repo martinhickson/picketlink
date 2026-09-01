@@ -29,7 +29,7 @@ import java.io.Serializable;
  */
 public interface Identity extends Serializable {
 
-    public enum AuthenticationResult {
+    enum AuthenticationResult {
         SUCCESS, FAILED
     }
 

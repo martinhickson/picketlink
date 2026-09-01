@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public interface SAML2HandlerRequest {
 
-    public enum GENERATE_REQUEST_TYPE {
+ enum GENERATE_REQUEST_TYPE {
         AUTH, LOGOUT;
     }
 

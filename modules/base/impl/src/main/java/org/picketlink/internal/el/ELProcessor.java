@@ -113,7 +113,7 @@ public class ELProcessor {
 
         private final ELResolver elResolver;
 
-        public PicketLinkELContext(ELResolver elResolver) {
+        PicketLinkELContext(ELResolver elResolver) {
             this.elResolver = elResolver;
         }
 

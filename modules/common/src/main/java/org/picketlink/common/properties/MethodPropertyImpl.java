@@ -44,7 +44,7 @@ class MethodPropertyImpl<V> implements MethodProperty<V> {
     private final String propertyName;
     private final Method setterMethod;
 
-    public MethodPropertyImpl(Method method) {
+    MethodPropertyImpl(Method method) {
         final String accessorMethodPrefix;
         final String propertyNameInAccessorMethod;
 

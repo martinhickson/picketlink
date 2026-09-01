@@ -4,7 +4,8 @@ import org.picketlink.auth.oauth.OAuthConstants;
 
 public enum TokenEndpointAuthMethod {
     CLIENT_SECRET_BASIC(OAuthConstants.TOKEN_ENDPOINT_AUTH_BASIC),
-    CLIENT_SECRET_POST(OAuthConstants.TOKEN_ENDPOINT_AUTH_POST);
+    CLIENT_SECRET_POST(OAuthConstants.TOKEN_ENDPOINT_AUTH_POST),
+    PRIVATE_KEY_JWT(OAuthConstants.TOKEN_ENDPOINT_AUTH_PRIVATE_KEY_JWT);
 
     private final String value;
 

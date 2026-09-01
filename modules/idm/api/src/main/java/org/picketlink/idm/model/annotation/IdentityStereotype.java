@@ -53,25 +53,25 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface IdentityStereotype {
 
-    Stereotype value();
+   Stereotype value();
 
-    public enum Stereotype {
-        UNDEFINED,
+    enum Stereotype {
+       UNDEFINED,
 
-        /**
-         * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent an user.</p>
-         */
-        USER,
+       /**
+        * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent an user.</p>
+        */
+       USER,
 
-        /**
-         * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent a role.</p>
-         */
-        ROLE,
+       /**
+        * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent a role.</p>
+        */
+       ROLE,
 
-        /**
-         * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent a group.</p>
-         */
-        GROUP
-    }
+       /**
+        * <p>Should be used by {@link org.picketlink.idm.model.IdentityType} types that represent a group.</p>
+        */
+       GROUP
+   }
 
 }

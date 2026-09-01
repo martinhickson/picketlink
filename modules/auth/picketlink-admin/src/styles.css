@@ -1,0 +1,17 @@
+/* Shared element styles; component-specific styles live with their components. */
+picketlink-admin { display: block; min-height: 100vh; }
+plk-picketlink-admin button {
+  padding: .3rem .7rem;
+  border: 1px solid #16213e;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: .85rem;
+}
+plk-picketlink-admin button:hover { background: #e2e8f0; }
+plk-picketlink-admin input, plk-picketlink-admin select, plk-picketlink-admin textarea {
+  padding: .3rem;
+  border: 1px solid #94a3b8;
+  font-size: .9rem;
+}
+plk-picketlink-admin .plk-error { color: #b91c1c; }
+plk-picketlink-admin .plk-hint { color: #475569; font-size: .9rem; }

@@ -58,7 +58,7 @@ import org.picketlink.idm.model.Account;
  */
 public interface Authenticator {
 
-    public enum AuthenticationStatus {
+    enum AuthenticationStatus {
         SUCCESS,
         FAILURE,
         DEFERRED

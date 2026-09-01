@@ -424,7 +424,7 @@ public abstract class AbstractSTSLoginModule implements LoginModule {
         }
     }
 
-    public abstract Element invokeSTS(final STSClient stsclient) throws WSTrustException, LoginException;
+ public abstract Element invokeSTS( STSClient stsclient) throws WSTrustException, LoginException;
 
     /**
      * Commit will package the samlToken set by the login method in a new {@link SamlCredential}. This new SamlCredential will

@@ -30,21 +30,21 @@ import org.picketlink.idm.query.RelationshipQueryParameter;
  */
 public interface Relationship extends AttributedType {
 
-    /**
-     * A query parameter that can be used to obtain all relationships for a given {@link IdentityType}.
-     */
-    QueryParameter IDENTITY = new QueryParameter() {};
+   /**
+    * A query parameter that can be used to obtain all relationships for a given {@link IdentityType}.
+    */
+   QueryParameter IDENTITY = new QueryParameter() {};
 
-    public final class RELATIONSHIP_QUERY_ATTRIBUTE {
-        public static RelationshipQueryParameter byName(final String name) {
-            return new RelationshipQueryParameter() {
+    final class RELATIONSHIP_QUERY_ATTRIBUTE {
+       public static RelationshipQueryParameter byName(final String name) {
+           return new RelationshipQueryParameter() {
 
-                @Override
-                public String getName() {
-                    return name;
-                }
-            };
-        }
-    }
+               @Override
+               public String getName() {
+                   return name;
+               }
+           };
+       }
+   }
 
 }

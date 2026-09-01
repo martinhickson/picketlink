@@ -53,22 +53,22 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Inherited
 public @interface RelationshipStereotype {
 
-    Stereotype value();
+   Stereotype value();
 
-    public enum Stereotype {
+    enum Stereotype {
 
-        /**
-         * <p>Should be used by {@link org.picketlink.idm.model.Relationship} types that represent an association between a
-         * {@link org.picketlink.idm.model.IdentityType} and a role type.</p>
-         */
-        GRANT,
+       /**
+        * <p>Should be used by {@link org.picketlink.idm.model.Relationship} types that represent an association between a
+        * {@link org.picketlink.idm.model.IdentityType} and a role type.</p>
+        */
+       GRANT,
 
-        /**
-         * <p>Should be used by {@link org.picketlink.idm.model.Relationship} types that represent an association between a
-         * {@link org.picketlink.idm.model.IdentityType} and a group type. Usually, the associated identity type is an user that is member
-         * of a group.</p>
-         */
-        GROUP_MEMBERSHIP
-    }
+       /**
+        * <p>Should be used by {@link org.picketlink.idm.model.Relationship} types that represent an association between a
+        * {@link org.picketlink.idm.model.IdentityType} and a group type. Usually, the associated identity type is an user that is member
+        * of a group.</p>
+        */
+       GROUP_MEMBERSHIP
+   }
 
 }

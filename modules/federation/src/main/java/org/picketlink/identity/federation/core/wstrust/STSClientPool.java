@@ -32,7 +32,7 @@ public interface STSClientPool {
      *
      * @param config to construct the pool of clients
      */
-    void createPool(final STSClientConfig config);
+ void createPool( STSClientConfig config);
 
     /**
      * This method initializes sub pool of clients by given configuration data and returns client from that pool.
@@ -43,7 +43,7 @@ public interface STSClientPool {
      * @param initialNumberOfClients initial number of clients in the pool
      * @param config to construct the pool of clients
      */
-    void createPool(int initialNumberOfClients, final STSClientConfig config);
+ void createPool(int initialNumberOfClients, STSClientConfig config);
 
     /**
      * This method initializes sub pool of clients by given configuration data.
@@ -55,21 +55,21 @@ public interface STSClientPool {
      * @param callBack which provide configuration
      */
 
-    void createPool(int initialNumberOfClients, final STSClientCreationCallBack callBack);
+ void createPool(int initialNumberOfClients, STSClientCreationCallBack callBack);
 
     /**
      * Destroys client sub pool denoted by given config.
      *
      * @param config {@link STSClientConfiguration} to find client sub pool to destroy
      */
-    void destroyPool(final STSClientConfig config);
+ void destroyPool( STSClientConfig config);
 
     /**
      * Destroy all the pools attached to given module name.
      *
      * @param moduleName module name to destroy pools or "" or null to destroy default module's pools.
      */
-    void destroyPool(final String moduleName);
+ void destroyPool( String moduleName);
 
     /**
      * Returns given {@link STSClient} back to the sub pool of clients.
@@ -77,14 +77,14 @@ public interface STSClientPool {
      *
      * @param {@link STSClient} to return back to the sub pool of clients
      */
-    void returnClient(final STSClient stsClient);
+ void returnClient( STSClient stsClient);
 
     /**
      * Get STSClient from sub pool denoted by config.
      * @param config {@link STSClientConfiguration} to find client sub pool
      * @return {@link STSClient} from the sub pool of clients
      */
-    STSClient getClient(final STSClientConfig config);
+ STSClient getClient( STSClientConfig config);
 
     /**
      * Checks whether given config has already sub pool of clients created.
@@ -92,6 +92,6 @@ public interface STSClientPool {
      * @param config {@link STSClientConfiguration} to find client sub pool
      * @return true if config was already used as sub pool key
      */
-    boolean configExists(final STSClientConfig config);
+ boolean configExists( STSClientConfig config);
 
 }

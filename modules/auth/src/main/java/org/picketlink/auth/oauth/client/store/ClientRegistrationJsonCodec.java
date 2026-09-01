@@ -1,6 +1,8 @@
 package org.picketlink.auth.oauth.client.store;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,10 +67,25 @@ public final class ClientRegistrationJsonCodec {
     private static void appendClient(StringBuilder json, RegisteredClient client) {
         json.append('{');
         appendString(json, "clientId", client.getClientId(), true);
-        appendString(json, "clientSecret", client.getClientSecret(), false);
+        if (client.getClientSecret() != null) {
+            appendString(json, "clientSecret", client.getClientSecret(), false);
+        }
         appendStringArray(json, "scopes", client.getScopes(), false);
         appendString(json, "tokenEndpointAuthMethod",
                 client.getTokenEndpointAuthMethod().getValue(), false);
+        if (!client.getAllowedAudiences().isEmpty()) {
+            appendStringArray(json, "allowedAudiences", client.getAllowedAudiences(), false);
+        }
+        if (client.getJwks() != null) {
+            // base64: the hand-rolled reader matches braces, and a JWKS document contains
+            // balanced-but-nested braces that must not leak into the envelope structure
+            appendString(json, "jwksB64",
+                    Base64.getEncoder().encodeToString(client.getJwks().getBytes(StandardCharsets.UTF_8)),
+                    false);
+        }
+        if (client.getMaxTokenLifetimeSeconds() > 0) {
+            appendNumber(json, "maxTokenLifetimeSeconds", client.getMaxTokenLifetimeSeconds(), false);
+        }
         json.append('}');
     }
 
@@ -77,14 +94,58 @@ public final class ClientRegistrationJsonCodec {
         String clientSecret = readString(objectJson, "clientSecret");
         Set<String> scopes = readStringArray(objectJson, "scopes");
         String authMethod = readString(objectJson, "tokenEndpointAuthMethod");
-        RegisteredClient.Builder builder = RegisteredClient.builder(clientId, clientSecret);
+        Set<String> allowedAudiences = readStringArray(objectJson, "allowedAudiences");
+        String jwksB64 = readString(objectJson, "jwksB64");
+        String jwks = jwksB64.isEmpty() ? null
+                : new String(Base64.getDecoder().decode(jwksB64), StandardCharsets.UTF_8);
+        long maxTokenLifetimeSeconds = readNumber(objectJson, "maxTokenLifetimeSeconds");
+        RegisteredClient.Builder builder = RegisteredClient.builder(clientId,
+                clientSecret.isEmpty() ? null : clientSecret);
         builder.scopes(scopes);
         if (OAuthConstants.TOKEN_ENDPOINT_AUTH_POST.equals(authMethod)) {
             builder.tokenEndpointAuthMethod(TokenEndpointAuthMethod.CLIENT_SECRET_POST);
+        } else if (OAuthConstants.TOKEN_ENDPOINT_AUTH_PRIVATE_KEY_JWT.equals(authMethod)) {
+            builder.tokenEndpointAuthMethod(TokenEndpointAuthMethod.PRIVATE_KEY_JWT);
         } else {
             builder.tokenEndpointAuthMethod(TokenEndpointAuthMethod.CLIENT_SECRET_BASIC);
         }
+        if (!allowedAudiences.isEmpty()) {
+            builder.allowedAudiences(allowedAudiences);
+        }
+        if (jwks != null && !jwks.isEmpty()) {
+            builder.jwks(jwks);
+        }
+        if (maxTokenLifetimeSeconds > 0) {
+            builder.maxTokenLifetimeSeconds(maxTokenLifetimeSeconds);
+        }
         return builder.build();
+    }
+
+    private static void appendNumber(StringBuilder json, String name, long value, boolean first) {
+        if (!first) {
+            json.append(',');
+        }
+        json.append('"').append(OAuthJsonWriter.escape(name)).append("\":").append(value);
+    }
+
+    private static long readNumber(String json, String fieldName) {
+        String marker = "\"" + fieldName + "\"";
+        int fieldIndex = json.indexOf(marker);
+        if (fieldIndex < 0) {
+            return 0L;
+        }
+        int colon = json.indexOf(':', fieldIndex + marker.length());
+        if (colon < 0) {
+            return 0L;
+        }
+        int end = colon + 1;
+        while (end < json.length() && Character.isDigit(json.charAt(end))) {
+            end++;
+        }
+        if (end == colon + 1) {
+            return 0L;
+        }
+        return Long.parseLong(json.substring(colon + 1, end).trim());
     }
 
     private static void appendString(StringBuilder json, String name, String value, boolean first) {
