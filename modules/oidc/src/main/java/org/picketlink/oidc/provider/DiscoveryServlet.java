@@ -34,6 +34,11 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "token_endpoint", basePath + "/token", false);
         field(json, "userinfo_endpoint", basePath + "/userinfo", false);
         field(json, "end_session_endpoint", basePath + "/logout", false);
+        field(json, "introspection_endpoint", basePath + "/introspect", false);
+        field(json, "revocation_endpoint", basePath + "/revoke", false);
+        field(json, "response_modes_supported",
+                "query fragment form_post jwt query.jwt fragment.jwt form_post.jwt", false);
+        field(json, "authorization_response_iss_parameter_supported", "true", false);
         field(json, "jwks_uri", basePath + "/jwks.json", false);
         field(json, "response_types_supported", "code", false);
         field(json, "grant_types_supported",

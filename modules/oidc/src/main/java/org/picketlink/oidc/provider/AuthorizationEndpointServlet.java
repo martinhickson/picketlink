@@ -89,12 +89,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String code = server.getAuthorizationCodes().create(
                 params.clientId, params.redirectUri, subject.get(), params.scope,
                 params.nonce, params.codeChallenge, params.maxAge);
-        String redirect = params.redirectUri
-                + (params.redirectUri.contains("?") ? "&" : "?")
-                + "code=" + code
-                + "&state=" + urlEncode(params.state == null ? "" : params.state);
-        response.setHeader("Location", redirect);
-        response.setStatus(HttpServletResponse.SC_FOUND);
+        emitAuthorizationResponse(params, code, response);
     }
 
     private RequestParams validate(HttpServletRequest request, HttpServletResponse response)
@@ -134,6 +129,11 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String codeChallenge = pick.apply("code_challenge", request.getParameter("code_challenge"));
         String codeChallengeMethod = pick.apply("code_challenge_method",
                 request.getParameter("code_challenge_method"));
+        String responseMode = pick.apply("response_mode", request.getParameter("response_mode"));
+        if (responseMode != null && !SUPPORTED_RESPONSE_MODES.contains(responseMode)) {
+            error(response, 400, "unsupported response_mode");
+            return null;
+        }
 
         if (!"code".equals(responseType)) {
             error(response, 400, "unsupported_response_type");
@@ -160,7 +160,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         }
         String requestObject = pick.apply("request", request.getParameter("request"));
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
-                codeChallenge, maxAge(request));
+                codeChallenge, maxAge(request), responseMode);
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, registered.get(), response);
         }
@@ -207,7 +207,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 state != null ? state : query.state,
                 nonce != null ? nonce : query.nonce,
                 codeChallenge != null ? codeChallenge : query.codeChallenge,
-                query.maxAge);
+                query.maxAge,
+                query.responseMode);
     }
 
     /** Parses the optional OIDC max_age request parameter (seconds since authentication). */
@@ -261,6 +262,82 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 .replace(">", "&gt;").replace("\"", "&quot;");
     }
 
+    private static final java.util.Set<String> SUPPORTED_RESPONSE_MODES = java.util.Set.of(
+            "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
+
+    /**
+     * Emits the authorization response per the requested response_mode: query (default),
+     * fragment, form_post, or the JARM modes (RFC 9101) where the response parameters are
+     * wrapped in a signed JWT (iss, aud = client, short exp) as the {@code response}
+     * parameter. Every redirect response carries the RFC 9207 {@code iss} parameter —
+     * the authorization-response mix-up mitigation.
+     */
+    private void emitAuthorizationResponse(RequestParams params, String code,
+            HttpServletResponse response) throws IOException {
+        String state = params.state == null ? "" : params.state;
+        String mode = params.responseMode == null ? "query" : params.responseMode;
+        if ("form_post".equals(mode)) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("text/html");
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.getWriter().write(formPost(params.redirectUri,
+                    hidden("code", code), hidden("state", state),
+                    hidden("iss", server.getIssuer())));
+            return;
+        }
+        if (mode.endsWith(".jwt") || "jwt".equals(mode)) {
+            String responseJwt = jarmResponse(params, code, state);
+            boolean fragment = "fragment".equals(mode) || "jwt".equals(mode);
+            String separator = fragment ? "#"
+                    : (params.redirectUri.contains("?") ? "&" : "?");
+            String redirect = params.redirectUri + separator + "response=" + urlEncode(responseJwt);
+            response.setHeader("Location", redirect);
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            return;
+        }
+        String redirect = params.redirectUri
+                + ("fragment".equals(mode)
+                        ? "#" + "code=" + code + "&state=" + urlEncode(state)
+                          + "&iss=" + urlEncode(server.getIssuer())
+                        : (params.redirectUri.contains("?") ? "&" : "?")
+                          + "code=" + code
+                          + "&state=" + urlEncode(state)
+                          + "&iss=" + urlEncode(server.getIssuer()));
+        response.setHeader("Location", redirect);
+        response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /** JARM (RFC 9101): signed response JWT with iss, aud, short-lived exp, code and state. */
+    private String jarmResponse(RequestParams params, String code, String state) {
+        long now = java.time.Clock.systemUTC().instant().getEpochSecond();
+        org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
+                new org.apache.cxf.rs.security.jose.jwt.JwtClaims();
+        claims.setIssuer(server.getIssuer());
+        claims.setAudience(params.clientId);
+        claims.setIssuedAt(now);
+        claims.setExpiryTime(now + 120);
+        claims.setClaim("code", code);
+        if (state != null && !state.isBlank()) {
+            claims.setClaim("state", state);
+        }
+        return server.getIssuanceServer().getSigningService().sign(claims, null);
+    }
+
+    private static String hidden(String name, String value) {
+        return "<input type=\"hidden\" name=\"" + escapeHtml(name)
+                + "\" value=\"" + escapeHtml(value) + "\"/>";
+    }
+
+    private static String formPost(String action, String... fields) {
+        StringBuilder html = new StringBuilder("<!doctype html><html><body onload=\"document.forms[0].submit()\">");
+        html.append("<form method=\"post\" action=\"").append(escapeHtml(action)).append("\">");
+        for (String field : fields) {
+            html.append(field);
+        }
+        html.append("</form></body></html>");
+        return html.toString();
+    }
+
     private static String urlEncode(String value) {
         return java.net.URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
@@ -275,9 +352,10 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         final String nonce;
         final String codeChallenge;
         final Long maxAge;
+        final String responseMode;
 
         RequestParams(String clientId, String redirectUri, String scope, String state,
-                String nonce, String codeChallenge, Long maxAge) {
+                String nonce, String codeChallenge, Long maxAge, String responseMode) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.scope = scope;
@@ -285,6 +363,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             this.nonce = nonce;
             this.codeChallenge = codeChallenge;
             this.maxAge = maxAge;
+            this.responseMode = responseMode;
         }
 
         java.util.List<Map.Entry<String, String>> hiddenFields() {
