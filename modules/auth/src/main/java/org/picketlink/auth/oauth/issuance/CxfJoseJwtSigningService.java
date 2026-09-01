@@ -83,6 +83,12 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
         if (key == null) {
             throw new IllegalStateException("No active signing key");
         }
+        if (key.isEd25519()) {
+            if (algorithm != null && !"EdDSA".equals(algorithm)) {
+                throw new JwtValidationException("Active key does not support algorithm " + algorithm);
+            }
+            return signEd25519(key, claims);
+        }
         if (algorithm != null && !key.getAlgorithm().name().equals(algorithm)) {
             throw new JwtValidationException("Active key does not support algorithm " + algorithm);
         }
@@ -92,8 +98,37 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
         return new JwsJwtCompactProducer(headers, claims).signWith(key.getSignatureProvider());
     }
 
+    /** Ed25519 JWS compact signing via plain JCA (CXF 4.x has no EdDSA enum). */
+    private static String signEd25519(SigningKey key, JwtClaims claims) {
+        try {
+            String header = "{\"alg\":\"EdDSA\",\"typ\":\"JWT\""
+                    + (key.getKeyId() == null ? "" : ",\"kid\":\"" + key.getKeyId() + "\"")
+                    + "}";
+            String payload = new org.apache.cxf.jaxrs.json.basic.JsonMapObjectReaderWriter()
+                    .toJson(claims);
+            String signingContent = URL_ENCODER.encodeToString(header.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                    + "." + URL_ENCODER.encodeToString(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            java.security.Signature signature = java.security.Signature.getInstance("Ed25519");
+            signature.initSign(key.getPrivateKey());
+            signature.update(signingContent.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            return signingContent + "." + URL_ENCODER.encodeToString(signature.sign());
+        } catch (java.security.GeneralSecurityException ex) {
+            throw new IllegalStateException("Unable to sign Ed25519 JWT", ex);
+        }
+    }
+
     @Override
     public JwtClaims validate(String compactJwt, Set<String> acceptedAlgorithms) {
+        return validate(compactJwt, acceptedAlgorithms, 0L);
+    }
+
+    /**
+     * As {@link #validate(String, Set)} with clock-skew leeway (seconds): tokens are
+     * considered valid up to {@code skewSeconds} past expiry / before not-before, absorbing
+     * small clock drift between issuer and validator.
+     */
+    @Override
+    public JwtClaims validate(String compactJwt, Set<String> acceptedAlgorithms, long skewSeconds) {
         if (compactJwt == null || compactJwt.isBlank()) {
             throw new JwtValidationException("Missing bearer token");
         }
@@ -102,6 +137,17 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
             consumer = new JwsCompactConsumer(compactJwt);
         } catch (RuntimeException ex) {
             throw new JwtValidationException("Malformed JWT");
+        }
+        String algorithmName = consumer.getJwsHeaders().getAlgorithm();
+        if ("EdDSA".equals(algorithmName)) {
+            if (acceptedAlgorithms != null && !acceptedAlgorithms.isEmpty()
+                    && !acceptedAlgorithms.contains("EdDSA")) {
+                throw new JwtValidationException("JWT algorithm EdDSA is not accepted");
+            }
+            if (!verifyEd25519(consumer)) {
+                throw new JwtValidationException("Invalid JWT signature");
+            }
+            return checkClaims(consumer, skewSeconds, clock);
         }
         SignatureAlgorithm algorithm = consumer.getJwsHeaders().getSignatureAlgorithm();
         if (algorithm == null || SignatureAlgorithm.NONE == algorithm) {
@@ -114,21 +160,69 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
         if (!verifySignature(consumer, algorithm)) {
             throw new JwtValidationException("Invalid JWT signature");
         }
+        return checkClaims(consumer, skewSeconds, clock);
+    }
 
+    private JwtClaims checkClaims(JwsCompactConsumer consumer, long skewSeconds, Clock claimsClock) {
         JwtClaims claims = readClaims(consumer);
-        long now = clock.instant().getEpochSecond();
+        long now = claimsClock.instant().getEpochSecond();
         if (!issuer.equals(claims.getIssuer())) {
             throw new JwtValidationException("Invalid JWT issuer");
         }
         Long expiry = claims.getExpiryTime();
-        if (expiry == null || expiry <= now) {
+        if (expiry == null || expiry <= now - skewSeconds) {
             throw new JwtValidationException("JWT has expired");
         }
         Long notBefore = claims.getNotBefore();
-        if (notBefore != null && notBefore > now) {
+        if (notBefore != null && notBefore > now + skewSeconds) {
             throw new JwtValidationException("JWT not yet valid");
         }
         return claims;
+    }
+
+    /** Test support: validates with an explicit validator clock (clock-drift scenarios). */
+    JwtClaims validateAtClock(String compactJwt, Set<String> acceptedAlgorithms, long skewSeconds,
+            Clock claimsClock) {
+        JwsCompactConsumer consumer = new JwsCompactConsumer(compactJwt);
+        String algorithmName = consumer.getJwsHeaders().getAlgorithm();
+        if ("EdDSA".equals(algorithmName)) {
+            if (!verifyEd25519(consumer)) {
+                throw new JwtValidationException("Invalid JWT signature");
+            }
+        } else if (!verifySignature(consumer, consumer.getJwsHeaders().getSignatureAlgorithm())) {
+            throw new JwtValidationException("Invalid JWT signature");
+        }
+        return checkClaims(consumer, skewSeconds, claimsClock);
+    }
+
+    /** Ed25519 verification via plain JCA against every registered Ed key (kid match first). */
+    private boolean verifyEd25519(JwsCompactConsumer consumer) {
+        String keyId = consumer.getJwsHeaders().getKeyId();
+        List<SigningKey> candidates = new ArrayList<>();
+        synchronized (keysById) {
+            for (SigningKey key : keysById.values()) {
+                if (key.isEd25519() && (keyId == null || keyId.equals(key.getKeyId()))) {
+                    candidates.add(key);
+                }
+            }
+        }
+        byte[] content = consumer.getUnsignedEncodedSequence()
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] signatureBytes = java.util.Base64.getUrlDecoder()
+                .decode(consumer.getEncodedSignature());
+        for (SigningKey key : candidates) {
+            try {
+                java.security.Signature verifier = java.security.Signature.getInstance("Ed25519");
+                verifier.initVerify(key.getPublicKey());
+                verifier.update(content);
+                if (verifier.verify(signatureBytes)) {
+                    return true;
+                }
+            } catch (java.security.GeneralSecurityException ex) {
+                // try the next candidate key
+            }
+        }
+        return false;
     }
 
     private boolean verifySignature(JwsCompactConsumer consumer, SignatureAlgorithm algorithm) {
@@ -206,7 +300,45 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
             jwk.setProperty(JsonWebKey.EC_Y_COORDINATE, encode(ec.getW().getAffineY()));
             return jwk;
         }
+        if (key.getPublicKey() instanceof java.security.interfaces.EdECPublicKey) {
+            // OKP/Ed25519 per RFC 8037 — modern JVMs (15+) generate these natively; CXF 4.x
+            // has no OKP constants, so the JWK is written with plain property names
+            java.security.interfaces.EdECPublicKey ed = (java.security.interfaces.EdECPublicKey) key.getPublicKey();
+            byte[] raw = rawEd25519(ed);
+            if (raw == null) {
+                return null;
+            }
+            JsonWebKey jwk = new JsonWebKey();
+            jwk.setProperty("kty", "OKP");
+            jwk.setKeyId(key.getKeyId());
+            jwk.setPublicKeyUse(PublicKeyUse.SIGN);
+            jwk.setProperty("crv", "Ed25519");
+            jwk.setProperty("x", Base64.getUrlEncoder().withoutPadding().encodeToString(raw));
+            return jwk;
+        }
         return null;
+    }
+
+    /** Raw 32-byte Ed25519 public key encoding for the JWK {@code x} coordinate. */
+    private static byte[] rawEd25519(java.security.interfaces.EdECPublicKey key) {
+        try {
+            java.security.KeyFactory factory = java.security.KeyFactory.getInstance("Ed25519");
+            java.security.spec.EdECPublicKeySpec spec = factory.getKeySpec(key,
+                    java.security.spec.EdECPublicKeySpec.class);
+            java.security.spec.EdECPoint point = spec.getPoint();
+            // little-endian encoding per RFC 8032: y with sign bit in the top bit of byte 31
+            byte[] raw = new byte[32];
+            byte[] y = point.getY().toByteArray(); // big-endian, possibly 33 bytes with sign
+            for (int i = 0; i < 32 && i < y.length; i++) {
+                raw[i] = y[y.length - 1 - i];
+            }
+            if (point.isXOdd()) {
+                raw[31] |= (byte) 0x80;
+            }
+            return raw;
+        } catch (java.security.GeneralSecurityException ex) {
+            return null;
+        }
     }
 
     private static String curve(ECPublicKey ec) {

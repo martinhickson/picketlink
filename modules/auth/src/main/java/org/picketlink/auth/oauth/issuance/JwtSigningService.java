@@ -25,6 +25,14 @@ public interface JwtSigningService {
     /** JWKS JSON document containing the publishable (asymmetric) keys, including recently rotated ones. */
     String publicJwksJson();
 
+    /**
+     * As {@link #validate(String, Set)} with clock-skew leeway; implementations without
+     * skew support fall back to exact time checks.
+     */
+    default JwtClaims validate(String compactJwt, Set<String> acceptedAlgorithms, long skewSeconds) {
+        return validate(compactJwt, acceptedAlgorithms);
+    }
+
     /** Key id of the key currently used for signing. */
     String activeKeyId();
 }

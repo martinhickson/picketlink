@@ -120,7 +120,13 @@ public final class JwtIssuanceManager {
      * registry is configured) that the token has not been revoked.
      */
     public JwtClaims validate(String tokenValue) {
-        JwtClaims claims = signingService.validate(tokenValue, Set.of(defaultAlgorithm));
+        return validate(tokenValue, 0L);
+    }
+
+    /** As {@link #validate(String)} with clock-skew leeway in seconds. */
+    public JwtClaims validate(String tokenValue, long clockSkewSeconds) {
+        JwtClaims claims = signingService.validate(tokenValue, Set.of(defaultAlgorithm),
+                clockSkewSeconds);
         if (tokenRegistry != null) {
             Optional<AccessTokenRecord> record = tokenRegistry.findByTokenValue(tokenValue);
             if (record.isEmpty() || record.get().isExpired(clock.instant())) {
