@@ -30,6 +30,7 @@ public class DiscoveryServlet extends HttpServlet {
         StringBuilder json = new StringBuilder("{");
         field(json, "issuer", issuer, true);
         field(json, "authorization_endpoint", basePath + "/authorize", false);
+        field(json, "pushed_authorization_request_endpoint", basePath + "/par", false);
         field(json, "token_endpoint", basePath + "/token", false);
         field(json, "userinfo_endpoint", basePath + "/userinfo", false);
         field(json, "end_session_endpoint", basePath + "/logout", false);

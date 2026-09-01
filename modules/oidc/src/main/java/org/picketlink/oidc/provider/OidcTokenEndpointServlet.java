@@ -131,6 +131,14 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 || redirectUri == null || !redirectUri.equals(consumed.getRedirectUri())) {
             throw oauthError(OAuthConstants.INVALID_GRANT, "code was not issued to this client");
         }
+        // OIDC Core 3.1.3.7: when max_age was requested, the authentication must still be
+        // recent enough — a code exchanged too late fails closed instead of issuing an
+        // ID token whose auth_time violates the relying party's freshness requirement
+        if (consumed.getMaxAge() != null
+                && java.time.Clock.systemUTC().instant().getEpochSecond()
+                        - consumed.getAuthTime() >= consumed.getMaxAge()) {
+            throw oauthError(OAuthConstants.INVALID_GRANT, "authentication is older than max_age");
+        }
         return issueTokens(client, consumed.getSubject(), parseScopes(consumed.getScopes()),
                 consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request));
     }
@@ -170,6 +178,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 server.getClaimSource().claimsFor(subject));
         idTokenClaims.put("auth_time", String.valueOf(authTime));
         idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
+        idTokenClaims.put("sid", java.util.UUID.randomUUID().toString());
         // ID token: same signing chokepoint, subject + nonce, audience is the client
         IssuedToken idToken = server.getIssuanceServer().getIssuanceManager()
                 .issue(IssuanceRequest.forClient(client)

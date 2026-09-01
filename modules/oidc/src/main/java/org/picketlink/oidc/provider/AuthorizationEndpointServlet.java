@@ -88,7 +88,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         }
         String code = server.getAuthorizationCodes().create(
                 params.clientId, params.redirectUri, subject.get(), params.scope,
-                params.nonce, params.codeChallenge);
+                params.nonce, params.codeChallenge, params.maxAge);
         String redirect = params.redirectUri
                 + (params.redirectUri.contains("?") ? "&" : "?")
                 + "code=" + code
@@ -99,23 +99,44 @@ public class AuthorizationEndpointServlet extends HttpServlet {
 
     private RequestParams validate(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        String responseType = request.getParameter("response_type");
         String clientId = request.getParameter("client_id");
-        String redirectUri = request.getParameter("redirect_uri");
-        String scope = request.getParameter("scope");
-        String state = request.getParameter("state");
-        String nonce = request.getParameter("nonce");
-        String codeChallenge = request.getParameter("code_challenge");
-        String codeChallengeMethod = request.getParameter("code_challenge_method");
-
-        if (!"code".equals(responseType)) {
-            error(response, 400, "unsupported_response_type");
-            return null;
-        }
         Optional<RegisteredClient> registered = store().findByClientId(clientId);
         if (!registered.isPresent()) {
             // never redirect to an unvalidated URI
             error(response, 400, "unauthorized_client");
+            return null;
+        }
+
+        // RFC 9126: request_uri values pushed by this provider's PAR endpoint are consumed
+        // here (single use, client-bound) and become the effective authorization parameters;
+        // external request_uri values are never fetched (SSRF-safe)
+        String requestUri = request.getParameter("request_uri");
+        final java.util.Map<String, String> pushedParams;
+        if (requestUri != null) {
+            pushedParams = server.getPushedAuthorizationRequests().consume(requestUri, clientId);
+            if (pushedParams == null) {
+                error(response, 400, "invalid or expired request_uri");
+                return null;
+            }
+        } else {
+            pushedParams = null;
+        }
+
+        java.util.function.BiFunction<String, String, String> pick =
+                (name, fallback) -> pushedParams != null && pushedParams.containsKey(name)
+                        ? pushedParams.get(name) : fallback;
+
+        String responseType = pick.apply("response_type", request.getParameter("response_type"));
+        String redirectUri = pick.apply("redirect_uri", request.getParameter("redirect_uri"));
+        String scope = pick.apply("scope", request.getParameter("scope"));
+        String state = pick.apply("state", request.getParameter("state"));
+        String nonce = pick.apply("nonce", request.getParameter("nonce"));
+        String codeChallenge = pick.apply("code_challenge", request.getParameter("code_challenge"));
+        String codeChallengeMethod = pick.apply("code_challenge_method",
+                request.getParameter("code_challenge_method"));
+
+        if (!"code".equals(responseType)) {
+            error(response, 400, "unsupported_response_type");
             return null;
         }
         if (redirectUri == null || !registered.get().getAllowedRedirectUris().contains(redirectUri)) {
@@ -137,16 +158,9 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_FOUND);
             return null;
         }
-        // request objects: signed JWT authorization requests (OIDC Core 6.1/6.3). The JWT's
-        // parameters take precedence over the query parameters. Unsigned request objects are
-        // rejected (they carry no integrity); request_uri is not fetched (SSRF-safe).
-        String requestObject = request.getParameter("request");
-        if (request.getParameter("request_uri") != null) {
-            error(response, 400, "request_uri not supported");
-            return null;
-        }
-        RequestParams params =
-                new RequestParams(clientId, redirectUri, scope, state, nonce, codeChallenge);
+        String requestObject = pick.apply("request", request.getParameter("request"));
+        RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
+                codeChallenge, maxAge(request));
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, registered.get(), response);
         }
@@ -192,7 +206,33 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 scope != null ? scope : query.scope,
                 state != null ? state : query.state,
                 nonce != null ? nonce : query.nonce,
-                codeChallenge != null ? codeChallenge : query.codeChallenge);
+                codeChallenge != null ? codeChallenge : query.codeChallenge,
+                query.maxAge);
+    }
+
+    /** Parses the optional OIDC max_age request parameter (seconds since authentication). */
+    private static Long maxAge(HttpServletRequest request) {
+        String raw = request.getParameter("max_age");
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            long value = Long.parseLong(raw.trim());
+            return value >= 0 ? value : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private static Long parseLong(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private static String stringClaim(org.apache.cxf.rs.security.jose.jwt.JwtClaims claims,
@@ -234,15 +274,17 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         final String state;
         final String nonce;
         final String codeChallenge;
+        final Long maxAge;
 
         RequestParams(String clientId, String redirectUri, String scope, String state,
-                String nonce, String codeChallenge) {
+                String nonce, String codeChallenge, Long maxAge) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.scope = scope;
             this.state = state;
             this.nonce = nonce;
             this.codeChallenge = codeChallenge;
+            this.maxAge = maxAge;
         }
 
         java.util.List<Map.Entry<String, String>> hiddenFields() {
@@ -252,6 +294,9 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             fields.add(Map.entry("redirect_uri", redirectUri));
             if (scope != null) {
                 fields.add(Map.entry("scope", scope));
+            }
+            if (maxAge != null) {
+                fields.add(Map.entry("max_age", String.valueOf(maxAge)));
             }
             if (state != null) {
                 fields.add(Map.entry("state", state));

@@ -34,11 +34,17 @@ public final class AuthorizationCodeService {
 
     public String create(String clientId, String redirectUri, String subject,
             String scopes, String nonce, String codeChallenge) {
+        return create(clientId, redirectUri, subject, scopes, nonce, codeChallenge, null);
+    }
+
+    public String create(String clientId, String redirectUri, String subject,
+            String scopes, String nonce, String codeChallenge, Long maxAge) {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String code = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         codes.put(code, new PendingCode(clientId, redirectUri, subject, scopes, nonce,
-                codeChallenge, clock.instant().getEpochSecond() + lifetimeSeconds));
+                codeChallenge, clock.instant().getEpochSecond() + lifetimeSeconds,
+                java.time.Instant.now().getEpochSecond(), maxAge));
         return code;
     }
 
@@ -87,15 +93,10 @@ public final class AuthorizationCodeService {
         final String codeChallenge;
         final long expiresAt;
         final long authTime;
+        final Long maxAge;
 
         PendingCode(String clientId, String redirectUri, String subject, String scopes,
-                String nonce, String codeChallenge, long expiresAt) {
-            this(clientId, redirectUri, subject, scopes, nonce, codeChallenge, expiresAt,
-                    java.time.Instant.now().getEpochSecond());
-        }
-
-        PendingCode(String clientId, String redirectUri, String subject, String scopes,
-                String nonce, String codeChallenge, long expiresAt, long authTime) {
+                String nonce, String codeChallenge, long expiresAt, long authTime, Long maxAge) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.subject = subject;
@@ -104,6 +105,7 @@ public final class AuthorizationCodeService {
             this.codeChallenge = codeChallenge;
             this.expiresAt = expiresAt;
             this.authTime = authTime;
+            this.maxAge = maxAge;
         }
 
         public String getClientId() {
@@ -129,6 +131,11 @@ public final class AuthorizationCodeService {
         /** End-user authentication time (epoch seconds) for the ID token's auth_time. */
         public long getAuthTime() {
             return authTime;
+        }
+
+        /** Requested OIDC max_age (seconds), null when unset. */
+        public Long getMaxAge() {
+            return maxAge;
         }
     }
 }

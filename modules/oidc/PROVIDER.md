@@ -119,4 +119,9 @@ For the admin API and admin UI, additionally mount
   (e.g. UserInfo) without a fresh, matching proof — stolen bearer strings are useless
 - prompt=none answers `login_required` per OIDC Core 3.1.2.1 (session-less provider);
   `ProviderCorsFilter` (allow-listed origins, DPoP header aware) enables SPA clients
+- PAR (RFC 9126): clients push authorization parameters to `/par` (authenticated,
+  validated at push time) and the browser carries only `client_id` + `request_uri` —
+  nothing sensitive transits the front channel; pushed URIs are single-use and client-bound
+- max_age enforced at token exchange (auth_time freshness per OIDC Core 3.1.3.7);
+  ID tokens carry `sid`
 - All tokens issued through the policy/audit/revocation chokepoint
