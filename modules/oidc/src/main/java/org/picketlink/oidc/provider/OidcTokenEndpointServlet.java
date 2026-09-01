@@ -172,6 +172,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                         .scopes(new LinkedHashSet<>())
                         .subject(subject)
                         .nonce(nonce)
+                        .extraClaims(server.getClaimSource().claimsFor(subject))
                         .requestedLifetimeSeconds(3600L)
                         .build());
         StringBuilder json = new StringBuilder("{");

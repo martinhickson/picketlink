@@ -60,6 +60,10 @@ public class UserInfoServlet extends HttpServlet {
             if (clientId != null) {
                 field(json, "client_id", clientId.toString(), false);
             }
+            for (java.util.Map.Entry<String, String> entry
+                    : server.getClaimSource().claimsFor(claims.getSubject()).entrySet()) {
+                field(json, entry.getKey(), entry.getValue(), false);
+            }
             json.append('}');
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("application/json");

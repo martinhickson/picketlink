@@ -15,7 +15,14 @@ the managed JWT issuance core — deployable on Tomcat or WildFly without CXF.
   <param-value>https://auth.corp.example</param-value>
 </context-param>
 <!-- optional: class implementing org.picketlink.oidc.provider.SubjectAuthenticator
-     (no-arg constructor). Default denies all logins. -->
+     (no-arg constructor). Default denies all logins. PicketLink IDM-backed example:
+
+     new IdmSubjectAuthenticator(partitionManager.createIdentityManager(realm))
+
+     verifies passwords through IDM's credential pipeline and enriches ID tokens /
+     UserInfo with standard OIDC profile claims (email, name, given_name, family_name,
+     preferred_username) from the IDM user. Wire it via a custom authenticator class with a
+     no-arg constructor (or extend the listener). -->
 <!--
 <context-param>
   <param-name>subjectAuthenticator</param-name>

@@ -1,6 +1,8 @@
 package org.picketlink.auth.oauth.issuance;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.picketlink.auth.oauth.model.RegisteredClient;
@@ -15,6 +17,7 @@ public final class IssuanceRequest {
     private final Long requestedLifetimeSeconds;
     private final String subject;
     private final String nonce;
+    private final Map<String, String> extraClaims;
 
     private IssuanceRequest(Builder builder) {
         this.client = builder.client;
@@ -24,6 +27,7 @@ public final class IssuanceRequest {
         this.requestedLifetimeSeconds = builder.requestedLifetimeSeconds;
         this.subject = builder.subject;
         this.nonce = builder.nonce;
+        this.extraClaims = new LinkedHashMap<>(builder.extraClaims);
     }
 
     public RegisteredClient getClient() {
@@ -57,6 +61,11 @@ public final class IssuanceRequest {
         return nonce;
     }
 
+    /** Additional claims (e.g. OIDC profile claims) merged into the token. */
+    public Map<String, String> getExtraClaims() {
+        return extraClaims;
+    }
+
     public static Builder forClient(RegisteredClient client) {
         return new Builder(client);
     }
@@ -69,6 +78,7 @@ public final class IssuanceRequest {
         private Long requestedLifetimeSeconds;
         private String subject;
         private String nonce;
+        private final Map<String, String> extraClaims = new LinkedHashMap<>();
 
         private Builder(RegisteredClient client) {
             this.client = client;
@@ -105,6 +115,13 @@ public final class IssuanceRequest {
 
         public Builder nonce(String nonce) {
             this.nonce = nonce;
+            return this;
+        }
+
+        public Builder extraClaims(Map<String, String> claims) {
+            if (claims != null) {
+                extraClaims.putAll(claims);
+            }
             return this;
         }
 

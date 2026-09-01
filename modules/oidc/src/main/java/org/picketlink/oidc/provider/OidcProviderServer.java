@@ -15,6 +15,7 @@ public final class OidcProviderServer {
     private final String issuer;
     private final ManagedIssuanceServer issuanceServer;
     private final SubjectAuthenticator subjectAuthenticator;
+    private final ClaimSource claimSource;
     private final AuthorizationCodeService authorizationCodes;
     private final RefreshTokenService refreshTokens;
     private final Clock clock;
@@ -23,6 +24,11 @@ public final class OidcProviderServer {
         this.issuer = builder.issuer;
         this.issuanceServer = builder.issuanceServer;
         this.subjectAuthenticator = builder.subjectAuthenticator;
+        this.claimSource = builder.claimSource != null
+                ? builder.claimSource
+                : (builder.subjectAuthenticator instanceof ClaimSource)
+                        ? (ClaimSource) builder.subjectAuthenticator
+                        : NO_CLAIMS;
         this.clock = builder.clock == null ? Clock.systemUTC() : builder.clock;
         this.authorizationCodes = builder.authorizationCodes != null
                 ? builder.authorizationCodes
@@ -42,6 +48,11 @@ public final class OidcProviderServer {
 
     public SubjectAuthenticator getSubjectAuthenticator() {
         return subjectAuthenticator;
+    }
+
+    /** Claim source for ID tokens / UserInfo; never null. */
+    public ClaimSource getClaimSource() {
+        return claimSource;
     }
 
     public AuthorizationCodeService getAuthorizationCodes() {
@@ -68,11 +79,20 @@ public final class OidcProviderServer {
         }
     };
 
+    /** Claim source used when none is configured and the authenticator is not one. */
+    public static final ClaimSource NO_CLAIMS = new ClaimSource() {
+        @Override
+        public java.util.Map<String, String> claimsFor(String subject) {
+            return java.util.Collections.emptyMap();
+        }
+    };
+
     public static final class Builder {
 
         private final String issuer;
         private final ManagedIssuanceServer issuanceServer;
         private SubjectAuthenticator subjectAuthenticator = DENY_ALL;
+        private ClaimSource claimSource;
         private AuthorizationCodeService authorizationCodes;
         private RefreshTokenService refreshTokens;
         private Clock clock;
@@ -84,6 +104,11 @@ public final class OidcProviderServer {
 
         public Builder subjectAuthenticator(SubjectAuthenticator authenticator) {
             this.subjectAuthenticator = authenticator;
+            return this;
+        }
+
+        public Builder claimSource(ClaimSource claimSource) {
+            this.claimSource = claimSource;
             return this;
         }
 
