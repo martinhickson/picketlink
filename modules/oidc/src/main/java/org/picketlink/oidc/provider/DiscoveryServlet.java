@@ -31,6 +31,7 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "issuer", issuer, true);
         field(json, "authorization_endpoint", basePath + "/authorize", false);
         field(json, "pushed_authorization_request_endpoint", basePath + "/par", false);
+        field(json, "device_authorization_endpoint", basePath + "/device_authorization", false);
         field(json, "token_endpoint", basePath + "/token", false);
         field(json, "userinfo_endpoint", basePath + "/userinfo", false);
         field(json, "end_session_endpoint", basePath + "/logout", false);
@@ -43,7 +44,8 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "response_types_supported", "code", false);
         field(json, "grant_types_supported",
                 "authorization_code refresh_token client_credentials"
-                + " urn:ietf:params:oauth:grant-type:token-exchange", false);
+                + " urn:ietf:params:oauth:grant-type:token-exchange"
+                + " urn:ietf:params:oauth:grant-type:device_code", false);
         field(json, "subject_types_supported", "public", false);
         field(json, "id_token_signing_alg_values_supported", "RS256 ES256", false);
         field(json, "code_challenge_methods_supported", "S256", false);

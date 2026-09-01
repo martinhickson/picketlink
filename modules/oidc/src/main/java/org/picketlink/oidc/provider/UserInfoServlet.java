@@ -42,6 +42,12 @@ public class UserInfoServlet extends HttpServlet {
     }
 
     @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        // OIDC Core 5.3: UserInfo accepts GET and POST with the same bearer semantics
+        doGet(request, response);
+    }
+
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorization = request.getHeader("Authorization");
         if (authorization == null || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {

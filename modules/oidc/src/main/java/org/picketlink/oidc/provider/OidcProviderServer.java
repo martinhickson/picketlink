@@ -19,6 +19,7 @@ public final class OidcProviderServer {
     private final AuthorizationCodeService authorizationCodes;
     private final RefreshTokenService refreshTokens;
     private final PushedAuthorizationRequestService pushedAuthorizationRequests;
+    private final DeviceAuthorizationService deviceAuthorizations;
     private final Clock clock;
 
     private OidcProviderServer(Builder builder) {
@@ -38,6 +39,7 @@ public final class OidcProviderServer {
                 ? builder.refreshTokens
                 : new RefreshTokenService(this.clock);
         this.pushedAuthorizationRequests = new PushedAuthorizationRequestService(this.clock);
+        this.deviceAuthorizations = new DeviceAuthorizationService(this.clock);
     }
 
     public String getIssuer() {
@@ -67,6 +69,10 @@ public final class OidcProviderServer {
 
     public PushedAuthorizationRequestService getPushedAuthorizationRequests() {
         return pushedAuthorizationRequests;
+    }
+
+    public DeviceAuthorizationService getDeviceAuthorizations() {
+        return deviceAuthorizations;
     }
 
     public Clock getClock() {

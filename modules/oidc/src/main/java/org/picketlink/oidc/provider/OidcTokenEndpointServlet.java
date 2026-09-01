@@ -38,6 +38,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final String TOKEN_EXCHANGE_GRANT =
             "urn:ietf:params:oauth:grant-type:token-exchange";
+    private static final String DEVICE_CODE_GRANT =
+            "urn:ietf:params:oauth:grant-type:device_code";
 
     private transient OidcProviderServer server;
     private transient ClientCredentialsAuthenticator authenticator;
@@ -115,6 +117,9 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         if (TOKEN_EXCHANGE_GRANT.equals(grantType)) {
             return tokenExchange(request, form);
         }
+        if (DEVICE_CODE_GRANT.equals(grantType)) {
+            return deviceCode(request, form);
+        }
         throw oauthError(OAuthConstants.UNSUPPORTED_GRANT_TYPE, "unsupported grant_type");
     }
 
@@ -165,6 +170,49 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         Set<String> scopes = parseScopes(rotated.getScopes());
         IssuedToken access = issueAccess(client, rotated.getSubject(), scopes);
         return tokenResponse(access, rotated.getNewRefreshToken(), scopes);
+    }
+
+    /** RFC 8628 device polling: pending grants answer authorization_pending, approved ones issue tokens. */
+    private String deviceCode(TokenRequest request, Map<String, String> form) {
+        ClientAuthentication authentication = authenticator.authenticate(request);
+        String deviceCode = form.get("device_code");
+        if (deviceCode == null || deviceCode.isBlank()) {
+            throw oauthError(OAuthConstants.INVALID_REQUEST, "device_code is required");
+        }
+        java.util.Optional<DeviceAuthorizationService.DeviceGrant> grant =
+                server.getDeviceAuthorizations().poll(deviceCode,
+                        authentication.getClient().getClientId());
+        if (grant.isEmpty()) {
+            throw oauthError(OAuthConstants.INVALID_GRANT,
+                    DeviceAuthorizationService.ERROR_EXPIRED_TOKEN);
+        }
+        DeviceAuthorizationService.DeviceGrant state = grant.get();
+        if (state.getStatus() == DeviceAuthorizationService.Status.DENIED) {
+            throw oauthError(OAuthConstants.INVALID_GRANT,
+                    DeviceAuthorizationService.ERROR_ACCESS_DENIED);
+        }
+        if (state.getStatus() != DeviceAuthorizationService.Status.CONSUMED
+                && state.getSubject() == null) {
+            // still PENDING: the device must keep polling at the advertised interval
+            throw oauthError(OAuthConstants.INVALID_GRANT,
+                    DeviceAuthorizationService.ERROR_AUTHORIZATION_PENDING);
+        }
+        Set<String> scopes = parseScopes(state.getScopes());
+        IssuedToken access = issueAccess(authentication.getClient(), state.getSubject(), scopes,
+                dpopJkt(request));
+        StringBuilder json = new StringBuilder("{");
+        json.append("\"access_token\":\"").append(org.picketlink.auth.oauth.json.OAuthJsonWriter
+                .escape(access.getTokenValue())).append('"');
+        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
+        if (!scopes.isEmpty()) {
+            json.append(",\"scope\":\"").append(
+                    org.picketlink.auth.oauth.json.OAuthJsonWriter.escape(
+                            org.picketlink.auth.oauth.service.ScopeValidator.formatScope(scopes)))
+                    .append('"');
+        }
+        json.append('}');
+        return json.toString();
     }
 
     /**
