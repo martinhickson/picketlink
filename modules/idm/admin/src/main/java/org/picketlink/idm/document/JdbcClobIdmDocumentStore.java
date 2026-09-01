@@ -5,8 +5,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
 
 /**
  * JDBC {@link IdmDocumentStore} storing the JSON envelope in {@code picketlink_idm.picketlink_idm_clob}.
@@ -22,6 +20,7 @@ public final class JdbcClobIdmDocumentStore implements IdmDocumentStore {
     public static final String CLOB_COLUMN = "picketlink_idm_clob";
 
     private final IdmJdbcConnectionSource connectionSource;
+    private volatile org.picketlink.common.db.SqlDialect dialect;
 
     public JdbcClobIdmDocumentStore(IdmJdbcConnectionSource connectionSource) {
         this.connectionSource = connectionSource;
@@ -79,13 +78,23 @@ public final class JdbcClobIdmDocumentStore implements IdmDocumentStore {
         }
     }
 
-    private static void ensureSchema(Connection connection) throws SQLException {
+    private org.picketlink.common.db.SqlDialect dialect(Connection connection) throws SQLException {
+        org.picketlink.common.db.SqlDialect current = dialect;
+        if (current == null) {
+            current = org.picketlink.common.db.SqlDialects.forConnection(connection);
+            dialect = current;
+        }
+        return current;
+    }
+
+    private void ensureSchema(Connection connection) throws SQLException {
+        String textType = dialect(connection).textType();
         try (PreparedStatement statement = connection.prepareStatement(
                 "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ("
                         + "document_id VARCHAR(128) PRIMARY KEY, "
-                        + CLOB_COLUMN + " CLOB NOT NULL, "
+                        + CLOB_COLUMN + " " + textType + " NOT NULL, "
                         + "version BIGINT NOT NULL, "
-                        + "updated_at TIMESTAMP NOT NULL)")) {
+                        + "updated_at BIGINT NOT NULL)")) {
             statement.execute();
         }
     }
@@ -96,7 +105,7 @@ public final class JdbcClobIdmDocumentStore implements IdmDocumentStore {
             statement.setString(1, document.getDocumentId());
             statement.setString(2, IdmDocumentJsonCodec.write(document));
             statement.setLong(3, document.getVersion());
-            statement.setTimestamp(4, Timestamp.from(Instant.now()));
+            statement.setLong(4, System.currentTimeMillis());
             statement.executeUpdate();
         }
     }
@@ -108,7 +117,7 @@ public final class JdbcClobIdmDocumentStore implements IdmDocumentStore {
                         + "WHERE document_id = ? AND version = ?")) {
             statement.setString(1, IdmDocumentJsonCodec.write(document));
             statement.setLong(2, document.getVersion());
-            statement.setTimestamp(3, Timestamp.from(Instant.now()));
+            statement.setLong(3, System.currentTimeMillis());
             statement.setString(4, document.getDocumentId());
             statement.setLong(5, expectedVersion);
             return statement.executeUpdate();

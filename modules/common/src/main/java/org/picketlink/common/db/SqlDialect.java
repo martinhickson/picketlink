@@ -1,4 +1,4 @@
-package org.picketlink.auth.oauth.store;
+package org.picketlink.common.db;
 
 /**
  * SQL dialect abstraction for the JSON-in-CLOB stores. The JDBC layer must work across the

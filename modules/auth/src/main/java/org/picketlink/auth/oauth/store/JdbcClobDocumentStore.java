@@ -1,5 +1,8 @@
 package org.picketlink.auth.oauth.store;
 
+import org.picketlink.common.db.SqlDialect;
+import org.picketlink.common.db.SqlDialects;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

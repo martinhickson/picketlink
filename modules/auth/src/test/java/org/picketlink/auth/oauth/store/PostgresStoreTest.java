@@ -1,5 +1,8 @@
 package org.picketlink.auth.oauth.store;
 
+import org.picketlink.common.db.SqlDialect;
+import org.picketlink.common.db.SqlDialects;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;

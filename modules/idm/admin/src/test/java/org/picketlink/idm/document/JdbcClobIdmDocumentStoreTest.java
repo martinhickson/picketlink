@@ -14,10 +14,9 @@ class JdbcClobIdmDocumentStoreTest {
 
     @Test
     void persistsDocumentWithOptimisticLocking() throws Exception {
-        Path dbFile = tempDir.resolve("idm-doc-test.mv.db");
-        String jdbcUrl = "jdbc:h2:file:" + dbFile.toAbsolutePath().normalize().toString().replace('\\', '/');
+        String jdbcUrl = "jdbc:sqlite:" + tempDir.resolve("idm-doc-test.db");
         IdmJdbcConnectionSource connectionSource = new DriverManagerJdbcConnectionSource(
-                new HibernateJdbcUrlInference.JdbcConnectionProperties(jdbcUrl, "org.h2.Driver", "sa", ""));
+                new HibernateJdbcUrlInference.JdbcConnectionProperties(jdbcUrl, "org.sqlite.JDBC", null, null));
         JdbcClobIdmDocumentStore store = new JdbcClobIdmDocumentStore(connectionSource);
         IdmRealmService service = new IdmRealmService(store);
 
@@ -41,10 +40,8 @@ class JdbcClobIdmDocumentStoreTest {
 
     @Test
     void persistsDocumentThroughJcaDataSource() throws Exception {
-        org.h2.jdbcx.JdbcDataSource dataSource = new org.h2.jdbcx.JdbcDataSource();
-        dataSource.setURL("jdbc:h2:mem:jca-idm-doc-test;DB_CLOSE_DELAY=-1");
-        dataSource.setUser("sa");
-        dataSource.setPassword("");
+        String jdbcUrl = "jdbc:sqlite:" + tempDir.resolve("jca-idm-doc-test.db");
+        javax.sql.DataSource dataSource = new SqliteTestDataSource(jdbcUrl);
 
         JcaDataSourceConnectionSource connectionSource =
                 new JcaDataSourceConnectionSource("java:comp/env/jdbc/ExampleDS", dataSource);
@@ -64,9 +61,9 @@ class JdbcClobIdmDocumentStoreTest {
                 <persistence>
                   <persistence-unit name="test">
                     <properties>
-                      <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
-                      <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:inferred"/>
-                      <property name="jakarta.persistence.jdbc.user" value="sa"/>
+                      <property name="jakarta.persistence.jdbc.driver" value="org.sqlite.JDBC"/>
+                      <property name="jakarta.persistence.jdbc.url" value="jdbc:sqlite:inferred.db"/>
+                      <property name="jakarta.persistence.jdbc.user" value=""/>
                       <property name="jakarta.persistence.jdbc.password" value=""/>
                     </properties>
                   </persistence-unit>
@@ -74,18 +71,71 @@ class JdbcClobIdmDocumentStoreTest {
                 """);
         HibernateJdbcUrlInference.JdbcConnectionProperties props =
                 HibernateJdbcUrlInference.fromPersistenceXml(persistence);
-        assertEquals("jdbc:h2:mem:inferred", props.url());
-        assertEquals("org.h2.Driver", props.driverClassName());
+        assertEquals("jdbc:sqlite:inferred.db", props.url());
+        assertEquals("org.sqlite.JDBC", props.driverClassName());
     }
 
     private static void assertTrueTableExists(String jdbcUrl) throws Exception {
-        try (java.sql.Connection connection = java.sql.DriverManager.getConnection(jdbcUrl, "sa", "");
+        try (java.sql.Connection connection = java.sql.DriverManager.getConnection(jdbcUrl);
                 java.sql.PreparedStatement statement = connection.prepareStatement(
                         "SELECT COUNT(*) FROM picketlink_idm")) {
             try (java.sql.ResultSet rs = statement.executeQuery()) {
                 rs.next();
                 assertEquals(1, rs.getInt(1));
             }
+        }
+    }
+
+    /** Minimal DataSource over the SQLite driver for the JCA connection-source test. */
+    static final class SqliteTestDataSource implements javax.sql.DataSource {
+
+        private final String url;
+
+        SqliteTestDataSource(String url) {
+            this.url = url;
+        }
+
+        @Override
+        public java.sql.Connection getConnection() throws java.sql.SQLException {
+            return java.sql.DriverManager.getConnection(url);
+        }
+
+        @Override
+        public java.sql.Connection getConnection(String username, String password) throws java.sql.SQLException {
+            return getConnection();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) throws java.sql.SQLException {
+            throw new java.sql.SQLException("not a wrapper");
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) {
+            return false;
+        }
+
+        @Override
+        public java.io.PrintWriter getLogWriter() {
+            return null;
+        }
+
+        @Override
+        public void setLogWriter(java.io.PrintWriter out) {
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) {
+        }
+
+        @Override
+        public int getLoginTimeout() {
+            return 0;
+        }
+
+        @Override
+        public java.util.logging.Logger getParentLogger() {
+            return java.util.logging.Logger.getGlobal();
         }
     }
 }

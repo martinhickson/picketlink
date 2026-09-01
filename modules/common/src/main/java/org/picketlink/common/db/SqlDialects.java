@@ -1,4 +1,4 @@
-package org.picketlink.auth.oauth.store;
+package org.picketlink.common.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;

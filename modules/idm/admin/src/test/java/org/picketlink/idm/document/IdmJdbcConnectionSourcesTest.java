@@ -37,15 +37,15 @@ class IdmJdbcConnectionSourcesTest {
 
     @Test
     void usesClassicModeWhenJdbcUrlIsConfiguredWithoutConnectionProperty() {
-        setProperty(IdmDocumentStores.JDBC_URL_PROPERTY, "jdbc:h2:mem:legacy");
+        setProperty(IdmDocumentStores.JDBC_URL_PROPERTY, "jdbc:sqlite:legacy.db");
         assertEquals("url", IdmJdbcConnectionSources.resolveConnectionMode());
     }
 
     @Test
     void resolvesClassicConnectionSourceFromJdbcUrl() {
         setProperty(IdmDocumentStores.JDBC_CONNECTION_PROPERTY, "url");
-        setProperty(IdmDocumentStores.JDBC_URL_PROPERTY, "jdbc:h2:mem:classic-mode");
-        setProperty(IdmDocumentStores.JDBC_DRIVER_PROPERTY, "org.h2.Driver");
+        setProperty(IdmDocumentStores.JDBC_URL_PROPERTY, "jdbc:sqlite:classic-mode.db");
+        setProperty(IdmDocumentStores.JDBC_DRIVER_PROPERTY, "org.sqlite.JDBC");
 
         IdmJdbcConnectionSource source = IdmJdbcConnectionSources.fromSystemProperties();
         assertInstanceOf(DriverManagerJdbcConnectionSource.class, source);
