@@ -36,6 +36,8 @@ import org.picketlink.auth.oauth.service.ScopeValidator;
 public class OidcTokenEndpointServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
+    private static final String TOKEN_EXCHANGE_GRANT =
+            "urn:ietf:params:oauth:grant-type:token-exchange";
 
     private transient OidcProviderServer server;
     private transient ClientCredentialsAuthenticator authenticator;
@@ -110,6 +112,9 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         if (OAuthConstants.CLIENT_CREDENTIALS_GRANT.equals(grantType)) {
             return clientCredentials(request);
         }
+        if (TOKEN_EXCHANGE_GRANT.equals(grantType)) {
+            return tokenExchange(request, form);
+        }
         throw oauthError(OAuthConstants.UNSUPPORTED_GRANT_TYPE, "unsupported grant_type");
     }
 
@@ -160,6 +165,99 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         Set<String> scopes = parseScopes(rotated.getScopes());
         IssuedToken access = issueAccess(client, rotated.getSubject(), scopes);
         return tokenResponse(access, rotated.getNewRefreshToken(), scopes);
+    }
+
+    /**
+     * Token Exchange (RFC 8693): an authenticated client exchanges a valid subject token
+     * (our JWT access token) for a new one scoped to a requested audience — the
+     * microservice delegation pattern. The subject carries over; when an actor_token is
+     * supplied it is validated too and recorded as the delegation actor ({@code act}
+     * chain), so the original caller stays auditable down the chain.
+     */
+    private String tokenExchange(TokenRequest request, Map<String, String> form) {
+        ClientAuthentication authentication = authenticator.authenticate(request);
+        RegisteredClient client = authentication.getClient();
+
+        String subjectToken = form.get("subject_token");
+        String subjectTokenType = form.get("subject_token_type");
+        if (subjectToken == null || subjectToken.isBlank()) {
+            throw oauthError(OAuthConstants.INVALID_REQUEST, "subject_token is required");
+        }
+        if (subjectTokenType != null
+                && !"urn:ietf:params:oauth:token-type:jwt".equals(subjectTokenType)
+                && !"urn:ietf:params:oauth:token-type:access_token".equals(subjectTokenType)) {
+            throw oauthError(OAuthConstants.INVALID_REQUEST, "unsupported subject_token_type");
+        }
+
+        org.apache.cxf.rs.security.jose.jwt.JwtClaims subjectClaims;
+        try {
+            subjectClaims = server.getIssuanceServer().getIssuanceManager().validate(subjectToken);
+        } catch (RuntimeException ex) {
+            throw oauthError(OAuthConstants.INVALID_GRANT, "subject_token is invalid: "
+                    + ex.getMessage());
+        }
+
+        // optional delegation actor (RFC 8693 section 4.4): recorded as act.sub
+        java.util.Map<String, Object> extra = new java.util.LinkedHashMap<>();
+        String actorToken = form.get("actor_token");
+        if (actorToken != null && !actorToken.isBlank()) {
+            try {
+                org.apache.cxf.rs.security.jose.jwt.JwtClaims actorClaims =
+                        server.getIssuanceServer().getIssuanceManager().validate(actorToken);
+                // preserve an existing chain, then append the new actor
+                Object existingAct = subjectClaims.getClaim("act");
+                java.util.Map<String, Object> act = new java.util.LinkedHashMap<>();
+                if (existingAct instanceof java.util.Map) {
+                    act.put("act", existingAct);
+                }
+                act.put("sub", actorClaims.getSubject());
+                extra.put("act", act);
+            } catch (RuntimeException ex) {
+                throw oauthError(OAuthConstants.INVALID_GRANT,
+                        "actor_token is invalid: " + ex.getMessage());
+            }
+        }
+
+        Set<String> audiences = new LinkedHashSet<>();
+        String requestedAudience = form.get("audience");
+        if (requestedAudience != null && !requestedAudience.isBlank()) {
+            audiences.addAll(Arrays.asList(requestedAudience.trim().split("\s+")));
+        }
+        Set<String> scopes = parseScopes(subjectClaims.getClaim(
+                org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_SCOPE) == null
+                        ? null
+                        : String.valueOf(subjectClaims.getClaim(
+                                org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_SCOPE)));
+
+        String dpopJkt = dpopJkt(request);
+        if (dpopJkt != null) {
+            java.util.Map<String, Object> cnf = new java.util.LinkedHashMap<>();
+            cnf.put("jkt", dpopJkt);
+            extra.put("cnf", cnf);
+        }
+
+        IssuedToken exchanged = server.getIssuanceServer().getIssuanceManager()
+                .issue(IssuanceRequest.forClient(client)
+                        .grantType(TOKEN_EXCHANGE_GRANT)
+                        .scopes(scopes)
+                        .subject(subjectClaims.getSubject())
+                        .audiences(audiences)
+                        .extraClaims(extra)
+                        .build());
+        StringBuilder json = new StringBuilder("{");
+        json.append("\"access_token\":\"").append(org.picketlink.auth.oauth.json.OAuthJsonWriter
+                .escape(exchanged.getTokenValue())).append('"');
+        json.append(",\"issued_token_type\":\"urn:ietf:params:oauth:token-type:jwt\"");
+        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"expires_in\":").append(exchanged.getLifetimeSeconds());
+        if (!scopes.isEmpty()) {
+            json.append(",\"scope\":\"").append(
+                    org.picketlink.auth.oauth.json.OAuthJsonWriter.escape(
+                            org.picketlink.auth.oauth.service.ScopeValidator.formatScope(scopes)))
+                    .append('"');
+        }
+        json.append('}');
+        return json.toString();
     }
 
     private String clientCredentials(TokenRequest request) {

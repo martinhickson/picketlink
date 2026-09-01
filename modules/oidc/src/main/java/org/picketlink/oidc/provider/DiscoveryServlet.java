@@ -36,7 +36,9 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "end_session_endpoint", basePath + "/logout", false);
         field(json, "jwks_uri", basePath + "/jwks.json", false);
         field(json, "response_types_supported", "code", false);
-        field(json, "grant_types_supported", "authorization_code refresh_token client_credentials", false);
+        field(json, "grant_types_supported",
+                "authorization_code refresh_token client_credentials"
+                + " urn:ietf:params:oauth:grant-type:token-exchange", false);
         field(json, "subject_types_supported", "public", false);
         field(json, "id_token_signing_alg_values_supported", "RS256 ES256", false);
         field(json, "code_challenge_methods_supported", "S256", false);
