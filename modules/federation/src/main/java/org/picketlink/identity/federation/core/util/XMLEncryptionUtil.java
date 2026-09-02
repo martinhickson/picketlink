@@ -91,7 +91,9 @@ public class XMLEncryptionUtil {
         algorithms.put("aes-256", new EncryptionAlgorithm("AES", XMLCipher.AES_256, 256));
         algorithms.put("aes", new EncryptionAlgorithm("AES", XMLCipher.AES_256, 256));
 
-        algorithms.put("tripledes", new EncryptionAlgorithm("TripleDes", XMLCipher.TRIPLEDES, 168));
+        // tripledes intentionally NOT registered: 112-bit effective security, disallowed by
+        // current XML Encryption guidance (STRONG_CRYPTO parity with the signature policy).
+        // Callers explicitly requesting it now fail closed with the unknown-algorithm error.
     }
 
     /**
