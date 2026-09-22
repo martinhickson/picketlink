@@ -337,13 +337,23 @@ jobs:
       run: |
         # Use the distributionManagement configured in pom.xml
         # The settings.xml has already been configured with authentication
+        set +e
         mvn deploy \
           -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
           -Dcheckstyle.skip=true \
           -Dmaven.compiler.source=17 \
-          -Dmaven.compiler.target=17
+          -Dmaven.compiler.target=17 | tee /tmp/gh-deploy.log
+        code=${PIPESTATUS[0]}
+        set -e
+        if [ "$code" -ne 0 ]; then
+          if grep -q 'status code: 409' /tmp/gh-deploy.log; then
+            echo "Already on GitHub Packages"
+          else
+            exit "$code"
+          fi
+        fi
 
     - name: Publish to Maven Central
       if: github.event.inputs.deploy_to_maven_central == 'true'
@@ -400,7 +410,9 @@ jobs:
               <password>${MAVEN_CENTRAL_PASSWORD}</password>\\
             </server>" ~/.m2/settings.xml
         echo "${MAVEN_CENTRAL_GPG_PRIVATE_KEY}" | gpg --batch --import --pinentry-mode loopback
-        mvn deploy -Pcentral-release \
+        # -Pcentral-release alone turns off the activeByDefault "all" profile, which holds the modules.
+        # The 3.0.7 parent POM is already on Central, so this publish skips it.
+        mvn deploy -Pcentral-release,all -pl '!picketlink-parent' \
           -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
