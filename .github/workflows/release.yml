@@ -412,8 +412,7 @@ jobs:
             </server>" ~/.m2/settings.xml
         echo "${MAVEN_CENTRAL_GPG_PRIVATE_KEY}" | gpg --batch --import --pinentry-mode loopback
         # -Pcentral-release alone turns off the activeByDefault "all" profile, which holds the modules.
-        # The 3.0.7 parent POM is already on Central, so this publish skips it.
-        mvn deploy -Pcentral-release,all -pl '!picketlink-parent' \
+        mvn deploy -Pcentral-release,all \
           -s ~/.m2/settings.xml \
           -Dmaven.test.skip=true \
           -DskipTests \
