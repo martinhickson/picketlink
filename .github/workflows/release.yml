@@ -92,6 +92,7 @@ jobs:
         # Check if release branch exists
         if git show-ref --verify --quiet refs/heads/${BRANCH_NAME} || git show-ref --verify --quiet refs/remotes/origin/${BRANCH_NAME}; then
           echo "Release branch ${BRANCH_NAME} already exists, checking it out"
+          rm -f settings.xml toolchains.xml
           git checkout ${BRANCH_NAME}
           git pull origin ${BRANCH_NAME} || true
         else
