@@ -2,7 +2,9 @@ package org.picketlink.auth.oauth.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,6 +34,32 @@ class ClientRegistrationServiceTest {
         assertEquals("service-a", created.getClientId());
         assertEquals(1, service.listClients().size());
         assertEquals("********", service.listClients().get(0).getClientSecret());
+    }
+
+    @Test
+    void keepsRedirectUrisAndBackChannelLogout() {
+        String json = "{\"clientId\":\"rp\",\"scopes\":[\"openid\"],"
+                + "\"allowedRedirectUris\":[\"https://rp.example/cb\"],"
+                + "\"backchannelLogoutUrl\":\"https://rp.example/logout\"}";
+        ClientRegistrationView created = service.registerClient(ClientRegistrationJsonWriter.readRequest(json));
+
+        assertEquals(List.of("https://rp.example/cb"), created.getAllowedRedirectUris());
+        assertEquals("https://rp.example/logout", created.getBackchannelLogoutUrl());
+
+        ClientRegistrationView listed = service.listClients().get(0);
+        assertEquals(List.of("https://rp.example/cb"), listed.getAllowedRedirectUris());
+        assertEquals("https://rp.example/logout", listed.getBackchannelLogoutUrl());
+
+        ClientRegistrationRequest again = ClientRegistrationJsonWriter.readRequest(
+                ClientRegistrationJsonWriter.writeView(created));
+        assertEquals(List.of("https://rp.example/cb"), again.getAllowedRedirectUris());
+        assertEquals("https://rp.example/logout", again.getBackchannelLogoutUrl());
+
+        ClientRegistrationService reopened = new ClientRegistrationService(
+                new JsonFileClientRegistrationStore(tempDir.resolve("clients.json")));
+        ClientRegistrationView stored = reopened.listClients().get(0);
+        assertEquals(List.of("https://rp.example/cb"), stored.getAllowedRedirectUris());
+        assertTrue(stored.getBackchannelLogoutUrl().equals("https://rp.example/logout"));
     }
 
     @Test

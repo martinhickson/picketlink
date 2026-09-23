@@ -8,7 +8,9 @@ public class ClientRegistrationRequest {
     private String clientId;
     private String clientSecret;
     private List<String> scopes = new ArrayList<String>();
+    private List<String> allowedRedirectUris = new ArrayList<String>();
     private String tokenEndpointAuthMethod;
+    private String backchannelLogoutUrl;
 
     public String getClientId() {
         return clientId;
@@ -40,5 +42,21 @@ public class ClientRegistrationRequest {
 
     public void setTokenEndpointAuthMethod(String tokenEndpointAuthMethod) {
         this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
+    }
+
+    public List<String> getAllowedRedirectUris() {
+        return allowedRedirectUris;
+    }
+
+    public void setAllowedRedirectUris(List<String> allowedRedirectUris) {
+        this.allowedRedirectUris = allowedRedirectUris;
+    }
+
+    public String getBackchannelLogoutUrl() {
+        return backchannelLogoutUrl;
+    }
+
+    public void setBackchannelLogoutUrl(String backchannelLogoutUrl) {
+        this.backchannelLogoutUrl = backchannelLogoutUrl;
     }
 }

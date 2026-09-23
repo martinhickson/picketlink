@@ -33,6 +33,8 @@ public final class ClientRegistrationJsonWriter {
         request.setClientSecret(readString(json, "clientSecret"));
         request.setTokenEndpointAuthMethod(readString(json, "tokenEndpointAuthMethod"));
         request.setScopes(readStringList(json, "scopes"));
+        request.setAllowedRedirectUris(readStringList(json, "allowedRedirectUris"));
+        request.setBackchannelLogoutUrl(readString(json, "backchannelLogoutUrl"));
         return request;
     }
 
@@ -41,6 +43,8 @@ public final class ClientRegistrationJsonWriter {
         appendString(json, "clientId", view.getClientId(), true);
         appendString(json, "clientSecret", view.getClientSecret(), false);
         appendStringArray(json, "scopes", view.getScopes(), false);
+        appendStringArray(json, "allowedRedirectUris", view.getAllowedRedirectUris(), false);
+        appendString(json, "backchannelLogoutUrl", view.getBackchannelLogoutUrl(), false);
         appendString(json, "tokenEndpointAuthMethod", view.getTokenEndpointAuthMethod(), false);
         json.append('}');
     }

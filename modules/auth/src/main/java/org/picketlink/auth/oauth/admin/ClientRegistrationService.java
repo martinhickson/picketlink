@@ -41,10 +41,20 @@ public class ClientRegistrationService {
         if (secret == null || secret.isBlank()) {
             secret = secretGenerator.generate();
         }
-        RegisteredClient client = RegisteredClient.builder(request.getClientId().trim(), secret)
+        RegisteredClient.Builder builder = RegisteredClient.builder(request.getClientId().trim(), secret)
                 .scopes(parseScopes(request.getScopes()))
-                .tokenEndpointAuthMethod(resolveAuthMethod(request.getTokenEndpointAuthMethod()))
-                .build();
+                .tokenEndpointAuthMethod(resolveAuthMethod(request.getTokenEndpointAuthMethod()));
+        if (request.getAllowedRedirectUris() != null) {
+            for (String redirectUri : request.getAllowedRedirectUris()) {
+                if (redirectUri != null && !redirectUri.isBlank()) {
+                    builder.redirectUri(redirectUri.trim());
+                }
+            }
+        }
+        if (request.getBackchannelLogoutUrl() != null && !request.getBackchannelLogoutUrl().isBlank()) {
+            builder.backchannelLogoutUrl(request.getBackchannelLogoutUrl().trim());
+        }
+        RegisteredClient client = builder.build();
         store.save(client);
         return toView(client, true);
     }
@@ -88,6 +98,8 @@ public class ClientRegistrationService {
         ClientRegistrationView view = new ClientRegistrationView();
         view.setClientId(client.getClientId());
         view.setScopes(new ArrayList<String>(client.getScopes()));
+        view.setAllowedRedirectUris(new ArrayList<String>(client.getAllowedRedirectUris()));
+        view.setBackchannelLogoutUrl(client.getBackchannelLogoutUrl());
         view.setTokenEndpointAuthMethod(client.getTokenEndpointAuthMethod().getValue());
         if (includeSecret) {
             view.setClientSecret(client.getClientSecret());
