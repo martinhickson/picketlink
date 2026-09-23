@@ -3,6 +3,7 @@ package org.picketlink.oidc.provider;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
@@ -263,6 +264,52 @@ class DpopAndCorsTest {
         assertTrue(location.getValue().contains("error=login_required"));
         assertTrue(location.getValue().contains("state=xyz"));
         assertTrue(location.getValue().contains("iss="));
+    }
+
+    @Test
+    void promptNoneCombinedWithAnotherValueIsRejected() throws Exception {
+        lenient().when(request.getParameter("response_type")).thenReturn("code");
+        lenient().when(request.getParameter("client_id")).thenReturn(CLIENT_ID);
+        lenient().when(request.getParameter("redirect_uri")).thenReturn("https://rp.example/cb");
+        lenient().when(request.getParameter("prompt")).thenReturn("none login");
+        lenient().when(request.getParameter("code_challenge")).thenReturn(
+                AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        lenient().when(request.getParameter("code_challenge_method")).thenReturn("S256");
+        new AuthorizationEndpointServlet(server).doGet(request, response);
+
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("cannot be combined"));
+        verify(response, never()).setHeader(org.mockito.ArgumentMatchers.eq("Location"),
+                org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void promptThatOnlyContainsNoneAsASubstringShowsTheLoginForm() throws Exception {
+        lenient().when(request.getParameter("response_type")).thenReturn("code");
+        lenient().when(request.getParameter("client_id")).thenReturn(CLIENT_ID);
+        lenient().when(request.getParameter("redirect_uri")).thenReturn("https://rp.example/cb");
+        lenient().when(request.getParameter("prompt")).thenReturn("nonessential");
+        lenient().when(request.getParameter("code_challenge")).thenReturn(
+                AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        lenient().when(request.getParameter("code_challenge_method")).thenReturn("S256");
+        new AuthorizationEndpointServlet(server).doGet(request, response);
+
+        verify(response).setStatus(200);
+        assertTrue(writer.toString().contains("password"));
+        assertFalse(writer.toString().contains("login_required"));
+    }
+
+    @Test
+    void unsignedDpopProofIsRejected() {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String header = encoder.encodeToString(
+                "{\"typ\":\"dpop+jwt\",\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = encoder.encodeToString("{}".getBytes(StandardCharsets.UTF_8));
+        DpopProofValidator.DpopValidationException ex = assertThrows(
+                DpopProofValidator.DpopValidationException.class,
+                () -> new DpopProofValidator(Clock.systemUTC())
+                        .validate(header + "." + payload + ".", "POST", TOKEN_URI));
+        assertTrue(ex.getMessage().contains("asymmetric"));
     }
 
     private static String accessTokenOf(String tokenResponse) {

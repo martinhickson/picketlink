@@ -266,8 +266,28 @@ class OidcProviderInteropTest {
     }
 
     @Test
+    void requestObjectPromptNoneIsHonoredWhenTheQueryOmitsIt() throws Exception {
+        String requestObject = signedRequestObject(CLIENT_ID, ISSUER, "n", null, null, "none");
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "openid");
+        params.put("request", requestObject);
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        authorizePost(params);
+
+        org.mockito.ArgumentCaptor<String> location =
+                org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        assertTrue(location.getValue().contains("error=login_required"));
+    }
+
+    @Test
     void requestObjectCannotReplaceAValidPkceChallenge() throws Exception {
-        String requestObject = signedRequestObject(CLIENT_ID, ISSUER, "n", "x", "plain");
+        String requestObject = signedRequestObject(CLIENT_ID, ISSUER, "n", "x", "plain", null);
         Map<String, String> params = new LinkedHashMap<>();
         params.put("response_type", "code");
         params.put("client_id", CLIENT_ID);
@@ -348,11 +368,11 @@ class OidcProviderInteropTest {
 
     /** Signed request object per OIDC Core 6.1: iss/sub = client, aud = issuer. */
     private String signedRequestObject(String clientId, String audience, String nonce) {
-        return signedRequestObject(clientId, audience, nonce, null, null);
+        return signedRequestObject(clientId, audience, nonce, null, null, null);
     }
 
     private String signedRequestObject(String clientId, String audience, String nonce,
-            String codeChallenge, String codeChallengeMethod) {
+            String codeChallenge, String codeChallengeMethod, String prompt) {
         long now = java.time.Instant.now().getEpochSecond();
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(clientId);
@@ -369,6 +389,9 @@ class OidcProviderInteropTest {
         }
         if (codeChallengeMethod != null) {
             claims.setClaim("code_challenge_method", codeChallengeMethod);
+        }
+        if (prompt != null) {
+            claims.setClaim("prompt", prompt);
         }
         JwsHeaders headers = new JwsHeaders();
         headers.setAlgorithm("RS256");

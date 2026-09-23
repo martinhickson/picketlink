@@ -161,7 +161,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             return null;
         }
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
-                codeChallenge, maxAge, responseMode);
+                codeChallenge, maxAge, responseMode, prompt);
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, codeChallengeMethod,
                     registered.get(), response);
@@ -170,10 +170,14 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         if (params == null) {
             return null;
         }
+        if (promptCombinesNone(params.prompt)) {
+            error(response, 400, "prompt none cannot be combined with another value");
+            return null;
+        }
         // prompt=none demands silent SSO, which a session-less provider cannot grant —
         // respond per OIDC Core 3.1.2.1 with the login_required error code.
         // Invalid scope or PKCE is rejected above, so it is not turned into this redirect.
-        if (prompt != null && prompt.contains("none")) {
+        if (promptIsNone(params.prompt)) {
             response.setHeader("Location", params.redirectUri
                     + (params.redirectUri.contains("?") ? "&" : "?")
                     + "error=login_required"
@@ -196,7 +200,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             String formatted = ScopeValidator.formatScope(approved);
             return new RequestParams(params.clientId, params.redirectUri,
                     formatted == null ? "" : formatted, params.state, params.nonce,
-                    params.codeChallenge, params.maxAge, params.responseMode);
+                    params.codeChallenge, params.maxAge, params.responseMode, params.prompt);
         } catch (OAuthException ex) {
             error(response, ex.getHttpStatus(), ex.getError().getErrorDescription());
             return null;
@@ -230,6 +234,10 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String codeChallenge = stringClaim(claims, "code_challenge");
         String codeChallengeMethod = stringClaim(claims, "code_challenge_method");
         String responseMode = stringClaim(claims, "response_mode");
+        String objectPrompt = stringClaim(claims, "prompt");
+        if (objectPrompt != null && objectPrompt.isBlank()) {
+            objectPrompt = null;
+        }
         final Long objectMaxAge;
         try {
             objectMaxAge = requiredMaxAge(stringClaim(claims, "max_age"));
@@ -264,7 +272,46 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 nonce != null ? nonce : query.nonce,
                 effectiveChallenge,
                 objectMaxAge != null ? objectMaxAge : query.maxAge,
-                responseMode != null ? responseMode : query.responseMode);
+                responseMode != null ? responseMode : query.responseMode,
+                objectPrompt != null ? objectPrompt : query.prompt);
+    }
+
+    /** True when {@code none} is one of several space-separated prompt values. */
+    private static boolean promptCombinesNone(String prompt) {
+        return promptHasNone(prompt) && promptHasOther(prompt);
+    }
+
+    /** True when {@code none} is the only prompt value. */
+    private static boolean promptIsNone(String prompt) {
+        return promptHasNone(prompt) && !promptHasOther(prompt);
+    }
+
+    private static boolean promptHasNone(String prompt) {
+        return promptContains(prompt, "none");
+    }
+
+    private static boolean promptHasOther(String prompt) {
+        if (prompt == null || prompt.isBlank()) {
+            return false;
+        }
+        for (String value : prompt.trim().split("\\s+")) {
+            if (!value.isEmpty() && !"none".equals(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean promptContains(String prompt, String expected) {
+        if (prompt == null || prompt.isBlank()) {
+            return false;
+        }
+        for (String value : prompt.trim().split("\\s+")) {
+            if (expected.equals(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -411,9 +458,11 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         final String codeChallenge;
         final Long maxAge;
         final String responseMode;
+        final String prompt;
 
         RequestParams(String clientId, String redirectUri, String scope, String state,
-                String nonce, String codeChallenge, Long maxAge, String responseMode) {
+                String nonce, String codeChallenge, Long maxAge, String responseMode,
+                String prompt) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.scope = scope;
@@ -422,6 +471,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             this.codeChallenge = codeChallenge;
             this.maxAge = maxAge;
             this.responseMode = responseMode;
+            this.prompt = prompt;
         }
 
         java.util.List<Map.Entry<String, String>> hiddenFields() {

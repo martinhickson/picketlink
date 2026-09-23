@@ -171,9 +171,12 @@ public final class ClientAssertionValidator {
     }
 
     private static boolean isRejectedAlgorithm(SignatureAlgorithm algorithm) {
-        String name = algorithm.name();
+        String name = algorithm.getJwaName();
+        if (name == null) {
+            return true;
+        }
         for (String prefix : REJECTED_ALGORITHM_PREFIXES) {
-            if (name.startsWith(prefix)) {
+            if (name.regionMatches(true, 0, prefix, 0, prefix.length())) {
                 return true;
             }
         }

@@ -58,8 +58,10 @@ public final class DpopProofValidator {
             throw new DpopValidationException("DPoP proof typ must be dpop+jwt");
         }
         SignatureAlgorithm algorithm = consumer.getJwsHeaders().getSignatureAlgorithm();
-        if (algorithm == null || algorithm.name().startsWith("HS")
-                || algorithm.name().startsWith("none")) {
+        String jwaName = algorithm == null ? null : algorithm.getJwaName();
+        if (jwaName == null
+                || jwaName.regionMatches(true, 0, "HS", 0, 2)
+                || jwaName.regionMatches(true, 0, "none", 0, 4)) {
             throw new DpopValidationException("DPoP proof must use an asymmetric algorithm");
         }
 

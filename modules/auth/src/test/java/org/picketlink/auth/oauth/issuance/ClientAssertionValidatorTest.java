@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Clock;
@@ -152,6 +153,18 @@ class ClientAssertionValidatorTest {
         OAuthException ex = assertThrows(OAuthException.class,
                 () -> validator.validate(assertion, client(jwks(keyPair))));
         assertTrue(ex.getError().getErrorDescription().contains("already been used"));
+    }
+
+    @Test
+    void shouldRejectUnsignedAssertion() {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String header = encoder.encodeToString("{\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = encoder.encodeToString(
+                ("{\"iss\":\"" + CLIENT_ID + "\",\"sub\":\"" + CLIENT_ID + "\"}")
+                        .getBytes(StandardCharsets.UTF_8));
+        OAuthException ex = assertThrows(OAuthException.class,
+                () -> validator.validate(header + "." + payload + ".", client(jwks(rsaKeyPair()))));
+        assertTrue(ex.getError().getErrorDescription().contains("asymmetric"));
     }
 
     @Test

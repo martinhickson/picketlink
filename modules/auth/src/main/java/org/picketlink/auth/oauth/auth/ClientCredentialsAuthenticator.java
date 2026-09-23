@@ -66,12 +66,10 @@ public class ClientCredentialsAuthenticator {
 
         String clientId = clientAssertionValidator.readIssuer(assertion);
         Optional<RegisteredClient> registered = clientRegistry.findByClientId(clientId);
-        if (!registered.isPresent()) {
-            throw invalidClient("Unknown client");
-        }
-        RegisteredClient client = registered.get();
-        if (client.getTokenEndpointAuthMethod() != TokenEndpointAuthMethod.PRIVATE_KEY_JWT) {
-            throw invalidClient("Client is not registered for private_key_jwt authentication");
+        RegisteredClient client = registered.orElse(null);
+        if (client == null
+                || client.getTokenEndpointAuthMethod() != TokenEndpointAuthMethod.PRIVATE_KEY_JWT) {
+            throw invalidClient("Client authentication failed");
         }
         clientAssertionValidator.validate(assertion, client);
         return new ClientAuthentication(client, TokenEndpointAuthMethod.PRIVATE_KEY_JWT);
@@ -93,18 +91,13 @@ public class ClientCredentialsAuthenticator {
     private ClientAuthentication authenticateWithSecret(String clientId, String clientSecret,
             TokenEndpointAuthMethod authMethod) {
         Optional<RegisteredClient> registeredClient = clientRegistry.findByClientId(clientId);
-        if (!registeredClient.isPresent()) {
-            throw invalidClient("Unknown client");
-        }
-        RegisteredClient client = registeredClient.get();
-
-        if (client.getClientSecret() == null
-                || !secretMatcher.matches(client.getClientSecret(), clientSecret)) {
-            throw invalidClient("Invalid client credentials");
-        }
-
-        if (client.getTokenEndpointAuthMethod() != authMethod) {
-            throw invalidClient("Client authentication method mismatch");
+        RegisteredClient client = registeredClient.orElse(null);
+        String expectedSecret = client == null || client.getClientSecret() == null
+                ? "picketlink-client-auth" : client.getClientSecret();
+        boolean secretMatches = secretMatcher.matches(expectedSecret, clientSecret);
+        boolean methodMatches = client != null && client.getTokenEndpointAuthMethod() == authMethod;
+        if (client == null || !secretMatches || !methodMatches) {
+            throw invalidClient("Client authentication failed");
         }
 
         return new ClientAuthentication(client, authMethod);

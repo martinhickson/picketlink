@@ -82,4 +82,23 @@ class ClientCredentialsAuthenticatorTest {
         OAuthException ex = assertThrows(OAuthException.class, () -> authenticator.authenticate(request));
         assertEquals(OAuthConstants.INVALID_CLIENT, ex.getError().getError());
     }
+
+    @Test
+    void failuresShareOneDescription() {
+        String unknown = failure("missing-client", "anything");
+        String badSecret = failure("service-b", "wrong");
+        String wrongMethod = failure("service-a", "s3cr3t");
+        assertEquals(unknown, badSecret);
+        assertEquals(unknown, wrongMethod);
+        assertEquals("Client authentication failed", unknown);
+    }
+
+    private String failure(String clientId, String secret) {
+        TokenRequest request = TokenRequest.builder()
+                .formParameter(OAuthConstants.CLIENT_ID, clientId)
+                .formParameter(OAuthConstants.CLIENT_SECRET, secret)
+                .build();
+        return assertThrows(OAuthException.class, () -> authenticator.authenticate(request))
+                .getError().getErrorDescription();
+    }
 }
