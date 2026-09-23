@@ -1,0 +1,11 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>github</id>
+      <username>${env.martinhickson}</username>
+      <password>${env.ghs_15368_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhdXRobmQiLCJjdHgiOiJoWGY5eC1QSmV0dExIQWh0amVZLXZZbW1qd21qX1J4NUVPZkdBNTUzUkdVS2RWaXh2TTZGVmFJIiwiZXhwIjoxNzkwMTkyOTIxLCJpYXQiOjE3OTAxODkzMjEsImlzcyI6ImdpdGh1YiIsImp0aSI6IjczMjNkMTFiLTZjMTEtNDIzNC1iOTI5LTEwZjQwYzBkYjJmMCIsInZlciI6M30.jGeUkzSq8FbQqCyTdgdzzEptPVggT3hUblJNmj2IdGPNV7sHDmXDu14-R7i0xXx-EpOZ7GHsDpNwD8rCc85WCg}</password>
+    </server>
+  </servers>
+</settings>
