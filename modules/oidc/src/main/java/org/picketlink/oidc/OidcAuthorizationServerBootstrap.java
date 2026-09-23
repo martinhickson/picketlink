@@ -9,8 +9,12 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.rs.security.oauth2.grants.code.AuthorizationCodeGrantHandler;
+import org.apache.cxf.rs.security.oauth2.grants.owner.ResourceOwnerGrantHandler;
 import org.apache.cxf.rs.security.oauth2.grants.refresh.RefreshTokenGrantHandler;
+import org.apache.cxf.rs.security.oauth2.provider.AccessTokenGrantHandler;
+import org.apache.cxf.rs.security.oauth2.provider.OAuthDataProvider;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthJSONProvider;
+import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.services.AccessTokenService;
 import org.apache.cxf.rs.security.jose.jaxrs.JsonWebKeysProvider;
 import org.apache.cxf.rs.security.oidc.idp.IdTokenResponseFilter;
@@ -44,6 +48,7 @@ public final class OidcAuthorizationServerBootstrap {
                         .scope(OidcDemoConstants.PROFILE_SCOPE)
                         .grantType("authorization_code")
                         .grantType("refresh_token")
+                        .grantType(OAuthConstants.RESOURCE_OWNER_GRANT)
                         .applicationName("PicketLink Demo RP")
                         .build())
                 .user(new OidcUserRegistration(
@@ -86,11 +91,7 @@ public final class OidcAuthorizationServerBootstrap {
 
         AccessTokenService tokenService = new AccessTokenService();
         tokenService.setDataProvider(dataProvider);
-        AuthorizationCodeGrantHandler codeHandler = new AuthorizationCodeGrantHandler();
-        codeHandler.setDataProvider(dataProvider);
-        RefreshTokenGrantHandler refreshHandler = new RefreshTokenGrantHandler();
-        refreshHandler.setDataProvider(dataProvider);
-        tokenService.setGrantHandlers(Arrays.asList(codeHandler, refreshHandler));
+        tokenService.setGrantHandlers(grantHandlers(dataProvider, config));
 
         IdTokenResponseFilter idTokenFilter = new IdTokenResponseFilter();
         idTokenFilter.setIdTokenProvider(idTokenProvider);
@@ -123,6 +124,36 @@ public final class OidcAuthorizationServerBootstrap {
         serviceBeans.addAll(additionalServiceBeans);
 
         createServer(bus, "/", serviceBeans);
+    }
+
+    static List<AccessTokenGrantHandler> grantHandlers(OAuthDataProvider dataProvider,
+            OidcAuthorizationServerConfig config) {
+        AuthorizationCodeGrantHandler codeHandler = new AuthorizationCodeGrantHandler();
+        codeHandler.setDataProvider(dataProvider);
+        RefreshTokenGrantHandler refreshHandler = new RefreshTokenGrantHandler();
+        refreshHandler.setDataProvider(dataProvider);
+        List<AccessTokenGrantHandler> handlers = new ArrayList<>();
+        handlers.add(codeHandler);
+        handlers.add(refreshHandler);
+        if (passwordGrantConfigured(config)) {
+            ResourceOwnerGrantHandler passwordHandler = new ResourceOwnerGrantHandler();
+            passwordHandler.setDataProvider(dataProvider);
+            passwordHandler.setLoginHandler(new ConfiguredResourceOwnerLoginHandler(config.getUsers()));
+            handlers.add(passwordHandler);
+        }
+        return List.copyOf(handlers);
+    }
+
+    private static boolean passwordGrantConfigured(OidcAuthorizationServerConfig config) {
+        if (config.getUsers().isEmpty()) {
+            return false;
+        }
+        for (OidcClientRegistration client : config.getClients()) {
+            if (client.getGrantTypes().contains(OAuthConstants.RESOURCE_OWNER_GRANT)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void createServer(Bus bus, String address, List<Object> serviceBeans) {

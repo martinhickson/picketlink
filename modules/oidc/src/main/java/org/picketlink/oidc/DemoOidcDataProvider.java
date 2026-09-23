@@ -13,6 +13,7 @@ public class DemoOidcDataProvider extends ConfiguredOidcDataProvider {
                 .scope(OidcDemoConstants.PROFILE_SCOPE)
                 .grantType("authorization_code")
                 .grantType("refresh_token")
+                .grantType("password")
                 .applicationName("PicketLink Demo RP")
                 .build()));
     }
