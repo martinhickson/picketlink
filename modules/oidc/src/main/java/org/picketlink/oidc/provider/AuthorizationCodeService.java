@@ -53,6 +53,17 @@ public final class AuthorizationCodeService {
     public String create(String clientId, String redirectUri, String subject,
             String scopes, String nonce, String codeChallenge, Long maxAge,
             String sid, Long authTime) {
+        return create(clientId, redirectUri, subject, scopes, nonce, codeChallenge,
+                maxAge, sid, authTime, null);
+    }
+
+    /**
+     * @param dpopJkt thumbprint from the authorization request; the token request must
+     *        present a DPoP proof for this key
+     */
+    public String create(String clientId, String redirectUri, String subject,
+            String scopes, String nonce, String codeChallenge, Long maxAge,
+            String sid, Long authTime, String dpopJkt) {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String code = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -62,7 +73,7 @@ public final class AuthorizationCodeService {
                 ? java.util.UUID.randomUUID().toString() : sid;
         codes.put(code, new PendingCode(clientId, redirectUri, subject, scopes, nonce,
                 codeChallenge, clock.instant().getEpochSecond() + lifetimeSeconds,
-                authenticatedAt, maxAge, sessionId));
+                authenticatedAt, maxAge, sessionId, dpopJkt));
         return code;
     }
 
@@ -207,10 +218,11 @@ public final class AuthorizationCodeService {
         final long authTime;
         final Long maxAge;
         final String sid;
+        final String dpopJkt;
 
         PendingCode(String clientId, String redirectUri, String subject, String scopes,
                 String nonce, String codeChallenge, long expiresAt, long authTime, Long maxAge,
-                String sid) {
+                String sid, String dpopJkt) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.subject = subject;
@@ -221,6 +233,7 @@ public final class AuthorizationCodeService {
             this.authTime = authTime;
             this.maxAge = maxAge;
             this.sid = sid;
+            this.dpopJkt = dpopJkt == null || dpopJkt.isBlank() ? null : dpopJkt;
         }
 
         public String getClientId() {
@@ -256,6 +269,11 @@ public final class AuthorizationCodeService {
         /** Browser SSO session id, copied into the ID token {@code sid} claim. */
         public String getSid() {
             return sid;
+        }
+
+        /** Thumbprint the authorization request bound this code to, or null. */
+        public String getDpopJkt() {
+            return dpopJkt;
         }
     }
 }

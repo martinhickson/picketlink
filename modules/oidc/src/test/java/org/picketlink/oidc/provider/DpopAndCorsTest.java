@@ -385,6 +385,87 @@ class DpopAndCorsTest {
     }
 
     @Test
+    void authorizationCodeBoundToDpopJktRejectsADifferentProof() throws Exception {
+        String jkt = thumbprint(dpopKeyPair);
+        String stolen = authorize(jkt);
+        redeem(stolen, null);
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("dpop_jkt"));
+
+        org.mockito.Mockito.clearInvocations(response);
+        writer.getBuffer().setLength(0);
+        String code = authorize(jkt);
+        redeem(code, dpopProof("POST", TOKEN_URI, "jti-authz"));
+        verify(response).setStatus(200);
+        String issued = writer.toString();
+        assertTrue(issued.contains("\"token_type\":\"DPoP\""));
+        String accessToken = issued.split("\"access_token\":\"")[1].split("\"")[0];
+        String payload = new String(Base64.getUrlDecoder().decode(accessToken.split("\\.")[1]),
+                StandardCharsets.UTF_8);
+        assertTrue(payload.contains(jkt));
+
+        org.mockito.Mockito.clearInvocations(response);
+        writer.getBuffer().setLength(0);
+        String mismatch = authorize("different-thumbprint");
+        redeem(mismatch, dpopProof("POST", TOKEN_URI, "jti-mismatch"));
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("dpop_jkt"));
+    }
+
+    private String authorize(String dpopJkt) throws Exception {
+        jakarta.servlet.http.HttpSession session = org.mockito.Mockito.mock(
+                jakarta.servlet.http.HttpSession.class);
+        Map<String, Object> attributes = new LinkedHashMap<>();
+        lenient().when(session.getAttribute(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> attributes.get(invocation.getArgument(0)));
+        lenient().doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(session).setAttribute(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any());
+        lenient().when(request.getSession(true)).thenReturn(session);
+        lenient().when(request.getSession(false)).thenReturn(session);
+        Map<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("client_id", CLIENT_ID);
+        parameters.put("response_type", "code");
+        parameters.put("redirect_uri", "https://rp.example/cb");
+        parameters.put("scope", "openid");
+        parameters.put("code_challenge", AuthorizationCodeService.s256("a".repeat(43)));
+        parameters.put("code_challenge_method", "S256");
+        parameters.put("dpop_jkt", dpopJkt);
+        parameters.put("username", "alice");
+        parameters.put("password", "wonderland");
+        lenient().when(request.getParameter(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(invocation -> parameters.get(invocation.getArgument(0)));
+        new AuthorizationEndpointServlet(server).doPost(request, response);
+        org.mockito.ArgumentCaptor<String> location = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        return location.getValue().split("code=")[1].split("&")[0];
+    }
+
+    private void redeem(String code, String proof) throws Exception {
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=authorization_code&code=" + code
+                        + "&redirect_uri=" + java.net.URLEncoder.encode(
+                                "https://rp.example/cb", StandardCharsets.UTF_8)
+                        + "&code_verifier=" + "a".repeat(43)));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+                .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes(StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(proof);
+        token.doPost(request, response);
+    }
+
+    private static String thumbprint(KeyPair keyPair) throws Exception {
+        RSAPublicKey rsa = (RSAPublicKey) keyPair.getPublic();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String canonical = "{\"e\":\"" + encoder.encodeToString(rsa.getPublicExponent().toByteArray())
+                + "\",\"kty\":\"RSA\",\"n\":\"" + encoder.encodeToString(rsa.getModulus().toByteArray())
+                + "\"}";
+        return encoder.encodeToString(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(canonical.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
     void unsignedDpopProofIsRejected() {
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
         String header = encoder.encodeToString(

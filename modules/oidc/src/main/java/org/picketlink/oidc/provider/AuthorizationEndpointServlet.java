@@ -153,7 +153,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             HttpServletResponse response) throws IOException {
         String code = server.getAuthorizationCodes().create(
                 params.clientId, params.redirectUri, subject, params.scope,
-                params.nonce, params.codeChallenge, params.maxAge, sid, authTime);
+                params.nonce, params.codeChallenge, params.maxAge, sid, authTime,
+                params.dpopJkt);
         emitAuthorizationResponse(params, code, response);
     }
 
@@ -215,6 +216,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             return null;
         }
         String prompt = pick.apply("prompt", request.getParameter("prompt"));
+        String dpopJkt = pick.apply("dpop_jkt", request.getParameter("dpop_jkt"));
         final Long maxAge;
         try {
             maxAge = requiredMaxAge(pick.apply("max_age", request.getParameter("max_age")));
@@ -223,7 +225,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             return null;
         }
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
-                codeChallenge, maxAge, responseMode, prompt);
+                codeChallenge, maxAge, responseMode, prompt, dpopJkt);
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, codeChallengeMethod,
                     registered.get(), response);
@@ -250,7 +252,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             String formatted = ScopeValidator.formatScope(approved);
             return new RequestParams(params.clientId, params.redirectUri,
                     formatted == null ? "" : formatted, params.state, params.nonce,
-                    params.codeChallenge, params.maxAge, params.responseMode, params.prompt);
+                    params.codeChallenge, params.maxAge, params.responseMode, params.prompt,
+                    params.dpopJkt);
         } catch (OAuthException ex) {
             error(response, ex.getHttpStatus(), ex.getError().getErrorDescription());
             return null;
@@ -285,6 +288,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String codeChallengeMethod = stringClaim(claims, "code_challenge_method");
         String responseMode = stringClaim(claims, "response_mode");
         String objectPrompt = stringClaim(claims, "prompt");
+        String objectDpopJkt = stringClaim(claims, "dpop_jkt");
         if (objectPrompt != null && objectPrompt.isBlank()) {
             objectPrompt = null;
         }
@@ -323,7 +327,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 effectiveChallenge,
                 objectMaxAge != null ? objectMaxAge : query.maxAge,
                 responseMode != null ? responseMode : query.responseMode,
-                objectPrompt != null ? objectPrompt : query.prompt);
+                objectPrompt != null ? objectPrompt : query.prompt,
+                objectDpopJkt != null ? objectDpopJkt : query.dpopJkt);
     }
 
     /** True when {@code none} is one of several space-separated prompt values. */
@@ -574,10 +579,11 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         final Long maxAge;
         final String responseMode;
         final String prompt;
+        final String dpopJkt;
 
         RequestParams(String clientId, String redirectUri, String scope, String state,
                 String nonce, String codeChallenge, Long maxAge, String responseMode,
-                String prompt) {
+                String prompt, String dpopJkt) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.scope = scope;
@@ -587,6 +593,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             this.maxAge = maxAge;
             this.responseMode = responseMode;
             this.prompt = prompt;
+            this.dpopJkt = dpopJkt == null || dpopJkt.isBlank() ? null : dpopJkt;
         }
 
         java.util.List<Map.Entry<String, String>> hiddenFields() {
@@ -612,6 +619,9 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             }
             if (responseMode != null) {
                 fields.add(Map.entry("response_mode", responseMode));
+            }
+            if (dpopJkt != null) {
+                fields.add(Map.entry("dpop_jkt", dpopJkt));
             }
             return fields;
         }

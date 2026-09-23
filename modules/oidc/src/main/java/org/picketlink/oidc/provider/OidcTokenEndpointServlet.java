@@ -169,10 +169,15 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                         - consumed.getAuthTime() >= consumed.getMaxAge()) {
             throw oauthError(OAuthConstants.INVALID_GRANT, "authentication is older than max_age");
         }
+        String presentedJkt = dpopJkt(request);
+        if (consumed.getDpopJkt() != null && !consumed.getDpopJkt().equals(presentedJkt)) {
+            throw oauthError(OAuthConstants.INVALID_GRANT, "DPoP proof does not match dpop_jkt");
+        }
         return issueTokens(client, consumed.getSubject(),
                 ScopeValidator.resolveApprovedScopes(client, consumed.getScopes()),
                 consumed.getNonce(), consumed.getAuthTime(), consumed.getSid(),
-                dpopJkt(request), "authorization_code");
+                consumed.getDpopJkt() != null ? consumed.getDpopJkt() : presentedJkt,
+                "authorization_code");
     }
 
     private String password(TokenRequest request, Map<String, String> form) {
