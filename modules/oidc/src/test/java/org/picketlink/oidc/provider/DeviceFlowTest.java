@@ -142,6 +142,15 @@ class DeviceFlowTest {
         assertTrue(payload.contains("\"sub\":\"alice\""));
         assertTrue(payload.contains("\"auth_time\":"));
         assertFalse(payload.contains("\"auth_time\":0"));
+        assertTrue(tokens.contains("\"refresh_token\":\""));
+        String refresh = tokens.split("\"refresh_token\":\"")[1].split("\"")[0];
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        post("grant_type=refresh_token&refresh_token=" + url(refresh));
+        token.doPost(request, response);
+        verify(response).setStatus(200);
+        assertTrue(writer.toString().contains("\"access_token\":\""));
 
         // device codes are single use: polling again reports the grant gone
         writer.getBuffer().setLength(0);
@@ -252,6 +261,7 @@ class DeviceFlowTest {
         token.doPost(request, response);
         verify(response).setStatus(200);
         assertTrue(writer.toString().contains("\"access_token\":\""));
+        assertTrue(writer.toString().contains("\"refresh_token\":\""));
         assertFalse(writer.toString().contains("\"id_token\""));
     }
 

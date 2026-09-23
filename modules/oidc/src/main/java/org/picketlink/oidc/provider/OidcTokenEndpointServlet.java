@@ -295,6 +295,9 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                             org.picketlink.auth.oauth.service.ScopeValidator.formatScope(scopes)))
                     .append('"');
         }
+        String refreshToken = server.getRefreshTokens().create(client.getClientId(),
+                state.getSubject(), ScopeValidator.formatScope(scopes), null, dpopJkt);
+        json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
         json.append('}');
         return json.toString();
     }
