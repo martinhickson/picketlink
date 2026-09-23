@@ -109,8 +109,9 @@ public class ProviderTokenManagementServlet extends HttpServlet {
                     .build();
             ClientAuthentication authentication = authenticator.authenticate(tokenRequest);
             if (MODE_REVOKE.equals(resolvedMode())) {
-                server.getIssuanceServer().getIssuanceManager()
-                        .revoke(token, authentication.getClient().getClientId());
+                String clientId = authentication.getClient().getClientId();
+                server.getIssuanceServer().getIssuanceManager().revoke(token, clientId);
+                server.getRefreshTokens().revoke(token, clientId);
                 response.setStatus(HttpServletResponse.SC_OK);
                 return;
             }

@@ -204,6 +204,29 @@ class ResponseModesAndTokenManagementTest {
     }
 
     @Test
+    void revocationKillsARefreshToken() throws Exception {
+        OidcTokenEndpointServlet token = new OidcTokenEndpointServlet(server);
+        lenient().when(request.getInputStream()).thenReturn(inputStream(
+                "grant_type=password&username=alice&password=wonderland&scope=openid"));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+                .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
+        token.doPost(request, response);
+        String refreshToken = writer.toString().split("\"refresh_token\":\"")[1].split("\"")[0];
+
+        writer.getBuffer().setLength(0);
+        when(request.getInputStream()).thenReturn(inputStream("token=" + refreshToken));
+        ProviderTokenManagementServlet.revocation(server).doPost(request, response);
+        verify(response, org.mockito.Mockito.atLeastOnce()).setStatus(200);
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        when(request.getInputStream()).thenReturn(inputStream(
+                "grant_type=refresh_token&refresh_token=" + refreshToken));
+        token.doPost(request, response);
+        verify(response).setStatus(400);
+    }
+
+    @Test
     void discoveryAdvertisesTheNewCapabilities() throws Exception {
         org.mockito.Mockito.clearInvocations(response);
         writer.getBuffer().setLength(0);

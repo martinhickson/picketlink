@@ -148,6 +148,12 @@ class OidcProviderFlowTest {
         StringWriter userinfoWriter = writer();
         userinfo.doGet(request, response);
         assertTrue(userinfoWriter.toString().contains("\"sub\":\"alice\""));
+
+        StringWriter idTokenWriter = writer();
+        lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + idToken);
+        userinfo.doGet(request, response);
+        verify(response).setStatus(401);
+        assertTrue(!idTokenWriter.toString().contains("\"sub\""));
     }
 
     @Test

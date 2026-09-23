@@ -57,6 +57,10 @@ public class UserInfoServlet extends HttpServlet {
         try {
             JwtClaims claims = server.getIssuanceServer().getIssuanceManager()
                     .validate(authorization.substring(7).trim());
+            if (claims.getClaim("at_hash") != null) {
+                error(response, 401, "access token required");
+                return;
+            }
             if (!requireMatchingDpopProof(claims, request, response)) {
                 return;
             }

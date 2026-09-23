@@ -153,8 +153,15 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             return null;
         }
         String prompt = pick.apply("prompt", request.getParameter("prompt"));
+        final Long maxAge;
+        try {
+            maxAge = requiredMaxAge(pick.apply("max_age", request.getParameter("max_age")));
+        } catch (IllegalArgumentException ex) {
+            error(response, 400, "invalid max_age");
+            return null;
+        }
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
-                codeChallenge, maxAge(request), responseMode);
+                codeChallenge, maxAge, responseMode);
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, codeChallengeMethod,
                     registered.get(), response);
@@ -223,6 +230,13 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String codeChallenge = stringClaim(claims, "code_challenge");
         String codeChallengeMethod = stringClaim(claims, "code_challenge_method");
         String responseMode = stringClaim(claims, "response_mode");
+        final Long objectMaxAge;
+        try {
+            objectMaxAge = requiredMaxAge(stringClaim(claims, "max_age"));
+        } catch (IllegalArgumentException ex) {
+            error(response, 400, "invalid max_age");
+            return null;
+        }
         if (responseType != null && !"code".equals(responseType)) {
             error(response, 400, "unsupported_response_type");
             return null;
@@ -249,32 +263,26 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 state != null ? state : query.state,
                 nonce != null ? nonce : query.nonce,
                 effectiveChallenge,
-                query.maxAge,
+                objectMaxAge != null ? objectMaxAge : query.maxAge,
                 responseMode != null ? responseMode : query.responseMode);
     }
 
-    /** Parses the optional OIDC max_age request parameter (seconds since authentication). */
-    private static Long maxAge(HttpServletRequest request) {
-        String raw = request.getParameter("max_age");
+    /**
+     * OIDC max_age in seconds. Blank means the client did not ask. A present value that is
+     * not a non-negative integer is rejected rather than ignored.
+     */
+    private static Long requiredMaxAge(String raw) {
         if (raw == null || raw.isBlank()) {
             return null;
         }
         try {
             long value = Long.parseLong(raw.trim());
-            return value >= 0 ? value : null;
+            if (value < 0) {
+                throw new IllegalArgumentException("negative max_age");
+            }
+            return value;
         } catch (NumberFormatException ex) {
-            return null;
-        }
-    }
-
-    private static Long parseLong(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        try {
-            return Long.parseLong(raw.trim());
-        } catch (NumberFormatException ex) {
-            return null;
+            throw new IllegalArgumentException("invalid max_age", ex);
         }
     }
 

@@ -45,6 +45,30 @@ public final class RefreshTokenService {
         return value;
     }
 
+    /**
+     * Revokes this refresh token and the rest of its family when it belongs to {@code clientId}.
+     * A token issued to another client is left in place.
+     */
+    public void revoke(String refreshToken, String clientId) {
+        if (refreshToken == null || clientId == null) {
+            return;
+        }
+        String hash = hash(refreshToken);
+        RefreshTokenRecord stored = store.remove(hash);
+        if (stored == null) {
+            String family = store.retiredFamily(hash);
+            if (family != null) {
+                store.revokeFamily(family);
+            }
+            return;
+        }
+        if (!clientId.equals(stored.getClientId())) {
+            store.save(stored);
+            return;
+        }
+        store.revokeFamily(stored.getFamily());
+    }
+
     /** The live record for this token. Does not rotate, retire, or revoke. */
     public Optional<RefreshTokenRecord> findLive(String refreshToken) {
         if (refreshToken == null) {

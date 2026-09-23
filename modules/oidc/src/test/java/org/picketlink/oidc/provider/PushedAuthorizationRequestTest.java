@@ -208,6 +208,43 @@ class PushedAuthorizationRequestTest {
     }
 
     @Test
+    void pushedMaxAgeIsEnforcedWhenTheBrowserOmitsIt() throws Exception {
+        form("response_type=code&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
+                + "&scope=openid&max_age=0"
+                + "&code_challenge=" + AuthorizationCodeService.s256(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                + "&code_challenge_method=S256");
+        basicAuth();
+        par.doPost(request, response);
+        verify(response).setStatus(201);
+        String requestUri = writer.toString().split("\"request_uri\":\"")[1].split("\"")[0];
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        params(new LinkedHashMap<>(Map.of(
+                "client_id", CLIENT_ID,
+                "request_uri", requestUri,
+                "username", "alice",
+                "password", "wonderland")));
+        authorize.doPost(request, response);
+        org.mockito.ArgumentCaptor<String> location =
+                org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        String code = location.getValue().substring((REDIRECT_URI + "?code=").length(),
+                location.getValue().indexOf('&'));
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        form("grant_type=authorization_code&code=" + code
+                + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
+                + "&code_verifier=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        basicAuth();
+        token.doPost(request, response);
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("max_age"));
+    }
+
+    @Test
     void pushedRequestRejectsAnUnregisteredScope() throws Exception {
         form("response_type=code&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
                 + "&scope=admin"
