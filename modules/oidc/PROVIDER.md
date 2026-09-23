@@ -101,7 +101,7 @@ For the admin API and admin UI, additionally mount
   Without JDBC: in-memory clients, ephemeral signing key, non-persistent token records.
 - Signing keys (JDBC profile): `-Dpicketlink.auth.keystore.path` / `...password`
   (PKCS12; auto-generated on first start, rotatable via the admin API).
-- Bootstrap admin client: `PICKETLINK_ADMIN_CLIENT_SECRET` (generated + logged once if unset).
+- Bootstrap admin client: `PICKETLINK_ADMIN_CLIENT_SECRET` (generated once if unset; the value is not logged).
 
 ## Security properties (verified by tests)
 

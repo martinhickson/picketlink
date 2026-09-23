@@ -36,7 +36,7 @@ policy check → claim assembly → sign → register → audit.
 | Threat | Control |
 |---|---|
 | Unauthorized admin access | Every admin endpoint requires a bearer JWT with `auth-admin` scope, validated through the same chokepoint (signature/expiry/revocation) — servlet and JAX-RS paths |
-| Bootstrap deadlock | `auth-admin` client seeded on first start (secret from `PICKETLINK_ADMIN_CLIENT_SECRET`, generated + logged once if unset) |
+| Bootstrap deadlock | `auth-admin` client seeded on first start (secret from `PICKETLINK_ADMIN_CLIENT_SECRET`, generated once if unset; the value is not logged) |
 | Secret leakage through admin API | Secrets masked (`********`) in listings; returned exactly once on create/rotate |
 | UI attacks on host sites | The admin UI is an Angular Elements web component with HashLocationStrategy — it cannot manipulate the host page's routes; API base + token injected by the host |
 | Token exposure in browser | Token handled in-memory by the element; the token browser shows hashes only, never raw JWTs |

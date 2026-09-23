@@ -149,8 +149,8 @@ public final class ManagedIssuanceServer {
                 .tokenEndpointAuthMethod(TokenEndpointAuthMethod.CLIENT_SECRET_BASIC)
                 .build());
         if (generated) {
-            LOG.warnf("Seeded admin client '%s' with generated secret '%s' — set %s to control it",
-                    ADMIN_CLIENT_ID, secret, ADMIN_CLIENT_SECRET_ENV);
+            LOG.warnf("Seeded admin client '%s' with a generated secret. Set %s to control it",
+                    ADMIN_CLIENT_ID, ADMIN_CLIENT_SECRET_ENV);
         }
     }
 

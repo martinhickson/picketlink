@@ -124,5 +124,5 @@ supported at dialect level, verification deferred), or in-memory otherwise. Toke
 **H2 is banned** in this repository — see `picketlink/CLAUDE.md`.
 
 Bootstrap: on first start an `auth-admin` client is seeded with the `auth-admin` scope and a
-secret from `PICKETLINK_ADMIN_CLIENT_SECRET` (generated and logged once if unset). Mint an
+secret from `PICKETLINK_ADMIN_CLIENT_SECRET` (generated once if unset; the value is not logged). Mint an
 admin token via `POST /oauth/token` with `grant_type=client_credentials`.

@@ -1,11 +1,18 @@
 package org.picketlink.auth.oauth.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -58,6 +65,52 @@ class ManagedIssuanceServerTest {
             assertEquals(4, server.getAdminResources().size());
         } finally {
             System.clearProperty("picketlink.auth.keystore.path");
+        }
+    }
+
+    @Test
+    void generatedAdminSecretIsNotWrittenToTheLog() throws Exception {
+        Logger logger = Logger.getLogger(ManagedIssuanceServer.class.getName());
+        List<String> lines = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                StringBuilder text = new StringBuilder();
+                if (record.getMessage() != null) {
+                    text.append(record.getMessage());
+                }
+                if (record.getParameters() != null) {
+                    for (Object parameter : record.getParameters()) {
+                        text.append(' ').append(parameter);
+                    }
+                }
+                lines.add(text.toString());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        handler.setLevel(Level.ALL);
+        Level previous = logger.getLevel();
+        logger.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        try {
+            ManagedIssuanceServer server = ManagedIssuanceServer.builder(ISSUER).build();
+            String secret = server.getClientStore()
+                    .findByClientId(ManagedIssuanceServer.ADMIN_CLIENT_ID)
+                    .get().getClientSecret();
+            String logged = String.join("\n", lines);
+            assertFalse(logged.contains(secret));
+            assertTrue(logged.contains(ManagedIssuanceServer.ADMIN_CLIENT_SECRET_ENV));
+            assertTrue(logged.contains(ManagedIssuanceServer.ADMIN_CLIENT_ID));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previous);
         }
     }
 
