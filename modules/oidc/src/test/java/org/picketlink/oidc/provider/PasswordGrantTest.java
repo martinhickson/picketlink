@@ -110,7 +110,8 @@ class PasswordGrantTest {
         assertTrue(json.contains("password"));
         assertTrue(json.contains("refresh_token"));
         assertTrue(json.contains("authorization_code"));
-        assertTrue(json.contains("/oidc/jwks.json"));
+        assertTrue(json.contains("\"jwks_uri\":\"" + ISSUER + "/oidc/jwks.json\""));
+        assertTrue(json.contains("\"token_endpoint\":\"" + ISSUER + "/oidc/token\""));
     }
 
     @Test

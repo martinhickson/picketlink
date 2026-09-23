@@ -253,8 +253,11 @@ class ResponseModesAndTokenManagementTest {
     void discoveryAdvertisesTheNewCapabilities() throws Exception {
         org.mockito.Mockito.clearInvocations(response);
         writer.getBuffer().setLength(0);
+        assertNotNull(DiscoveryServlet.class.getDeclaredConstructor().newInstance());
         new DiscoveryServlet(ISSUER, "").doGet(request, response);
         String json = writer.toString();
+        assertTrue(json.contains("\"authorization_endpoint\":\"" + ISSUER + "/authorize\""));
+        assertTrue(json.contains("\"jwks_uri\":\"" + ISSUER + "/jwks.json\""));
         assertTrue(json.contains("introspection_endpoint"));
         assertTrue(json.contains("revocation_endpoint"));
         assertTrue(json.contains("response_modes_supported"));

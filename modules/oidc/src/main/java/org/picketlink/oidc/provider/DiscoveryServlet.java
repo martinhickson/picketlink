@@ -17,8 +17,12 @@ public class DiscoveryServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private final transient String issuer;
-    private final transient String basePath;
+    private transient String issuer;
+    private transient String basePath;
+
+    /** Container constructor. Issuer and base path are read in {@link #init()}. */
+    public DiscoveryServlet() {
+    }
 
     public DiscoveryServlet(String issuer, String basePath) {
         this.issuer = issuer;
@@ -26,18 +30,37 @@ public class DiscoveryServlet extends HttpServlet {
     }
 
     @Override
+    public void init() {
+        if (issuer == null || issuer.isBlank()) {
+            Object configured = getServletContext().getAttribute(OidcProviderServer.class.getName());
+            if (configured instanceof OidcProviderServer) {
+                issuer = ((OidcProviderServer) configured).getIssuer();
+            }
+            if (issuer == null || issuer.isBlank()) {
+                issuer = getServletContext().getInitParameter("issuer");
+            }
+        }
+        if (basePath == null) {
+            basePath = normalize(getInitParameter("basePath"));
+        }
+        if (issuer == null || issuer.isBlank()) {
+            throw new IllegalStateException("issuer is required for discovery");
+        }
+    }
+
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         StringBuilder json = new StringBuilder("{");
         field(json, "issuer", issuer, true);
-        field(json, "authorization_endpoint", basePath + "/authorize", false);
-        field(json, "pushed_authorization_request_endpoint", basePath + "/par", false);
-        field(json, "device_authorization_endpoint", basePath + "/device_authorization", false);
-        field(json, "token_endpoint", basePath + "/token", false);
-        field(json, "userinfo_endpoint", basePath + "/userinfo", false);
-        field(json, "end_session_endpoint", basePath + "/logout", false);
-        field(json, "introspection_endpoint", basePath + "/introspect", false);
-        field(json, "revocation_endpoint", basePath + "/revoke", false);
-        field(json, "jwks_uri", basePath + "/jwks.json", false);
+        field(json, "authorization_endpoint", endpoint("/authorize"), false);
+        field(json, "pushed_authorization_request_endpoint", endpoint("/par"), false);
+        field(json, "device_authorization_endpoint", endpoint("/device_authorization"), false);
+        field(json, "token_endpoint", endpoint("/token"), false);
+        field(json, "userinfo_endpoint", endpoint("/userinfo"), false);
+        field(json, "end_session_endpoint", endpoint("/logout"), false);
+        field(json, "introspection_endpoint", endpoint("/introspect"), false);
+        field(json, "revocation_endpoint", endpoint("/revoke"), false);
+        field(json, "jwks_uri", endpoint("/jwks.json"), false);
         array(json, "response_types_supported", "code");
         array(json, "response_modes_supported",
                 "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
@@ -81,6 +104,16 @@ public class DiscoveryServlet extends HttpServlet {
 
     private static void bool(StringBuilder json, String name, boolean value) {
         json.append(",\"").append(OAuthJsonWriter.escape(name)).append("\":").append(value);
+    }
+
+    /** OIDC discovery requires absolute endpoint URLs. A path is resolved against the issuer. */
+    private String endpoint(String path) {
+        String root = basePath == null ? "" : basePath;
+        if (root.startsWith("https://") || root.startsWith("http://")) {
+            return root + path;
+        }
+        String issuerRoot = issuer.endsWith("/") ? issuer.substring(0, issuer.length() - 1) : issuer;
+        return issuerRoot + root + path;
     }
 
     private static String normalize(String basePath) {
