@@ -170,7 +170,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.setHeader("Location", params.redirectUri
                     + (params.redirectUri.contains("?") ? "&" : "?")
                     + "error=login_required"
-                    + (params.state == null ? "" : "&state=" + urlEncode(params.state)));
+                    + (params.state == null ? "" : "&state=" + urlEncode(params.state))
+                    + "&iss=" + urlEncode(server.getIssuer()));
             response.setStatus(HttpServletResponse.SC_FOUND);
             return null;
         }
@@ -221,6 +222,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String nonce = stringClaim(claims, "nonce");
         String codeChallenge = stringClaim(claims, "code_challenge");
         String codeChallengeMethod = stringClaim(claims, "code_challenge_method");
+        String responseMode = stringClaim(claims, "response_mode");
         if (responseType != null && !"code".equals(responseType)) {
             error(response, 400, "unsupported_response_type");
             return null;
@@ -235,6 +237,10 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             error(response, 400, "PKCE S256 is required");
             return null;
         }
+        if (responseMode != null && !SUPPORTED_RESPONSE_MODES.contains(responseMode)) {
+            error(response, 400, "unsupported response_mode");
+            return null;
+        }
         // overlay: request-object values take precedence per OIDC Core 6.1
         return new RequestParams(
                 query.clientId,
@@ -244,7 +250,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 nonce != null ? nonce : query.nonce,
                 effectiveChallenge,
                 query.maxAge,
-                query.responseMode);
+                responseMode != null ? responseMode : query.responseMode);
     }
 
     /** Parses the optional OIDC max_age request parameter (seconds since authentication). */
@@ -430,6 +436,9 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             if (codeChallenge != null) {
                 fields.add(Map.entry("code_challenge", codeChallenge));
                 fields.add(Map.entry("code_challenge_method", "S256"));
+            }
+            if (responseMode != null) {
+                fields.add(Map.entry("response_mode", responseMode));
             }
             return fields;
         }

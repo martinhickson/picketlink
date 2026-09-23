@@ -168,6 +168,16 @@ class AuthorizationCodePkceTest {
     }
 
     @Test
+    void anotherClientCannotBurnTheCode() {
+        Clock clock = Clock.systemUTC();
+        AuthorizationCodeService codes = new AuthorizationCodeService(clock);
+        String code = codes.create(CLIENT_ID, REDIRECT_URI, "alice", "openid", "n",
+                AuthorizationCodeService.s256(VERIFIER));
+        assertTrue(codes.consume(code, VERIFIER, "other-client", REDIRECT_URI).isEmpty());
+        assertTrue(codes.consume(code, VERIFIER, CLIENT_ID, REDIRECT_URI).isPresent());
+    }
+
+    @Test
     void codeIssuedWithoutAChallengeCannotBeRedeemed() {
         Clock clock = Clock.fixed(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC);
         AuthorizationCodeService codes = new AuthorizationCodeService(clock);

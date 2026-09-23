@@ -208,6 +208,19 @@ class PushedAuthorizationRequestTest {
     }
 
     @Test
+    void pushedRequestRejectsAnUnregisteredScope() throws Exception {
+        form("response_type=code&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
+                + "&scope=admin"
+                + "&code_challenge=" + AuthorizationCodeService.s256(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                + "&code_challenge_method=S256");
+        basicAuth();
+        par.doPost(request, response);
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("not registered"));
+    }
+
+    @Test
     void discoveryAdvertisesTheParEndpoint() throws Exception {
         org.mockito.Mockito.clearInvocations(response);
         new DiscoveryServlet(ISSUER, "").doGet(request, response);

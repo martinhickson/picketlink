@@ -88,6 +88,14 @@ class PasswordGrantTest {
     }
 
     @Test
+    void passwordGrantWithoutOpenidDoesNotIssueAnIdToken() throws Exception {
+        post("grant_type=password&username=alice&password=wonderland&scope=profile");
+        String json = writer.toString();
+        assertTrue(json.contains("\"access_token\""));
+        assertTrue(!json.contains("\"id_token\""));
+    }
+
+    @Test
     void passwordGrantRejectsABadPassword() throws Exception {
         post("grant_type=password&username=alice&password=wrong");
         org.mockito.Mockito.verify(response).setStatus(400);
@@ -111,13 +119,15 @@ class PasswordGrantTest {
                 .subjectAuthenticator(server.getSubjectAuthenticator())
                 .authorizationCodes(server.getAuthorizationCodes())
                 .build();
+        String verifier = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         String code = server.getAuthorizationCodes().create(
-                CLIENT_ID, "https://rp.example.test/callback", "alice", "openid", "n", null);
+                CLIENT_ID, "https://rp.example.test/callback", "alice", "openid", "n",
+                AuthorizationCodeService.s256(verifier));
         Optional<AuthorizationCodeService.PendingCode> consumed =
-                other.getAuthorizationCodes().consume(code, null);
+                other.getAuthorizationCodes().consume(code, verifier);
         assertTrue(consumed.isPresent());
         assertEquals("alice", consumed.get().getSubject());
-        assertTrue(server.getAuthorizationCodes().consume(code, null).isEmpty());
+        assertTrue(server.getAuthorizationCodes().consume(code, verifier).isEmpty());
     }
 
     @Test

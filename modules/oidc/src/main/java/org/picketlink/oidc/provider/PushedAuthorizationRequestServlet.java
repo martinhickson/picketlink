@@ -18,6 +18,7 @@ import org.picketlink.auth.oauth.http.FormParameters;
 import org.picketlink.auth.oauth.json.OAuthJsonWriter;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 import org.picketlink.auth.oauth.model.TokenRequest;
+import org.picketlink.auth.oauth.service.ScopeValidator;
 
 /**
  * PAR push endpoint (RFC 9126, typically mapped at {@code /par}): an authenticated client
@@ -92,6 +93,7 @@ public class PushedAuthorizationRequestServlet extends HttpServlet {
                 writeError(response, 400, "PKCE S256 is required");
                 return;
             }
+            ScopeValidator.resolveApprovedScopes(client, form.get("scope"));
 
             String requestUri = server.getPushedAuthorizationRequests()
                     .push(client.getClientId(), form);

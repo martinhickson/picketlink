@@ -59,6 +59,32 @@ public final class AuthorizationCodeService {
             return Optional.empty();
         }
         PendingCode pending = codes.remove(code);
+        return redeem(pending, codeVerifier);
+    }
+
+    /**
+     * Redeems a code for this client and redirect URI. A different client, or a different
+     * redirect URI, leaves the code in place so a front-channel observer cannot burn it.
+     * A matching client with a wrong verifier still consumes the code.
+     */
+    public Optional<PendingCode> consume(String code, String codeVerifier,
+            String expectedClientId, String expectedRedirectUri) {
+        if (code == null) {
+            return Optional.empty();
+        }
+        PendingCode pending = codes.get(code);
+        if (pending == null
+                || expectedClientId == null || !expectedClientId.equals(pending.clientId)
+                || expectedRedirectUri == null || !expectedRedirectUri.equals(pending.redirectUri)) {
+            return Optional.empty();
+        }
+        if (!codes.remove(code, pending)) {
+            return Optional.empty();
+        }
+        return redeem(pending, codeVerifier);
+    }
+
+    private Optional<PendingCode> redeem(PendingCode pending, String codeVerifier) {
         if (pending == null) {
             return Optional.empty();
         }

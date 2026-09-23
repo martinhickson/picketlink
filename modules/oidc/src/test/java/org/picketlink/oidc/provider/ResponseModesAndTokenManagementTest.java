@@ -97,6 +97,22 @@ class ResponseModesAndTokenManagementTest {
     }
 
     @Test
+    void loginFormKeepsTheResponseMode() throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "openid");
+        params.put("response_mode", "fragment");
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        params.forEach((name, value) -> lenient().when(request.getParameter(name)).thenReturn(value));
+        authorize.doGet(request, response);
+        assertTrue(writer.toString().contains("name=\"response_mode\" value=\"fragment\""));
+    }
+
+    @Test
     void fragmentModePutsResponseInTheFragment() throws Exception {
         loginAs("fragment");
         ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);

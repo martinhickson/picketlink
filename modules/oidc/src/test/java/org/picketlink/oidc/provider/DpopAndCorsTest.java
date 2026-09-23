@@ -262,6 +262,7 @@ class DpopAndCorsTest {
         verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
         assertTrue(location.getValue().contains("error=login_required"));
         assertTrue(location.getValue().contains("state=xyz"));
+        assertTrue(location.getValue().contains("iss="));
     }
 
     private static String accessTokenOf(String tokenResponse) {

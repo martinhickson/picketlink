@@ -150,7 +150,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         String codeVerifier = form.get("code_verifier");
 
         Optional<AuthorizationCodeService.PendingCode> pending =
-                server.getAuthorizationCodes().consume(code, codeVerifier);
+                server.getAuthorizationCodes().consume(code, codeVerifier,
+                        client.getClientId(), redirectUri);
         if (!pending.isPresent()) {
             throw oauthError(OAuthConstants.INVALID_GRANT,
                     "authorization code is invalid, expired or PKCE verification failed");
@@ -375,7 +376,29 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     private String issueTokens(RegisteredClient client, String subject, Set<String> scopes,
             String nonce, long authTime, String dpopJkt, String grantType) {
         IssuedToken access = issueAccess(client, subject, scopes, dpopJkt, grantType);
-        // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family)
+        StringBuilder json = new StringBuilder("{");
+        json.append("\"access_token\":\"").append(OAuthJsonWriter.escape(access.getTokenValue())).append('"');
+        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
+        if (scopes.contains("openid")) {
+            json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(
+                    idToken(client, subject, nonce, authTime, access).getTokenValue())).append('"');
+        }
+        if (!scopes.isEmpty()) {
+            json.append(",\"scope\":\"").append(OAuthJsonWriter.escape(ScopeValidator.formatScope(scopes)))
+                    .append('"');
+        }
+        String refreshToken = server.getRefreshTokens()
+                .create(client.getClientId(), subject, ScopeValidator.formatScope(scopes), nonce);
+        json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
+        json.append('}');
+        return json.toString();
+    }
+
+    /** OIDC ID token. Issued only when the approved scope includes {@code openid}. */
+    private IssuedToken idToken(RegisteredClient client, String subject,
+            String nonce, long authTime, IssuedToken access) {
+        // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family
         java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
                 server.getClaimSource().claimsFor(subject));
         idTokenClaims.put("auth_time", Long.valueOf(authTime));
@@ -391,20 +414,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                         .extraClaims(idTokenClaims)
                         .requestedLifetimeSeconds(3600L)
                         .build());
-        StringBuilder json = new StringBuilder("{");
-        json.append("\"access_token\":\"").append(OAuthJsonWriter.escape(access.getTokenValue())).append('"');
-        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
-        json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
-        json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(idToken.getTokenValue())).append('"');
-        if (!scopes.isEmpty()) {
-            json.append(",\"scope\":\"").append(OAuthJsonWriter.escape(ScopeValidator.formatScope(scopes)))
-                    .append('"');
-        }
-        String refreshToken = server.getRefreshTokens()
-                .create(client.getClientId(), subject, ScopeValidator.formatScope(scopes), nonce);
-        json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
-        json.append('}');
-        return json.toString();
+        return idToken;
     }
 
     /** Base64url of the leftmost 128 bits of SHA-256 over the access token. */
