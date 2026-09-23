@@ -135,6 +135,14 @@ class DeviceFlowTest {
         token.doPost(request, response);
         verify(response).setStatus(400);
         assertTrue(writer.toString().contains(DeviceAuthorizationService.ERROR_AUTHORIZATION_PENDING));
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        post("grant_type=" + url("urn:ietf:params:oauth:grant-type:device_code")
+                + "&device_code=" + url(deviceCode));
+        token.doPost(request, response);
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains(DeviceAuthorizationService.ERROR_SLOW_DOWN));
     }
 
     @Test

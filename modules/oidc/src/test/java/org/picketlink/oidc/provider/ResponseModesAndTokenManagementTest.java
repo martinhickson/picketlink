@@ -72,6 +72,9 @@ class ResponseModesAndTokenManagementTest {
         params.put("redirect_uri", REDIRECT_URI);
         params.put("scope", "openid");
         params.put("state", "s-1");
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
         if (responseMode != null) {
             params.put("response_mode", responseMode);
         }
@@ -122,7 +125,8 @@ class ResponseModesAndTokenManagementTest {
         ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);
         verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
         String redirect = location.getValue();
-        assertTrue(redirect.contains("#response="), "jwt default is fragment delivery");
+        assertTrue(redirect.startsWith(REDIRECT_URI + "?response="),
+                "code flow delivers response_mode=jwt on the query");
 
         String responseJwt = java.net.URLDecoder.decode(
                 redirect.substring(redirect.indexOf("response=") + "response=".length()),

@@ -54,7 +54,8 @@ public final class DeviceAuthorizationService {
         String deviceCode = Base64.getUrlEncoder().withoutPadding().encodeToString(deviceBytes);
         String userCode = generateUserCode();
         DeviceGrant grant = new DeviceGrant(deviceCode, userCode, clientId, scopes,
-                clock.instant().getEpochSecond() + lifetimeSeconds, Status.PENDING);
+                clock.instant().getEpochSecond() + lifetimeSeconds, Status.PENDING,
+                pollIntervalSeconds);
         byDeviceCode.put(deviceCode, grant);
         byUserCode.put(userCode, grant);
         return grant;
@@ -102,6 +103,13 @@ public final class DeviceAuthorizationService {
                 byUserCode.remove(grant.userCode);
                 return Optional.of(grant);
             }
+            long now = clock.instant().getEpochSecond();
+            grant.slowDown = grant.lastPollEpoch >= 0
+                    && now - grant.lastPollEpoch < grant.minIntervalSeconds;
+            if (grant.slowDown) {
+                grant.minIntervalSeconds += 5;
+            }
+            grant.lastPollEpoch = now;
             return Optional.of(grant);
         }
     }
@@ -145,15 +153,19 @@ public final class DeviceAuthorizationService {
         final long expiresAt;
         volatile Status status;
         volatile String subject;
+        volatile long lastPollEpoch = -1L;
+        volatile long minIntervalSeconds;
+        volatile boolean slowDown;
 
         DeviceGrant(String deviceCode, String userCode, String clientId, String scopes,
-                long expiresAt, Status status) {
+                long expiresAt, Status status, long minIntervalSeconds) {
             this.deviceCode = deviceCode;
             this.userCode = userCode;
             this.clientId = clientId;
             this.scopes = scopes;
             this.expiresAt = expiresAt;
             this.status = status;
+            this.minIntervalSeconds = minIntervalSeconds;
         }
 
         public String getDeviceCode() {
@@ -174,6 +186,11 @@ public final class DeviceAuthorizationService {
 
         public String getSubject() {
             return subject;
+        }
+
+        /** True when this poll arrived sooner than the interval the client was told to wait. */
+        public boolean isSlowDown() {
+            return slowDown;
         }
     }
 }

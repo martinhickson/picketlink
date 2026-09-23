@@ -57,7 +57,9 @@ public class UserInfoServlet extends HttpServlet {
         try {
             JwtClaims claims = server.getIssuanceServer().getIssuanceManager()
                     .validate(authorization.substring(7).trim());
-            requireMatchingDpopProof(claims, request, response);
+            if (!requireMatchingDpopProof(claims, request, response)) {
+                return;
+            }
             StringBuilder json = new StringBuilder("{");
             field(json, "sub", claims.getSubject(), true);
             Object scope = claims.getClaim("scope");
@@ -86,33 +88,37 @@ public class UserInfoServlet extends HttpServlet {
      * RFC 9449 resource-server side: an access token with a cnf.jkt confirmation claim is
      * DPoP-bound and only usable together with a fresh DPoP proof signed by the bound key.
      */
-    private void requireMatchingDpopProof(JwtClaims claims, HttpServletRequest request,
+    /** @return false when an error response has already been written */
+    private boolean requireMatchingDpopProof(JwtClaims claims, HttpServletRequest request,
             HttpServletResponse response) throws IOException {
         Object cnf = claims.getClaim("cnf");
         if (cnf == null) {
-            return;
+            return true;
         }
         String expectedJkt = cnf instanceof java.util.Map
                 ? String.valueOf(((java.util.Map<?, ?>) cnf).get("jkt"))
                 : null;
         String proof = request.getHeader("DPoP");
-        if (expectedJkt == null || proof == null) {
+        if (expectedJkt == null || "null".equals(expectedJkt) || proof == null) {
             error(response, 401, "DPoP-bound token requires a DPoP proof");
-            return;
+            return false;
         }
         if (dpopValidator == null) {
             dpopValidator = new DpopProofValidator(server.getClock());
         }
+        String method = request.getMethod() == null ? "GET" : request.getMethod();
         String actualJkt;
         try {
-            actualJkt = dpopValidator.validate(proof, "GET", userinfoUri(request));
+            actualJkt = dpopValidator.validate(proof, method, userinfoUri(request));
         } catch (DpopProofValidator.DpopValidationException ex) {
             error(response, 401, ex.getMessage());
-            return;
+            return false;
         }
         if (!expectedJkt.equals(actualJkt)) {
             error(response, 401, "DPoP proof key does not match the token binding");
+            return false;
         }
+        return true;
     }
 
     private String userinfoUri(HttpServletRequest request) {

@@ -223,7 +223,8 @@ class OidcProviderInteropTest {
 
         String payload = new String(Base64.getUrlDecoder().decode(idToken.split("\\.")[1]),
                 StandardCharsets.UTF_8);
-        assertTrue(payload.contains("auth_time"), "auth_time claim required for interop");
+        assertTrue(parseFlat(payload).get("auth_time") instanceof Long,
+                "auth_time must be a JSON number");
 
         // at_hash = base64url(left half of SHA-256(access_token))
         byte[] digest = MessageDigest.getInstance("SHA-256")

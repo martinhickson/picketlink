@@ -239,15 +239,18 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                     DeviceAuthorizationService.ERROR_EXPIRED_TOKEN);
         }
         DeviceAuthorizationService.DeviceGrant state = grant.get();
+        if (state.isSlowDown()) {
+            throw oauthError(DeviceAuthorizationService.ERROR_SLOW_DOWN,
+                    "the client must increase its polling interval");
+        }
         if (state.getStatus() == DeviceAuthorizationService.Status.DENIED) {
             throw oauthError(OAuthConstants.INVALID_GRANT,
                     DeviceAuthorizationService.ERROR_ACCESS_DENIED);
         }
         if (state.getStatus() != DeviceAuthorizationService.Status.CONSUMED
                 && state.getSubject() == null) {
-            // still PENDING: the device must keep polling at the advertised interval
-            throw oauthError(OAuthConstants.INVALID_GRANT,
-                    DeviceAuthorizationService.ERROR_AUTHORIZATION_PENDING);
+            throw oauthError(DeviceAuthorizationService.ERROR_AUTHORIZATION_PENDING,
+                    "the authorization request is still pending");
         }
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(
                 authentication.getClient(), state.getScopes());
@@ -375,7 +378,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family)
         java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
                 server.getClaimSource().claimsFor(subject));
-        idTokenClaims.put("auth_time", String.valueOf(authTime));
+        idTokenClaims.put("auth_time", Long.valueOf(authTime));
         idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
         idTokenClaims.put("sid", java.util.UUID.randomUUID().toString());
         // ID token: same signing chokepoint, subject + nonce, audience is the client

@@ -1,8 +1,10 @@
 package org.picketlink.oidc.provider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -147,10 +149,13 @@ class DpopAndCorsTest {
 
         // userinfo: bound token without proof -> 401
         writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
         lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + accessToken);
         lenient().when(request.getMethod()).thenReturn("GET");
         userinfo.doGet(request, response);
         verify(response).setStatus(401);
+        verify(response, never()).setStatus(200);
+        assertFalse(writer.toString().contains("\"sub\""));
         org.mockito.Mockito.clearInvocations(response);
 
         // userinfo: bound token + valid fresh proof from the bound key -> 200 with sub
@@ -179,8 +184,13 @@ class DpopAndCorsTest {
 
         lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + accessToken);
         lenient().when(request.getHeader("DPoP")).thenReturn(foreignProof);
+        lenient().when(request.getMethod()).thenReturn("GET");
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
         userinfo.doGet(request, response);
         verify(response).setStatus(401);
+        verify(response, never()).setStatus(200);
+        assertFalse(writer.toString().contains("\"sub\""));
         org.mockito.Mockito.clearInvocations(response);
     }
 

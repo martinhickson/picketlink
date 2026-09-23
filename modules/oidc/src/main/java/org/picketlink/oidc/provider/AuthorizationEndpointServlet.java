@@ -323,7 +323,15 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         }
         if (mode.endsWith(".jwt") || "jwt".equals(mode)) {
             String responseJwt = jarmResponse(params, code, state);
-            boolean fragment = "fragment".equals(mode) || "jwt".equals(mode);
+            if ("form_post.jwt".equals(mode)) {
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType("text/html");
+                response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                response.getWriter().write(formPost(params.redirectUri, hidden("response", responseJwt)));
+                return;
+            }
+            // response_type=code defaults to the query. "jwt" is that default plus JARM.
+            boolean fragment = "fragment.jwt".equals(mode);
             String separator = fragment ? "#"
                     : (params.redirectUri.contains("?") ? "&" : "?");
             String redirect = params.redirectUri + separator + "response=" + urlEncode(responseJwt);
