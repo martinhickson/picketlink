@@ -10,14 +10,21 @@ public final class AccessTokenRecord {
 
     private final String tokenValue;
     private final String clientId;
+    private final String subject;
     private final Set<String> scopes;
     private final Instant issuedAt;
     private final Instant expiresAt;
 
     public AccessTokenRecord(String tokenValue, String clientId, Set<String> scopes,
             Instant issuedAt, Instant expiresAt) {
+        this(tokenValue, clientId, scopes, issuedAt, expiresAt, null);
+    }
+
+    public AccessTokenRecord(String tokenValue, String clientId, Set<String> scopes,
+            Instant issuedAt, Instant expiresAt, String subject) {
         this.tokenValue = Objects.requireNonNull(tokenValue, "tokenValue");
         this.clientId = Objects.requireNonNull(clientId, "clientId");
+        this.subject = subject;
         this.scopes = Collections.unmodifiableSet(new LinkedHashSet<>(scopes));
         this.issuedAt = Objects.requireNonNull(issuedAt, "issuedAt");
         this.expiresAt = Objects.requireNonNull(expiresAt, "expiresAt");
@@ -29,6 +36,11 @@ public final class AccessTokenRecord {
 
     public String getClientId() {
         return clientId;
+    }
+
+    /** End-user subject, or null when the token was stored before subjects were recorded. */
+    public String getSubject() {
+        return subject;
     }
 
     public Set<String> getScopes() {

@@ -108,7 +108,7 @@ public final class JwtIssuanceManager {
         String tokenValue = signingService.sign(claims, context.getAlgorithm());
         if (tokenRegistry != null) {
             tokenRegistry.store(new AccessTokenRecord(tokenValue, client.getClientId(),
-                    request.getScopes(), issuedAt, expiresAt));
+                    request.getScopes(), issuedAt, expiresAt, subject));
         }
         audit(context, tokenId, null);
         return new IssuedToken(tokenValue, tokenId, context.getLifetimeSeconds(), request.getScopes(),

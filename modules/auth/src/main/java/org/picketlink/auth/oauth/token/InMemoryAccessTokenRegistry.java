@@ -28,4 +28,13 @@ public class InMemoryAccessTokenRegistry implements AccessTokenRegistry {
             tokens.remove(tokenValue);
         }
     }
+
+    @Override
+    public void revokeSubjectClient(String subject, String clientId) {
+        if (subject == null || subject.isBlank() || clientId == null || clientId.isBlank()) {
+            return;
+        }
+        tokens.entrySet().removeIf(entry -> subject.equals(entry.getValue().getSubject())
+                && clientId.equals(entry.getValue().getClientId()));
+    }
 }

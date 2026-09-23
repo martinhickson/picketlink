@@ -181,6 +181,26 @@ class SsoSessionTest {
     }
 
     @Test
+    void logoutBurnsThatSessionsAccessToken() throws Exception {
+        String code = login(CLIENT_A, REDIRECT_A);
+        String access = accessToken(CLIENT_A, SECRET, REDIRECT_A, code);
+        assertEquals(200, userinfo(access));
+        RegisteredClient other = RegisteredClient.builder("client-c", SECRET).scope("openid").build();
+        String kept = server.getIssuanceServer().getIssuanceManager()
+                .issue(org.picketlink.auth.oauth.issuance.IssuanceRequest.forClient(other)
+                        .grantType("authorization_code")
+                        .scopes(java.util.Set.of("openid"))
+                        .subject("alice")
+                        .build())
+                .getTokenValue();
+        lenient().when(request.getParameter(anyString())).thenReturn(null);
+        writer();
+        new LogoutEndpointServlet(server).doGet(request, response);
+        assertEquals(401, userinfo(access));
+        assertEquals(200, userinfo(kept));
+    }
+
+    @Test
     void promptLoginStillShowsTheFormWhenASessionExists() throws Exception {
         login(CLIENT_A, REDIRECT_A);
         org.mockito.Mockito.clearInvocations(response);
@@ -292,7 +312,33 @@ class SsoSessionTest {
         return redirect.substring(start, redirect.indexOf('&', start));
     }
 
+    private String accessToken(String clientId, String secret, String redirectUri, String code)
+            throws Exception {
+        String json = tokenJson(clientId, secret, redirectUri, code);
+        int start = json.indexOf("\"access_token\":\"") + "\"access_token\":\"".length();
+        return json.substring(start, json.indexOf('"', start));
+    }
+
+    private int userinfo(String accessToken) throws Exception {
+        org.mockito.Mockito.clearInvocations(response);
+        lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + accessToken);
+        lenient().when(request.getHeader("DPoP")).thenReturn(null);
+        writer();
+        new UserInfoServlet(server).doGet(request, response);
+        org.mockito.ArgumentCaptor<Integer> status =
+                org.mockito.ArgumentCaptor.forClass(Integer.class);
+        verify(response).setStatus(status.capture());
+        return status.getValue();
+    }
+
     private String redeem(String clientId, String secret, String redirectUri, String code)
+            throws Exception {
+        String json = tokenJson(clientId, secret, redirectUri, code);
+        int start = json.indexOf("\"id_token\":\"") + "\"id_token\":\"".length();
+        return json.substring(start, json.indexOf('"', start));
+    }
+
+    private String tokenJson(String clientId, String secret, String redirectUri, String code)
             throws Exception {
         String body = "grant_type=authorization_code&code=" + code
                 + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
@@ -303,9 +349,7 @@ class SsoSessionTest {
         lenient().when(request.getHeader("DPoP")).thenReturn(null);
         StringWriter writer = writer();
         token.doPost(request, response);
-        String json = writer.toString();
-        int start = json.indexOf("\"id_token\":\"") + "\"id_token\":\"".length();
-        return json.substring(start, json.indexOf('"', start));
+        return writer.toString();
     }
 
     private StringWriter writer() throws Exception {

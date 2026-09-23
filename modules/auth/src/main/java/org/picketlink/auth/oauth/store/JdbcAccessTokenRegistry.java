@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -68,13 +69,15 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
     private static void insert(Connection connection, AccessTokenRecord token, String tokenHash)
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO " + TABLE_NAME + " (token_hash, client_id, scopes, issued_at, expires_at)"
-                        + " VALUES (?, ?, ?, ?, ?)")) {
+                "INSERT INTO " + TABLE_NAME
+                        + " (token_hash, client_id, scopes, issued_at, expires_at, subject_name)"
+                        + " VALUES (?, ?, ?, ?, ?, ?)")) {
             statement.setString(1, tokenHash);
             statement.setString(2, token.getClientId());
             statement.setString(3, String.join(" ", token.getScopes()));
             statement.setLong(4, token.getIssuedAt().toEpochMilli());
             statement.setLong(5, token.getExpiresAt().toEpochMilli());
+            statement.setString(6, token.getSubject());
             statement.executeUpdate();
         }
     }
@@ -82,13 +85,15 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
     private static int update(Connection connection, AccessTokenRecord token, String tokenHash)
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "UPDATE " + TABLE_NAME + " SET client_id = ?, scopes = ?, issued_at = ?, expires_at = ?"
+                "UPDATE " + TABLE_NAME
+                        + " SET client_id = ?, scopes = ?, issued_at = ?, expires_at = ?, subject_name = ?"
                         + " WHERE token_hash = ?")) {
             statement.setString(1, token.getClientId());
             statement.setString(2, String.join(" ", token.getScopes()));
             statement.setLong(3, token.getIssuedAt().toEpochMilli());
             statement.setLong(4, token.getExpiresAt().toEpochMilli());
-            statement.setString(5, tokenHash);
+            statement.setString(5, token.getSubject());
+            statement.setString(6, tokenHash);
             return statement.executeUpdate();
         }
     }
@@ -100,6 +105,24 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
             return findByHash(connection, hash(tokenValue));
         } catch (SQLException ex) {
             throw new IllegalStateException("Unable to look up token record", ex);
+        }
+    }
+
+    @Override
+    public void revokeSubjectClient(String subject, String clientId) {
+        if (subject == null || subject.isBlank() || clientId == null || clientId.isBlank()) {
+            return;
+        }
+        try (Connection connection = connectionSource.openConnection()) {
+            ensureSchema(connection);
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "DELETE FROM " + TABLE_NAME + " WHERE subject_name = ? AND client_id = ?")) {
+                statement.setString(1, subject);
+                statement.setString(2, clientId);
+                statement.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Unable to revoke token records", ex);
         }
     }
 
@@ -158,7 +181,7 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
     private static Optional<AccessTokenRecord> findByHash(Connection connection, String tokenHash)
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT client_id, scopes, issued_at, expires_at FROM " + TABLE_NAME
+                "SELECT client_id, scopes, issued_at, expires_at, subject_name FROM " + TABLE_NAME
                         + " WHERE token_hash = ?")) {
             statement.setString(1, tokenHash);
             try (ResultSet rs = statement.executeQuery()) {
@@ -175,7 +198,8 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
                         rs.getString(1),
                         scopeSet,
                         Instant.ofEpochMilli(rs.getLong(3)),
-                        Instant.ofEpochMilli(rs.getLong(4))));
+                        Instant.ofEpochMilli(rs.getLong(4)),
+                        rs.getString(5)));
             }
         }
     }
@@ -205,8 +229,30 @@ public final class JdbcAccessTokenRegistry implements AccessTokenRegistry {
                         + "client_id VARCHAR(128) NOT NULL, "
                         + "scopes VARCHAR(1024), "
                         + "issued_at BIGINT NOT NULL, "
-                        + "expires_at BIGINT NOT NULL)")) {
+                        + "expires_at BIGINT NOT NULL, "
+                        + "subject_name VARCHAR(256))")) {
             statement.execute();
+        }
+        if (!columnExists(connection, "subject_name")) {
+            try (PreparedStatement alter = connection.prepareStatement(
+                    "ALTER TABLE " + TABLE_NAME + " ADD COLUMN subject_name VARCHAR(256)")) {
+                alter.execute();
+            }
+        }
+    }
+
+    private static boolean columnExists(Connection connection, String column) throws SQLException {
+        DatabaseMetaData meta = connection.getMetaData();
+        if (findColumn(meta, TABLE_NAME, column)) {
+            return true;
+        }
+        return findColumn(meta, TABLE_NAME.toUpperCase(), column.toUpperCase());
+    }
+
+    private static boolean findColumn(DatabaseMetaData meta, String table, String column)
+            throws SQLException {
+        try (ResultSet columns = meta.getColumns(null, null, table, column)) {
+            return columns.next();
         }
     }
 

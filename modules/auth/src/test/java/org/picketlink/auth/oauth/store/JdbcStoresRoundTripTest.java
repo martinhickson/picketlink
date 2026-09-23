@@ -98,6 +98,36 @@ class JdbcStoresRoundTripTest {
     }
 
     @Test
+    void revokeDropsOnlyThatSubjectAtThatClient() throws Exception {
+        DriverManagerConnectionSource source = new DriverManagerConnectionSource(
+                "jdbc:sqlite:" + tempDir.resolve("legacy-tokens.db"), null, null);
+        try (java.sql.Connection connection = source.openConnection()) {
+            connection.createStatement().execute(
+                    "CREATE TABLE picketlink_auth_tokens ("
+                            + "token_hash VARCHAR(64) PRIMARY KEY, "
+                            + "client_id VARCHAR(128) NOT NULL, "
+                            + "scopes VARCHAR(1024), "
+                            + "issued_at BIGINT NOT NULL, "
+                            + "expires_at BIGINT NOT NULL)");
+        }
+        JdbcAccessTokenRegistry registry = new JdbcAccessTokenRegistry(source);
+        Set<String> scopes = new LinkedHashSet<>();
+        scopes.add("openid");
+        Instant issued = Instant.now();
+        Instant expires = issued.plusSeconds(300);
+        registry.store(new AccessTokenRecord("alice-a", "client-a", scopes, issued, expires, "alice"));
+        registry.store(new AccessTokenRecord("bob-a", "client-a", scopes, issued, expires, "bob"));
+        registry.store(new AccessTokenRecord("alice-c", "client-c", scopes, issued, expires, "alice"));
+        assertEquals("alice", registry.findByTokenValue("alice-a").get().getSubject());
+
+        registry.revokeSubjectClient("alice", "client-a");
+
+        assertFalse(registry.findByTokenValue("alice-a").isPresent());
+        assertEquals("bob", registry.findByTokenValue("bob-a").get().getSubject());
+        assertTrue(registry.findByTokenValue("alice-c").isPresent());
+    }
+
+    @Test
     void policyConfigShouldRoundTripAsJson() {
         IssuancePolicyConfig config = new IssuancePolicyConfig();
         config.setAllowedAlgorithms(new LinkedHashSet<>(List.of("RS256", "ES256")));

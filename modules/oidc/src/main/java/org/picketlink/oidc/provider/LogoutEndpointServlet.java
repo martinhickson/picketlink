@@ -146,8 +146,9 @@ public class LogoutEndpointServlet extends HttpServlet {
     }
 
     /**
-     * Tells each client the session is over and burns codes and refresh tokens issued
-     * for that session. A refresh token for a client that did not join stays usable.
+     * Tells each client the session is over and burns that session's codes plus the
+     * refresh and access tokens for that subject at each joined client. A token for a
+     * client that did not join stays usable.
      */
     static void endParticipantSessions(OidcProviderServer server, String subject, String sid,
             Set<String> clientIds) {
@@ -163,6 +164,7 @@ public class LogoutEndpointServlet extends HttpServlet {
         }
         for (String clientId : clientIds) {
             server.getRefreshTokens().revokeSubjectClient(subject, clientId);
+            server.getIssuanceServer().getTokenRegistry().revokeSubjectClient(subject, clientId);
         }
     }
 

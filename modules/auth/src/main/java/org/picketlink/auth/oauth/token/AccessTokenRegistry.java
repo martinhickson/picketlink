@@ -10,4 +10,10 @@ public interface AccessTokenRegistry {
     Optional<AccessTokenRecord> findByTokenValue(String tokenValue);
 
     void remove(String tokenValue);
+
+    /**
+     * Drops live tokens for this subject at this client. Tokens stored with no subject
+     * stay until they expire.
+     */
+    void revokeSubjectClient(String subject, String clientId);
 }
