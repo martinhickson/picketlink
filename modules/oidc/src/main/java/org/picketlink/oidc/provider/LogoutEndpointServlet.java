@@ -142,7 +142,28 @@ public class LogoutEndpointServlet extends HttpServlet {
                 sid = hintSid;
             }
         }
-        notifyClients(server, subject, sid, targets);
+        endParticipantSessions(server, subject, sid, targets);
+    }
+
+    /**
+     * Tells each client the session is over and burns codes and refresh tokens issued
+     * for that session. A refresh token for a client that did not join stays usable.
+     */
+    static void endParticipantSessions(OidcProviderServer server, String subject, String sid,
+            Set<String> clientIds) {
+        notifyClients(server, subject, sid, clientIds);
+        if (server == null || subject == null || subject.isBlank()) {
+            return;
+        }
+        if (sid != null && !sid.isBlank()) {
+            server.getAuthorizationCodes().discardSid(sid);
+        }
+        if (clientIds == null) {
+            return;
+        }
+        for (String clientId : clientIds) {
+            server.getRefreshTokens().revokeSubjectClient(subject, clientId);
+        }
     }
 
     /** Posts one logout token per client. Failures of one callback do not skip the others. */

@@ -94,7 +94,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         jakarta.servlet.http.HttpSession session = request.getSession(true);
         SsoSession.Held previous = SsoSession.read(session);
         if (previous != null && !previous.subject.equals(subject.get())) {
-            LogoutEndpointServlet.notifyClients(server, previous.subject, previous.sid,
+            LogoutEndpointServlet.endParticipantSessions(server, previous.subject, previous.sid,
                     SsoSession.clientIds(session));
         }
         String sid = SsoSession.login(session, subject.get(), authTime);

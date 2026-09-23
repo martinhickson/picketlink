@@ -66,6 +66,14 @@ public final class AuthorizationCodeService {
         return code;
     }
 
+    /** Drops every still-pending code for this browser session. Other sessions stay. */
+    public void discardSid(String sid) {
+        if (sid == null || sid.isBlank()) {
+            return;
+        }
+        codes.entrySet().removeIf(entry -> sid.equals(entry.getValue().sid));
+    }
+
     /**
      * Consumes the code (single use). A consumed, expired, or PKCE-failed code never validates again.
      * The code is removed before the verifier is checked, so a wrong verifier cannot be retried.

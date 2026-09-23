@@ -69,6 +69,14 @@ public final class RefreshTokenService {
         store.revokeFamily(stored.getFamily());
     }
 
+    /** Drops live refresh tokens for this subject at this client. Other clients stay. */
+    public void revokeSubjectClient(String subject, String clientId) {
+        if (subject == null || subject.isBlank() || clientId == null || clientId.isBlank()) {
+            return;
+        }
+        store.revokeSubjectClient(subject, clientId);
+    }
+
     /** The live record for this token. Does not rotate, retire, or revoke. */
     public Optional<RefreshTokenRecord> findLive(String refreshToken) {
         if (refreshToken == null) {

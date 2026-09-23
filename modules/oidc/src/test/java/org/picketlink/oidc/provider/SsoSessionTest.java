@@ -144,7 +144,7 @@ class SsoSessionTest {
         try {
             int port = http.getAddress().getPort();
             save(CLIENT_A, REDIRECT_A, "http://127.0.0.1:" + port + "/a");
-            login(CLIENT_A, REDIRECT_A);
+            String code = login(CLIENT_A, REDIRECT_A);
             String aliceSid = String.valueOf(sessionAttributes.get(SsoSession.SID));
             parameters(CLIENT_A, REDIRECT_A, null, null);
             lenient().when(request.getParameter("username")).thenReturn("bob");
@@ -154,9 +154,30 @@ class SsoSessionTest {
             assertTrue(loggedOut.get(0).contains("\"sub\":\"alice\""));
             assertTrue(loggedOut.get(0).contains("\"sid\":\"" + aliceSid + "\""));
             assertNotEquals(aliceSid, sessionAttributes.get(SsoSession.SID));
+            assertTrue(server.getAuthorizationCodes()
+                    .consume(code, VERIFIER, CLIENT_A, REDIRECT_A).isEmpty());
         } finally {
             http.stop(0);
         }
+    }
+
+    @Test
+    void logoutBurnsThatSessionsCodeAndRefreshToken() throws Exception {
+        String code = login(CLIENT_A, REDIRECT_A);
+        String keptCode = server.getAuthorizationCodes().create(
+                "client-c", "https://c.example/cb", "alice", "openid", "n",
+                AuthorizationCodeService.s256(VERIFIER), null, "other-sid", null);
+        String deadRefresh = server.getRefreshTokens().create(CLIENT_A, "alice", "openid", null);
+        String keptRefresh = server.getRefreshTokens().create("client-c", "alice", "openid", null);
+        lenient().when(request.getParameter(anyString())).thenReturn(null);
+        writer();
+        new LogoutEndpointServlet(server).doGet(request, response);
+        assertTrue(server.getAuthorizationCodes()
+                .consume(code, VERIFIER, CLIENT_A, REDIRECT_A).isEmpty());
+        assertTrue(server.getAuthorizationCodes()
+                .consume(keptCode, VERIFIER, "client-c", "https://c.example/cb").isPresent());
+        assertTrue(server.getRefreshTokens().rotate(deadRefresh).isEmpty());
+        assertTrue(server.getRefreshTokens().rotate(keptRefresh).isPresent());
     }
 
     @Test

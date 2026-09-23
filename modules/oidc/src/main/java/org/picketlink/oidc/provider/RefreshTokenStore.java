@@ -23,6 +23,9 @@ public interface RefreshTokenStore {
     /** Removes every live and retired token of the family (replay response). */
     void revokeFamily(String family);
 
+    /** Removes live refresh tokens for this subject at this client. */
+    void revokeSubjectClient(String subject, String clientId);
+
     /** In-memory default; refresh state does not survive restarts. */
     final class InMemoryRefreshTokenStore implements RefreshTokenStore {
 
@@ -64,6 +67,15 @@ public interface RefreshTokenStore {
                 }
             }
             retired.entrySet().removeIf(entry -> family.equals(entry.getValue()));
+        }
+
+        @Override
+        public void revokeSubjectClient(String subject, String clientId) {
+            if (subject == null || clientId == null) {
+                return;
+            }
+            byHash.entrySet().removeIf(entry -> clientId.equals(entry.getValue().getClientId())
+                    && subject.equals(entry.getValue().getSubject()));
         }
     }
 }

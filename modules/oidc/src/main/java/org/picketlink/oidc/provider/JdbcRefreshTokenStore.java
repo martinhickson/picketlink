@@ -88,6 +88,22 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
         });
     }
 
+    @Override
+    public void revokeSubjectClient(String subject, String clientId) {
+        if (subject == null || clientId == null) {
+            return;
+        }
+        withConnection(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "DELETE FROM " + TABLE_NAME
+                            + " WHERE subject_name = ? AND client_id = ? AND retired = 0")) {
+                statement.setString(1, subject);
+                statement.setString(2, clientId);
+                statement.executeUpdate();
+            }
+        });
+    }
+
     private RefreshTokenRecord read(String tokenHash, boolean retired) {
         final RefreshTokenRecord[] result = new RefreshTokenRecord[1];
         withConnection(connection -> {
