@@ -409,6 +409,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 .issue(IssuanceRequest.forClient(client)
                         .grantType("oidc-id-token")
                         .scopes(new LinkedHashSet<>())
+                        .audiences(java.util.Set.of(client.getClientId()))
                         .subject(subject)
                         .nonce(nonce)
                         .extraClaims(idTokenClaims)

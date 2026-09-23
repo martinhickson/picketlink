@@ -206,8 +206,15 @@ class OidcProviderInteropTest {
                 valueEnd++;
             }
             String raw = json.substring(valueStart, valueEnd).trim();
-            values.put(json.substring(keyStart + 1, keyEnd),
-                    raw.startsWith("\"") ? raw.substring(1, raw.length() - 1) : Long.valueOf(raw));
+            Object parsed;
+            if (raw.startsWith("\"")) {
+                parsed = raw.substring(1, raw.length() - 1);
+            } else if (raw.startsWith("[") || raw.startsWith("{")) {
+                parsed = raw;
+            } else {
+                parsed = Long.valueOf(raw);
+            }
+            values.put(json.substring(keyStart + 1, keyEnd), parsed);
             index = valueEnd;
         }
         return values;
@@ -234,6 +241,9 @@ class OidcProviderInteropTest {
         String expected = Base64.getUrlEncoder().withoutPadding().encodeToString(leftHalf);
         assertTrue(payload.contains("\"at_hash\":\"" + expected + "\""),
                 "at_hash must match OIDC Core 3.1.3.6 computation");
+        Object audience = parseFlat(payload).get("aud");
+        assertNotNull(audience);
+        assertTrue(audience.toString().contains(CLIENT_ID), "id token aud must be the client id");
     }
 
     @Test

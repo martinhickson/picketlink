@@ -295,9 +295,10 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
             jwk.setKeyType(KeyType.EC);
             jwk.setKeyId(key.getKeyId());
             jwk.setPublicKeyUse(PublicKeyUse.SIGN);
+            int octets = fieldOctets(ec);
             jwk.setProperty(JsonWebKey.EC_CURVE, curve(ec));
-            jwk.setProperty(JsonWebKey.EC_X_COORDINATE, encode(ec.getW().getAffineX()));
-            jwk.setProperty(JsonWebKey.EC_Y_COORDINATE, encode(ec.getW().getAffineY()));
+            jwk.setProperty(JsonWebKey.EC_X_COORDINATE, encodeFixed(ec.getW().getAffineX(), octets));
+            jwk.setProperty(JsonWebKey.EC_Y_COORDINATE, encodeFixed(ec.getW().getAffineY(), octets));
             return jwk;
         }
         if (key.getPublicKey() instanceof java.security.interfaces.EdECPublicKey) {
@@ -352,8 +353,41 @@ public final class CxfJoseJwtSigningService implements JwtSigningService {
         return JsonWebKey.EC_CURVE_P521;
     }
 
+    /**
+     * RFC 7518: the octet sequence is the minimum big-endian length, so the sign byte
+     * {@link BigInteger#toByteArray()} inserts is not part of {@code n} or {@code e}.
+     */
     private static String encode(BigInteger value) {
-        return URL_ENCODER.encodeToString(value.toByteArray());
+        return URL_ENCODER.encodeToString(unsigned(value));
+    }
+
+    /** EC coordinates are the full field width, left-padded with zeros (RFC 7518). */
+    private static String encodeFixed(BigInteger value, int octets) {
+        byte[] raw = unsigned(value);
+        if (raw.length > octets) {
+            throw new IllegalArgumentException("integer does not fit in " + octets + " octets");
+        }
+        if (raw.length < octets) {
+            byte[] padded = new byte[octets];
+            System.arraycopy(raw, 0, padded, octets - raw.length, raw.length);
+            raw = padded;
+        }
+        return URL_ENCODER.encodeToString(raw);
+    }
+
+    private static byte[] unsigned(BigInteger value) {
+        byte[] bytes = value.toByteArray();
+        if (bytes.length > 1 && bytes[0] == 0) {
+            byte[] trimmed = new byte[bytes.length - 1];
+            System.arraycopy(bytes, 1, trimmed, 0, trimmed.length);
+            return trimmed;
+        }
+        return bytes;
+    }
+
+    private static int fieldOctets(ECPublicKey ec) {
+        int bits = ec.getParams().getCurve().getField().getFieldSize();
+        return (bits + 7) / 8;
     }
 
     @Override
