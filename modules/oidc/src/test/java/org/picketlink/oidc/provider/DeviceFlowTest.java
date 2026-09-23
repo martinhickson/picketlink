@@ -1,5 +1,6 @@
 package org.picketlink.oidc.provider;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
@@ -67,8 +68,12 @@ class DeviceFlowTest {
 
     private void post(String formBody) throws java.io.IOException {
         lenient().when(request.getInputStream()).thenReturn(inputStream(formBody));
-        lenient().when(request.getHeader("Authorization")).thenReturn("Basic "
-                + Base64.getEncoder().encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
+        lenient().when(request.getHeader("Authorization")).thenReturn(basic(CLIENT_ID));
+    }
+
+    private static String basic(String clientId) {
+        return "Basic " + Base64.getEncoder().encodeToString(
+                (clientId + ":" + CLIENT_SECRET).getBytes(StandardCharsets.UTF_8));
     }
 
     private static String url(String value) {
@@ -126,9 +131,17 @@ class DeviceFlowTest {
                 + "&device_code=" + url(deviceCode));
         token.doPost(request, response);
         verify(response).setStatus(200);
-        String accessToken = writer.toString().split("\"access_token\":\"")[1].split("\"")[0];
+        String tokens = writer.toString();
+        String accessToken = tokens.split("\"access_token\":\"")[1].split("\"")[0];
         assertEqualsSafe("alice", server.getIssuanceServer().getIssuanceManager()
                 .validate(accessToken).getSubject());
+        assertTrue(tokens.contains("\"id_token\":\""));
+        String idToken = tokens.split("\"id_token\":\"")[1].split("\"")[0];
+        String payload = new String(Base64.getUrlDecoder().decode(idToken.split("\\.")[1]),
+                StandardCharsets.UTF_8);
+        assertTrue(payload.contains("\"sub\":\"alice\""));
+        assertTrue(payload.contains("\"auth_time\":"));
+        assertFalse(payload.contains("\"auth_time\":0"));
 
         // device codes are single use: polling again reports the grant gone
         writer.getBuffer().setLength(0);
@@ -210,6 +223,36 @@ class DeviceFlowTest {
         post("scope=admin");
         deviceAuthorization.doPost(request, response);
         verify(response).setStatus(400);
+    }
+
+    @Test
+    void deviceGrantWithoutOpenidOmitsTheIdToken() throws Exception {
+        server.getIssuanceServer().getClientStore().save(RegisteredClient.builder("cli-api", CLIENT_SECRET)
+                .scope("profile").build());
+        writer.getBuffer().setLength(0);
+        lenient().when(request.getInputStream()).thenReturn(inputStream("scope=profile"));
+        lenient().when(request.getHeader("Authorization")).thenReturn(basic("cli-api"));
+        deviceAuthorization.doPost(request, response);
+        String grant = writer.toString();
+        String deviceCode = grant.split("\"device_code\":\"")[1].split("\"")[0];
+        String userCode = grant.split("\"user_code\":\"")[1].split("\"")[0];
+
+        lenient().when(request.getParameter("user_code")).thenReturn(userCode);
+        lenient().when(request.getParameter("username")).thenReturn("alice");
+        lenient().when(request.getParameter("password")).thenReturn("wonderland");
+        lenient().when(request.getParameter("decision")).thenReturn("approve");
+        verification.doPost(request, response);
+
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        lenient().when(request.getInputStream()).thenReturn(inputStream(
+                "grant_type=" + url("urn:ietf:params:oauth:grant-type:device_code")
+                        + "&device_code=" + url(deviceCode)));
+        lenient().when(request.getHeader("Authorization")).thenReturn(basic("cli-api"));
+        token.doPost(request, response);
+        verify(response).setStatus(200);
+        assertTrue(writer.toString().contains("\"access_token\":\""));
+        assertFalse(writer.toString().contains("\"id_token\""));
     }
 
     @Test

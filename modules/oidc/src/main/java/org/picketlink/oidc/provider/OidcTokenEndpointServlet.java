@@ -258,13 +258,20 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(
                 authentication.getClient(), state.getScopes());
         String dpopJkt = dpopJkt(request);
-        IssuedToken access = issueAccess(authentication.getClient(), state.getSubject(), scopes,
-                dpopJkt);
+        RegisteredClient client = authentication.getClient();
+        IssuedToken access = issueAccess(client, state.getSubject(), scopes, dpopJkt,
+                DEVICE_CODE_GRANT);
         StringBuilder json = new StringBuilder("{");
         json.append("\"access_token\":\"").append(org.picketlink.auth.oauth.json.OAuthJsonWriter
                 .escape(access.getTokenValue())).append('"');
         json.append(",\"token_type\":\"").append(tokenType(dpopJkt)).append('"');
         json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
+        if (scopes.contains("openid")) {
+            json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(
+                    idToken(client, state.getSubject(), scopes, null, state.getAuthTime(),
+                            access, null).getTokenValue()))
+                    .append('"');
+        }
         if (!scopes.isEmpty()) {
             json.append(",\"scope\":\"").append(
                     org.picketlink.auth.oauth.json.OAuthJsonWriter.escape(

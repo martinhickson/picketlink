@@ -73,6 +73,9 @@ public final class DeviceAuthorizationService {
             }
             grant.status = approved ? Status.APPROVED : Status.DENIED;
             grant.subject = subject;
+            if (approved) {
+                grant.authTime = clock.instant().getEpochSecond();
+            }
             return true;
         }
     }
@@ -153,6 +156,7 @@ public final class DeviceAuthorizationService {
         final long expiresAt;
         volatile Status status;
         volatile String subject;
+        volatile long authTime;
         volatile long lastPollEpoch = -1L;
         volatile long minIntervalSeconds;
         volatile boolean slowDown;
@@ -186,6 +190,11 @@ public final class DeviceAuthorizationService {
 
         public String getSubject() {
             return subject;
+        }
+
+        /** Epoch seconds when the user approved the device. Zero until then. */
+        public long getAuthTime() {
+            return authTime;
         }
 
         /** True when this poll arrived sooner than the interval the client was told to wait. */
