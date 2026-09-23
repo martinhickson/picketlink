@@ -41,12 +41,28 @@ public final class AuthorizationCodeService {
 
     public String create(String clientId, String redirectUri, String subject,
             String scopes, String nonce, String codeChallenge, Long maxAge) {
+        return create(clientId, redirectUri, subject, scopes, nonce, codeChallenge,
+                maxAge, null, null);
+    }
+
+    /**
+     * @param sid browser session id shared by every client in this SSO session; a fresh
+     *        id is minted when the caller has no session
+     * @param authTime original authentication time; null means authenticate now
+     */
+    public String create(String clientId, String redirectUri, String subject,
+            String scopes, String nonce, String codeChallenge, Long maxAge,
+            String sid, Long authTime) {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         String code = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        long authenticatedAt = authTime == null
+                ? clock.instant().getEpochSecond() : authTime.longValue();
+        String sessionId = sid == null || sid.isBlank()
+                ? java.util.UUID.randomUUID().toString() : sid;
         codes.put(code, new PendingCode(clientId, redirectUri, subject, scopes, nonce,
                 codeChallenge, clock.instant().getEpochSecond() + lifetimeSeconds,
-                clock.instant().getEpochSecond(), maxAge));
+                authenticatedAt, maxAge, sessionId));
         return code;
     }
 
@@ -182,9 +198,11 @@ public final class AuthorizationCodeService {
         final long expiresAt;
         final long authTime;
         final Long maxAge;
+        final String sid;
 
         PendingCode(String clientId, String redirectUri, String subject, String scopes,
-                String nonce, String codeChallenge, long expiresAt, long authTime, Long maxAge) {
+                String nonce, String codeChallenge, long expiresAt, long authTime, Long maxAge,
+                String sid) {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.subject = subject;
@@ -194,6 +212,7 @@ public final class AuthorizationCodeService {
             this.expiresAt = expiresAt;
             this.authTime = authTime;
             this.maxAge = maxAge;
+            this.sid = sid;
         }
 
         public String getClientId() {
@@ -224,6 +243,11 @@ public final class AuthorizationCodeService {
         /** Requested OIDC max_age (seconds), null when unset. */
         public Long getMaxAge() {
             return maxAge;
+        }
+
+        /** Browser SSO session id, copied into the ID token {@code sid} claim. */
+        public String getSid() {
+            return sid;
         }
     }
 }

@@ -90,6 +90,7 @@ public class LogoutEndpointServlet extends HttpServlet {
         }
         String redirect = resolveRedirect(clientId, postLogoutRedirectUri, tokenClientId);
         if (redirect == null) {
+            endBrowserSession(request);
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("text/html");
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -101,6 +102,7 @@ public class LogoutEndpointServlet extends HttpServlet {
                     + java.net.URLEncoder.encode(state, StandardCharsets.UTF_8);
         }
         notifyBackChannelLogout(clientId, tokenClientId, idTokenHint);
+        endBrowserSession(request);
         response.setHeader("Location", redirect);
         response.setStatus(HttpServletResponse.SC_FOUND);
     }
@@ -120,6 +122,7 @@ public class LogoutEndpointServlet extends HttpServlet {
             return;
         }
         String subject = null;
+        String sid = null;
         try {
             org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
                     server.getIssuanceServer().getIssuanceManager().validate(idTokenHint);
@@ -127,12 +130,16 @@ public class LogoutEndpointServlet extends HttpServlet {
                 return;
             }
             subject = claims.getSubject();
+            Object sidClaim = claims.getClaim("sid");
+            if (sidClaim != null && !String.valueOf(sidClaim).isBlank()) {
+                sid = String.valueOf(sidClaim);
+            }
         } catch (RuntimeException ex) {
             return; // no usable hint, no logout token
         }
         try {
             String logoutToken = server.getIssuanceServer().getSigningService()
-                    .sign(logoutTokenClaims(clientId, subject), null);
+                    .sign(logoutTokenClaims(clientId, subject, sid), null);
             HttpRequest request = HttpRequest.newBuilder(URI.create(registered.get().getBackchannelLogoutUrl()))
                     .timeout(java.time.Duration.ofSeconds(5))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -145,7 +152,7 @@ public class LogoutEndpointServlet extends HttpServlet {
         }
     }
 
-    private JwtClaims logoutTokenClaims(String clientId, String subject) {
+    private JwtClaims logoutTokenClaims(String clientId, String subject, String sid) {
         long now = server.getClock().instant().getEpochSecond();
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(server.getIssuer());
@@ -154,10 +161,21 @@ public class LogoutEndpointServlet extends HttpServlet {
         claims.setIssuedAt(now);
         claims.setExpiryTime(now + 120);
         claims.setTokenId(java.util.UUID.randomUUID().toString());
+        if (sid != null) {
+            claims.setClaim("sid", sid);
+        }
         Map<String, Object> events = new LinkedHashMap<>();
         events.put("http://schemas.openid.net/event/backchannel-logout", new LinkedHashMap<>());
         claims.setClaim("events", events);
         return claims;
+    }
+
+    /** Ends the browser SSO session so the next client cannot sign in silently. */
+    private static void endBrowserSession(HttpServletRequest request) {
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
     }
 
     private String resolveRedirect(String clientId, String postLogoutRedirectUri, String tokenClientId) {

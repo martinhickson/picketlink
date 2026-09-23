@@ -171,7 +171,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         return issueTokens(client, consumed.getSubject(),
                 ScopeValidator.resolveApprovedScopes(client, consumed.getScopes()),
-                consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request), "authorization_code");
+                consumed.getNonce(), consumed.getAuthTime(), consumed.getSid(),
+                dpopJkt(request), "authorization_code");
     }
 
     private String password(TokenRequest request, Map<String, String> form) {
@@ -188,7 +189,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(client, request.getScope());
         return issueTokens(client, subject.get(), scopes, form.get("nonce"),
-                server.getClock().instant().getEpochSecond(), dpopJkt(request), OAuthConstants.PASSWORD_GRANT);
+                server.getClock().instant().getEpochSecond(), null, dpopJkt(request),
+                OAuthConstants.PASSWORD_GRANT);
     }
 
     private String refreshToken(TokenRequest request, Map<String, String> form) {
@@ -375,7 +377,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     private String issueTokens(RegisteredClient client, String subject, Set<String> scopes,
-            String nonce, long authTime, String dpopJkt, String grantType) {
+            String nonce, long authTime, String sid, String dpopJkt, String grantType) {
         IssuedToken access = issueAccess(client, subject, scopes, dpopJkt, grantType);
         StringBuilder json = new StringBuilder("{");
         json.append("\"access_token\":\"").append(OAuthJsonWriter.escape(access.getTokenValue())).append('"');
@@ -383,7 +385,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
         if (scopes.contains("openid")) {
             json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(
-                    idToken(client, subject, nonce, authTime, access).getTokenValue())).append('"');
+                    idToken(client, subject, nonce, authTime, access, sid).getTokenValue())).append('"');
         }
         if (!scopes.isEmpty()) {
             json.append(",\"scope\":\"").append(OAuthJsonWriter.escape(ScopeValidator.formatScope(scopes)))
@@ -398,13 +400,14 @@ public class OidcTokenEndpointServlet extends HttpServlet {
 
     /** OIDC ID token. Issued only when the approved scope includes {@code openid}. */
     private IssuedToken idToken(RegisteredClient client, String subject,
-            String nonce, long authTime, IssuedToken access) {
+            String nonce, long authTime, IssuedToken access, String sid) {
         // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family
         java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
                 server.getClaimSource().claimsFor(subject));
         idTokenClaims.put("auth_time", Long.valueOf(authTime));
         idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
-        idTokenClaims.put("sid", java.util.UUID.randomUUID().toString());
+        idTokenClaims.put("sid", sid == null || sid.isBlank()
+                ? java.util.UUID.randomUUID().toString() : sid);
         // ID token: same signing chokepoint, subject + nonce, audience is the client
         IssuedToken idToken = server.getIssuanceServer().getIssuanceManager()
                 .issue(IssuanceRequest.forClient(client)

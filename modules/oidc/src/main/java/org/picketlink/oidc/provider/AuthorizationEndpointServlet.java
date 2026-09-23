@@ -18,7 +18,8 @@ import org.picketlink.auth.oauth.service.ScopeValidator;
 
 /**
  * OIDC authorization endpoint ({@code /authorize}): {@code response_type=code} with PKCE
- * (S256). GET renders a minimal login form (or the deployment's own SSO front-end can POST
+ * (S256). A fresh browser session signs the next client in without another password.
+ * Otherwise GET renders a minimal login form (or the deployment's own SSO front-end can POST
  * credentials straight here); POST authenticates the subject through the configured
  * {@link SubjectAuthenticator} and redirects back with a single-use code bound to client,
  * redirect URI, subject, scopes, nonce and PKCE challenge.
@@ -53,7 +54,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         RequestParams params = validate(request, response);
-        if (params == null) {
+        if (params == null || completeWithoutPrompt(request, params, response)) {
             return;
         }
         response.setStatus(HttpServletResponse.SC_OK);
@@ -76,7 +77,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         RequestParams params = validate(request, response);
-        if (params == null) {
+        if (params == null || answerPromptNone(request, params, response)) {
             return;
         }
         String username = request.getParameter("username");
@@ -89,9 +90,66 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.getWriter().write("<p>Invalid credentials</p>");
             return;
         }
+        long authTime = server.getClock().instant().getEpochSecond();
+        String sid = SsoSession.login(request.getSession(true), subject.get(), authTime);
+        issueCode(params, subject.get(), sid, Long.valueOf(authTime), response);
+    }
+
+    /**
+     * GET: a fresh session completes the request, and {@code prompt=none} never shows
+     * the form. Returns true when a response was sent.
+     */
+    private boolean completeWithoutPrompt(HttpServletRequest request, RequestParams params,
+            HttpServletResponse response) throws IOException {
+        return reuseBrowserSession(request, params, response)
+                || answerPromptNone(request, params, response);
+    }
+
+    /**
+     * {@code prompt=none} is silent SSO only. No fresh session means {@code login_required}
+     * (OIDC Core 3.1.2.1), including when the value arrived in a request object.
+     * A password on this request is not a login. Returns true when a response was sent.
+     */
+    private boolean answerPromptNone(HttpServletRequest request, RequestParams params,
+            HttpServletResponse response) throws IOException {
+        if (!promptIsNone(params.prompt)) {
+            return false;
+        }
+        if (reuseBrowserSession(request, params, response)) {
+            return true;
+        }
+        response.setHeader("Location", params.redirectUri
+                + (params.redirectUri.contains("?") ? "&" : "?")
+                + "error=login_required"
+                + (params.state == null ? "" : "&state=" + urlEncode(params.state))
+                + "&iss=" + urlEncode(server.getIssuer()));
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        return true;
+    }
+
+    /**
+     * A fresh browser session satisfies another client without a password prompt.
+     * {@code prompt=login} always shows the form. Returns true when a response was sent.
+     */
+    private boolean reuseBrowserSession(HttpServletRequest request, RequestParams params,
+            HttpServletResponse response) throws IOException {
+        if (promptContains(params.prompt, "login")) {
+            return false;
+        }
+        long now = server.getClock().instant().getEpochSecond();
+        SsoSession.Held held = SsoSession.read(request.getSession(false));
+        if (!SsoSession.fresh(held, params.maxAge, now)) {
+            return false;
+        }
+        issueCode(params, held.subject, held.sid, Long.valueOf(held.authTime), response);
+        return true;
+    }
+
+    private void issueCode(RequestParams params, String subject, String sid, Long authTime,
+            HttpServletResponse response) throws IOException {
         String code = server.getAuthorizationCodes().create(
-                params.clientId, params.redirectUri, subject.get(), params.scope,
-                params.nonce, params.codeChallenge, params.maxAge);
+                params.clientId, params.redirectUri, subject, params.scope,
+                params.nonce, params.codeChallenge, params.maxAge, sid, authTime);
         emitAuthorizationResponse(params, code, response);
     }
 
@@ -172,18 +230,6 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         }
         if (promptCombinesNone(params.prompt)) {
             error(response, 400, "prompt none cannot be combined with another value");
-            return null;
-        }
-        // prompt=none demands silent SSO, which a session-less provider cannot grant —
-        // respond per OIDC Core 3.1.2.1 with the login_required error code.
-        // Invalid scope or PKCE is rejected above, so it is not turned into this redirect.
-        if (promptIsNone(params.prompt)) {
-            response.setHeader("Location", params.redirectUri
-                    + (params.redirectUri.contains("?") ? "&" : "?")
-                    + "error=login_required"
-                    + (params.state == null ? "" : "&state=" + urlEncode(params.state))
-                    + "&iss=" + urlEncode(server.getIssuer()));
-            response.setStatus(HttpServletResponse.SC_FOUND);
             return null;
         }
         return params;

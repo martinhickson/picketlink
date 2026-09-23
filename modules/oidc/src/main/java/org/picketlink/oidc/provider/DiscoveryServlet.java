@@ -76,6 +76,8 @@ public class DiscoveryServlet extends HttpServlet {
                 "client_secret_basic", "client_secret_post", "private_key_jwt");
         array(json, "scopes_supported", "openid", "profile", "email");
         bool(json, "authorization_response_iss_parameter_supported", true);
+        bool(json, "backchannel_logout_supported", true);
+        bool(json, "backchannel_logout_session_supported", true);
         json.append('}');
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json");

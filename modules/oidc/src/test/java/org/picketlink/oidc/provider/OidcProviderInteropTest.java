@@ -365,14 +365,19 @@ class OidcProviderInteropTest {
         assertTrue(payload.contains("http://schemas.openid.net/event/backchannel-logout"));
         assertTrue(payload.contains("\"sub\":\"alice\""));
         assertTrue(payload.contains("\"aud\":\"" + CLIENT_ID + "\""));
+        assertTrue(payload.contains("\"sid\":\"session-alice\""));
     }
 
     private String mintTokenForAlice() {
+        java.util.Map<String, Object> extra = new java.util.LinkedHashMap<>();
+        extra.put("at_hash", "left-half");
+        extra.put("sid", "session-alice");
         return issuanceServer.getIssuanceManager()
                 .issue(org.picketlink.auth.oauth.issuance.IssuanceRequest
                         .forClient(issuanceServer.getClientStore().findByClientId(CLIENT_ID).get())
                         .grantType("oidc-id-token")
                         .subject("alice")
+                        .extraClaims(extra)
                         .build()).getTokenValue();
     }
 

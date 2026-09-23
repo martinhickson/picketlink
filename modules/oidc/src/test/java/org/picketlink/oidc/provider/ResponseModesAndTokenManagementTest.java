@@ -264,6 +264,8 @@ class ResponseModesAndTokenManagementTest {
         assertTrue(json.contains("\"authorization_response_iss_parameter_supported\":true"));
         assertTrue(json.contains("\"grant_types_supported\":["));
         assertTrue(json.contains("\"dpop_signing_alg_values_supported\":[\"RS256\",\"ES256\"]"));
+        assertTrue(json.contains("\"backchannel_logout_supported\":true"));
+        assertTrue(json.contains("\"backchannel_logout_session_supported\":true"));
         assertTrue(!json.contains("\"authorization_response_iss_parameter_supported\":\"true\""));
     }
 
