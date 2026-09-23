@@ -223,7 +223,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         RefreshTokenService.Rotation rotated = rotation.get();
         Set<String> scopes = parseScopes(rotated.getScopes());
-        IssuedToken access = issueAccess(client, rotated.getSubject(), scopes);
+        IssuedToken access = issueAccess(client, rotated.getSubject(), scopes,
+                dpopJkt(request), "refresh_token");
         return tokenResponse(access, rotated.getNewRefreshToken(), scopes);
     }
 
@@ -379,7 +380,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         ClientAuthentication authentication = authenticator.authenticate(request);
         RegisteredClient client = authentication.getClient();
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(client, request.getScope());
-        IssuedToken issued = issueAccess(client, client.getClientId(), scopes, dpopJkt(request));
+        IssuedToken issued = issueAccess(client, client.getClientId(), scopes, dpopJkt(request),
+                OAuthConstants.CLIENT_CREDENTIALS_GRANT);
         return tokenResponse(issued, null, scopes);
     }
 
@@ -441,15 +443,6 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         } catch (java.security.NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 unavailable", ex);
         }
-    }
-
-    private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes) {
-        return issueAccess(client, subject, scopes, null, "authorization_code");
-    }
-
-    private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes,
-            String dpopJkt) {
-        return issueAccess(client, subject, scopes, dpopJkt, "authorization_code");
     }
 
     private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes,

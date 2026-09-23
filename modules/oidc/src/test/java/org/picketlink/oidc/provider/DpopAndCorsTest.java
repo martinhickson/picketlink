@@ -311,6 +311,28 @@ class DpopAndCorsTest {
     }
 
     @Test
+    void refreshWithDpopProofBindsTheNewAccessToken() throws Exception {
+        String refresh = server.getRefreshTokens().create(CLIENT_ID, "alice", "openid", null);
+        writer.getBuffer().setLength(0);
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=refresh_token&refresh_token="
+                        + java.net.URLEncoder.encode(refresh, StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+                .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes(StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(
+                dpopProof("POST", TOKEN_URI, "jti-refresh"));
+        token.doPost(request, response);
+        verify(response).setStatus(200);
+        String json = writer.toString();
+        assertTrue(json.contains("\"token_type\":\"DPoP\""));
+        String accessToken = json.split("\"access_token\":\"")[1].split("\"")[0];
+        String payload = new String(Base64.getUrlDecoder().decode(accessToken.split("\\.")[1]),
+                StandardCharsets.UTF_8);
+        assertTrue(payload.contains("\"cnf\""));
+        assertTrue(payload.contains("\"sub\":\"alice\""));
+    }
+
+    @Test
     void unsignedDpopProofIsRejected() {
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
         String header = encoder.encodeToString(
