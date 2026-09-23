@@ -13,7 +13,7 @@ public final class OidcPathScopedClientCodeRequestFilter extends OidcClientCodeR
     @Override
     public void filter(ContainerRequestContext context) throws IOException {
         if (requiresOidcFilter(context.getUriInfo().getPath())) {
-            super.filter(context);
+            TokenPostRetry.once(() -> super.filter(context));
         }
     }
 

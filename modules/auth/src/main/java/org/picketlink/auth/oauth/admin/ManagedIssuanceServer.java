@@ -87,14 +87,14 @@ public final class ManagedIssuanceServer {
         }
 
         IssuancePolicyConfig policy = policyStore.load();
-        CxfJoseJwtSigningService signingService;
-        if (keyStore != null) {
+        org.picketlink.auth.oauth.issuance.JwtSigningService signingService = builder.signingService;
+        if (signingService == null && keyStore != null) {
             if (keyStore.loadDocument().getKeys().isEmpty()) {
                 // first start: generate the initial signing key into the keystore
                 keyStore.rotate();
             }
             signingService = keyStore.toSigningService(issuer);
-        } else {
+        } else if (signingService == null) {
             signingService = ephemeralSigningService(issuer);
         }
 
@@ -229,6 +229,7 @@ public final class ManagedIssuanceServer {
         private IssuancePolicyStore policyStore;
         private SigningKeyStore keyStore;
         private JdbcConnectionSource connectionSource;
+        private org.picketlink.auth.oauth.issuance.JwtSigningService signingService;
 
         private Builder(String issuer) {
             this.issuer = issuer;
@@ -251,6 +252,11 @@ public final class ManagedIssuanceServer {
 
         public Builder connectionSource(JdbcConnectionSource connectionSource) {
             this.connectionSource = connectionSource;
+            return this;
+        }
+
+        public Builder signingService(org.picketlink.auth.oauth.issuance.JwtSigningService signingService) {
+            this.signingService = signingService;
             return this;
         }
 

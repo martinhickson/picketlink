@@ -1,11 +1,13 @@
 package org.picketlink.auth.oauth.servlet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import jakarta.servlet.ReadListener;
@@ -66,6 +68,27 @@ class OAuthTokenEndpointServletTest {
         assertEquals(HttpServletResponse.SC_OK, statusCaptor.getValue());
         assertTrue(responseWriter.toString().contains("\"access_token\""));
         assertTrue(responseWriter.toString().contains("\"token_type\":\"Bearer\""));
+    }
+
+    @Test
+    void armedFaultClosesTheNextPostOnly() throws Exception {
+        when(request.getContentType()).thenReturn(OAuthConstants.APPLICATION_FORM_URLENCODED);
+        when(request.getInputStream()).thenReturn(inputStream(
+                "grant_type=client_credentials&client_id=demo&client_secret=secret&scope=api.read"));
+        NextTokenPostFault fault = new NextTokenPostFault();
+        fault.arm();
+        OAuthTokenEndpointServlet servlet = new OAuthTokenEndpointServlet(
+                new org.picketlink.auth.oauth.grant.GrantDispatcher(java.util.List.of(
+                        new org.picketlink.auth.oauth.grant.ClientCredentialsGrantHandler(tokenService))),
+                fault);
+
+        IOException closed = assertThrows(IOException.class, () -> servlet.doPost(request, response));
+        assertTrue(closed.getMessage().contains("Connection closed"));
+
+        when(request.getInputStream()).thenReturn(inputStream(
+                "grant_type=client_credentials&client_id=demo&client_secret=secret&scope=api.read"));
+        servlet.doPost(request, response);
+        verify(response).setStatus(HttpServletResponse.SC_OK);
     }
 
     @Test

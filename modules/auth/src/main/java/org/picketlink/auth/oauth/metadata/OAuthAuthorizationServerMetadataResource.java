@@ -21,8 +21,18 @@ public class OAuthAuthorizationServerMetadataResource {
         StringBuilder json = new StringBuilder();
         json.append('{');
         append(json, "issuer", metadata.getIssuer(), true);
+        if (metadata.getAuthorizationEndpoint() != null) {
+            append(json, "authorization_endpoint", metadata.getAuthorizationEndpoint(), false);
+        }
         append(json, "token_endpoint", metadata.getTokenEndpoint(), false);
+        if (metadata.getJwksUri() != null) {
+            append(json, "jwks_uri", metadata.getJwksUri(), false);
+        }
         appendArray(json, "grant_types_supported", metadata.getGrantTypesSupported(), false);
+        if (!metadata.getIdTokenSigningAlgValuesSupported().isEmpty()) {
+            appendArray(json, "id_token_signing_alg_values_supported",
+                    metadata.getIdTokenSigningAlgValuesSupported(), false);
+        }
         appendArray(json, "token_endpoint_auth_methods_supported",
                 metadata.getTokenEndpointAuthMethodsSupported(), false);
         if (!metadata.getScopesSupported().isEmpty()) {

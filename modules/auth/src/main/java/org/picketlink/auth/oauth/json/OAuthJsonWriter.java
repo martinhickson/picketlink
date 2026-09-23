@@ -18,6 +18,12 @@ public final class OAuthJsonWriter {
         if (response.getScope() != null && !response.getScope().isBlank()) {
             appendStringField(json, OAuthConstants.SCOPE, response.getScope(), false);
         }
+        if (response.getRefreshToken() != null && !response.getRefreshToken().isBlank()) {
+            appendStringField(json, OAuthConstants.REFRESH_TOKEN, response.getRefreshToken(), false);
+        }
+        if (response.getIdToken() != null && !response.getIdToken().isBlank()) {
+            appendStringField(json, OAuthConstants.ID_TOKEN, response.getIdToken(), false);
+        }
         json.append('}');
         return json.toString();
     }

@@ -26,12 +26,14 @@ import org.picketlink.auth.oauth.model.OAuthErrorResponse;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 import org.picketlink.auth.oauth.model.TokenRequest;
 import org.picketlink.auth.oauth.service.ScopeValidator;
+import org.picketlink.auth.oauth.servlet.NextTokenPostFault;
 
 /**
  * OIDC token endpoint ({@code /token}): {@code authorization_code} (PKCE-verified),
- * {@code refresh_token} (rotation + reuse detection) and {@code client_credentials}. Access
- * and ID tokens are JWTs minted through the {@code JwtIssuanceManager} chokepoint, so the
- * issuance policy engine, audit log and revocation registry all apply.
+ * {@code refresh_token} (rotation + reuse detection), {@code password} and
+ * {@code client_credentials}. Access and ID tokens are JWTs minted through the
+ * {@code JwtIssuanceManager} chokepoint, so the issuance policy engine, audit log and
+ * revocation registry all apply.
  */
 public class OidcTokenEndpointServlet extends HttpServlet {
 
@@ -44,12 +46,18 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     private transient OidcProviderServer server;
     private transient ClientCredentialsAuthenticator authenticator;
     private transient DpopProofValidator dpopValidator;
+    private transient NextTokenPostFault nextPostFault = new NextTokenPostFault();
 
     public OidcTokenEndpointServlet() {
     }
 
     public OidcTokenEndpointServlet(OidcProviderServer server) {
+        this(server, new NextTokenPostFault());
+    }
+
+    public OidcTokenEndpointServlet(OidcProviderServer server, NextTokenPostFault nextPostFault) {
         this.server = server;
+        this.nextPostFault = nextPostFault;
         if (server != null) {
             this.authenticator = newAuthenticator(server);
         }
@@ -67,6 +75,10 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             throw new IllegalStateException("OidcProviderServer must be configured");
         }
         authenticator = newAuthenticator(server);
+        Object fault = getServletContext().getAttribute(NextTokenPostFault.class.getName());
+        if (fault instanceof NextTokenPostFault) {
+            nextPostFault = (NextTokenPostFault) fault;
+        }
     }
 
     private static ClientCredentialsAuthenticator newAuthenticator(OidcProviderServer server) {
@@ -88,6 +100,10 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 .authorizationHeader(request.getHeader("Authorization"))
                 .formParameters(form)
                 .build();
+        if (nextPostFault.consume()) {
+            response.setHeader("Connection", "close");
+            throw new IOException("Connection closed");
+        }
         try {
             String json = handle(tokenRequest, form);
             response.setStatus(HttpServletResponse.SC_OK);
@@ -110,6 +126,9 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         if ("refresh_token".equals(grantType)) {
             return refreshToken(request, form);
+        }
+        if (OAuthConstants.PASSWORD_GRANT.equals(grantType)) {
+            return password(request, form);
         }
         if (OAuthConstants.CLIENT_CREDENTIALS_GRANT.equals(grantType)) {
             return clientCredentials(request);
@@ -150,7 +169,24 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             throw oauthError(OAuthConstants.INVALID_GRANT, "authentication is older than max_age");
         }
         return issueTokens(client, consumed.getSubject(), parseScopes(consumed.getScopes()),
-                consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request));
+                consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request), "authorization_code");
+    }
+
+    private String password(TokenRequest request, Map<String, String> form) {
+        ClientAuthentication authentication = authenticator.authenticate(request);
+        RegisteredClient client = authentication.getClient();
+        String username = form.get(OAuthConstants.USERNAME);
+        String password = form.get(OAuthConstants.PASSWORD);
+        if (username == null || username.isBlank() || password == null) {
+            throw oauthError(OAuthConstants.INVALID_REQUEST, "username and password are required");
+        }
+        Optional<String> subject = server.getSubjectAuthenticator().authenticate(username, password);
+        if (subject.isEmpty()) {
+            throw oauthError(OAuthConstants.INVALID_GRANT, "invalid resource owner credentials");
+        }
+        Set<String> scopes = ScopeValidator.resolveApprovedScopes(client, request.getScope());
+        return issueTokens(client, subject.get(), scopes, form.get("nonce"),
+                server.getClock().instant().getEpochSecond(), dpopJkt(request), OAuthConstants.PASSWORD_GRANT);
     }
 
     private String refreshToken(TokenRequest request, Map<String, String> form) {
@@ -317,8 +353,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     private String issueTokens(RegisteredClient client, String subject, Set<String> scopes,
-            String nonce, long authTime, String dpopJkt) {
-        IssuedToken access = issueAccess(client, subject, scopes, dpopJkt);
+            String nonce, long authTime, String dpopJkt, String grantType) {
+        IssuedToken access = issueAccess(client, subject, scopes, dpopJkt, grantType);
         // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family)
         java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
                 server.getClaimSource().claimsFor(subject));
@@ -365,11 +401,16 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes) {
-        return issueAccess(client, subject, scopes, null);
+        return issueAccess(client, subject, scopes, null, "authorization_code");
     }
 
     private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes,
             String dpopJkt) {
+        return issueAccess(client, subject, scopes, dpopJkt, "authorization_code");
+    }
+
+    private IssuedToken issueAccess(RegisteredClient client, String subject, Set<String> scopes,
+            String dpopJkt, String grantType) {
         java.util.Map<String, Object> extra = null;
         if (dpopJkt != null) {
             // RFC 9449: proof-of-possession binding — the token is only usable with the
@@ -381,7 +422,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         return server.getIssuanceServer().getIssuanceManager()
                 .issue(IssuanceRequest.forClient(client)
-                        .grantType("authorization_code")
+                        .grantType(grantType)
                         .scopes(scopes)
                         .subject(subject)
                         .extraClaims(extra)

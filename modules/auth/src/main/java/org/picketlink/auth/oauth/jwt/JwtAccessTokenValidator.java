@@ -13,14 +13,20 @@ public class JwtAccessTokenValidator {
 
     private final JwtSettings settings;
     private final Clock clock;
+    private final JwtSigner signer;
 
     public JwtAccessTokenValidator(JwtSettings settings) {
         this(settings, Clock.SYSTEM);
     }
 
     public JwtAccessTokenValidator(JwtSettings settings, Clock clock) {
+        this(settings, clock, null);
+    }
+
+    public JwtAccessTokenValidator(JwtSettings settings, Clock clock, JwtSigner signer) {
         this.settings = settings;
         this.clock = clock;
+        this.signer = signer;
     }
 
     public JwtClaims validate(String token) {
@@ -31,10 +37,7 @@ public class JwtAccessTokenValidator {
         if (parts.length != 3) {
             throw new JwtValidationException("Malformed JWT");
         }
-        String expectedSignature = sign(parts[0] + "." + parts[1]);
-        if (!MessageDigest.isEqual(
-                expectedSignature.getBytes(StandardCharsets.UTF_8),
-                parts[2].getBytes(StandardCharsets.UTF_8))) {
+        if (!signatureMatches(parts[0] + "." + parts[1], parts[2])) {
             throw new JwtValidationException("Invalid JWT signature");
         }
 
@@ -55,6 +58,17 @@ public class JwtAccessTokenValidator {
             throw new JwtValidationException("JWT missing client identity");
         }
         return new JwtClaims(clientId, readStringClaim(payloadJson, "scope"));
+    }
+
+    private boolean signatureMatches(String content, String presented) {
+        if (signer != null) {
+            byte[] signature = Base64.getUrlDecoder().decode(presented);
+            return signer.verify(content.getBytes(StandardCharsets.UTF_8), signature);
+        }
+        String expectedSignature = sign(content);
+        return MessageDigest.isEqual(
+                expectedSignature.getBytes(StandardCharsets.UTF_8),
+                presented.getBytes(StandardCharsets.UTF_8));
     }
 
     private String sign(String content) {

@@ -13,6 +13,12 @@ public final class OAuthConstants {
     public static final String ERROR_DESCRIPTION = "error_description";
 
     public static final String CLIENT_CREDENTIALS_GRANT = "client_credentials";
+    public static final String PASSWORD_GRANT = "password";
+    public static final String REFRESH_TOKEN_GRANT = "refresh_token";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String REFRESH_TOKEN = "refresh_token";
+    public static final String ID_TOKEN = "id_token";
     public static final String BEARER_TOKEN_TYPE = "Bearer";
 
     public static final String TOKEN_ENDPOINT_AUTH_BASIC = "client_secret_basic";

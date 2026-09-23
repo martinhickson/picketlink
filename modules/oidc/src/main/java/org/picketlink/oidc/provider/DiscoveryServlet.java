@@ -43,7 +43,7 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "jwks_uri", basePath + "/jwks.json", false);
         field(json, "response_types_supported", "code", false);
         field(json, "grant_types_supported",
-                "authorization_code refresh_token client_credentials"
+                "authorization_code refresh_token password client_credentials"
                 + " urn:ietf:params:oauth:grant-type:token-exchange"
                 + " urn:ietf:params:oauth:grant-type:device_code", false);
         field(json, "subject_types_supported", "public", false);

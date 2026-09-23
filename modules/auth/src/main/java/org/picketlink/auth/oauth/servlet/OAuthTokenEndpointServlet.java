@@ -10,6 +10,8 @@ import org.picketlink.auth.oauth.OAuthConstants;
 import org.picketlink.auth.oauth.OAuthException;
 import org.picketlink.auth.oauth.http.FormParameters;
 import org.picketlink.auth.oauth.json.OAuthJsonWriter;
+import org.picketlink.auth.oauth.grant.ClientCredentialsGrantHandler;
+import org.picketlink.auth.oauth.grant.GrantDispatcher;
 import org.picketlink.auth.oauth.model.TokenRequest;
 import org.picketlink.auth.oauth.model.TokenResponse;
 import org.picketlink.auth.oauth.service.ClientCredentialsTokenService;
@@ -18,25 +20,44 @@ public class OAuthTokenEndpointServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
 
-    private transient ClientCredentialsTokenService tokenService;
+    private transient GrantDispatcher grants;
+    private transient NextTokenPostFault nextPostFault = new NextTokenPostFault();
 
     public OAuthTokenEndpointServlet() {
     }
 
     public OAuthTokenEndpointServlet(ClientCredentialsTokenService tokenService) {
-        this.tokenService = tokenService;
+        this(new GrantDispatcher(java.util.List.of(new ClientCredentialsGrantHandler(tokenService))));
+    }
+
+    public OAuthTokenEndpointServlet(GrantDispatcher grants) {
+        this(grants, new NextTokenPostFault());
+    }
+
+    public OAuthTokenEndpointServlet(GrantDispatcher grants, NextTokenPostFault nextPostFault) {
+        this.grants = grants;
+        this.nextPostFault = nextPostFault;
     }
 
     @Override
     public void init() {
-        if (tokenService == null) {
-            Object configured = getServletContext().getAttribute(ClientCredentialsTokenService.class.getName());
-            if (configured instanceof ClientCredentialsTokenService) {
-                tokenService = (ClientCredentialsTokenService) configured;
+        if (grants == null && getServletContext() != null) {
+            Object configured = getServletContext().getAttribute(GrantDispatcher.class.getName());
+            if (configured instanceof GrantDispatcher) {
+                grants = (GrantDispatcher) configured;
+            }
+            Object legacy = getServletContext().getAttribute(ClientCredentialsTokenService.class.getName());
+            if (grants == null && legacy instanceof ClientCredentialsTokenService) {
+                grants = new GrantDispatcher(java.util.List.of(
+                        new ClientCredentialsGrantHandler((ClientCredentialsTokenService) legacy)));
+            }
+            Object fault = getServletContext().getAttribute(NextTokenPostFault.class.getName());
+            if (fault instanceof NextTokenPostFault) {
+                nextPostFault = (NextTokenPostFault) fault;
             }
         }
-        if (tokenService == null) {
-            throw new IllegalStateException("ClientCredentialsTokenService must be configured");
+        if (grants == null) {
+            throw new IllegalStateException("GrantDispatcher must be configured");
         }
     }
 
@@ -61,8 +82,13 @@ public class OAuthTokenEndpointServlet extends HttpServlet {
                 .formParameters(formParameters)
                 .build();
 
+        if (nextPostFault.consume()) {
+            response.setHeader("Connection", "close");
+            throw new IOException("Connection closed");
+        }
+
         try {
-            TokenResponse tokenResponse = tokenService.issueToken(tokenRequest);
+            TokenResponse tokenResponse = grants.issue(tokenRequest);
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType(OAuthConstants.APPLICATION_JSON);
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
