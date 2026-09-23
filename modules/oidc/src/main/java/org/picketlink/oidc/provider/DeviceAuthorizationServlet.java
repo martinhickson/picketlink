@@ -77,12 +77,18 @@ public class DeviceAuthorizationServlet extends HttpServlet {
 
             DeviceAuthorizationService.DeviceGrant grant = server.getDeviceAuthorizations()
                     .create(authentication.getClient().getClientId(), scope == null ? "" : scope);
-            String verificationUri = System.getProperty("picketlink.oidc.device.verification.uri",
-                    server.getIssuer() + "/device");
+            String configured = System.getProperty("picketlink.oidc.device.verification.uri");
+            String verificationUri = configured != null && !configured.isBlank()
+                    ? configured : server.endpoint("/device");
+            String complete = verificationUri
+                    + (verificationUri.contains("?") ? "&" : "?")
+                    + "user_code=" + java.net.URLEncoder.encode(grant.getUserCode(), StandardCharsets.UTF_8);
             StringBuilder json = new StringBuilder("{");
             json.append("\"device_code\":\"").append(OAuthJsonWriter.escape(grant.getDeviceCode())).append('"');
-            json.append(",\"user_code\":\"").append(grant.getUserCode()).append('"');
+            json.append(",\"user_code\":\"").append(OAuthJsonWriter.escape(grant.getUserCode())).append('"');
             json.append(",\"verification_uri\":\"").append(OAuthJsonWriter.escape(verificationUri)).append('"');
+            json.append(",\"verification_uri_complete\":\"")
+                    .append(OAuthJsonWriter.escape(complete)).append('"');
             json.append(",\"expires_in\":").append(server.getDeviceAuthorizations().lifetimeSeconds());
             json.append(",\"interval\":").append(server.getDeviceAuthorizations().pollIntervalSeconds());
             json.append('}');

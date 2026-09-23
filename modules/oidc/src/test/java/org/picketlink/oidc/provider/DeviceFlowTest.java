@@ -83,9 +83,26 @@ class DeviceFlowTest {
         String json = writer.toString();
         assertTrue(json.contains("\"device_code\":\""));
         assertTrue(json.contains("\"user_code\":\""));
-        assertTrue(json.contains("\"verification_uri\""));
+        assertTrue(json.contains("\"verification_uri\":\"https://auth.example.test/device\""));
+        assertTrue(json.contains("\"verification_uri_complete\":\"https://auth.example.test/device?user_code="));
         assertTrue(json.contains("\"interval\""));
         return json;
+    }
+
+    @Test
+    void verificationUriFollowsTheMountPath() throws Exception {
+        OidcProviderServer mounted = OidcProviderServer.builder(ISSUER, server.getIssuanceServer())
+                .subjectAuthenticator(new SubjectAuthenticator.InMemorySubjectAuthenticator(
+                        Map.of("alice", "wonderland")))
+                .basePath("/oidc")
+                .build();
+        writer.getBuffer().setLength(0);
+        post("scope=openid");
+        new DeviceAuthorizationServlet(mounted).doPost(request, response);
+        String json = writer.toString();
+        assertTrue(json.contains("\"verification_uri\":\"https://auth.example.test/oidc/device\""));
+        assertTrue(json.contains(
+                "\"verification_uri_complete\":\"https://auth.example.test/oidc/device?user_code="));
     }
 
     @Test
