@@ -97,6 +97,29 @@ class ResponseModesAndTokenManagementTest {
     }
 
     @Test
+    void omittedStateIsNotEchoed() throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "openid");
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        params.put("username", "alice");
+        params.put("password", "wonderland");
+        params.forEach((name, value) -> lenient().when(request.getParameter(name)).thenReturn(value));
+        authorize.doPost(request, response);
+
+        ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        String redirect = location.getValue();
+        assertTrue(redirect.startsWith(REDIRECT_URI + "?code="));
+        assertTrue(redirect.contains("iss="));
+        assertTrue(!redirect.contains("state="));
+    }
+
+    @Test
     void loginFormKeepsTheResponseMode() throws Exception {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("response_type", "code");
@@ -235,7 +258,10 @@ class ResponseModesAndTokenManagementTest {
         assertTrue(json.contains("introspection_endpoint"));
         assertTrue(json.contains("revocation_endpoint"));
         assertTrue(json.contains("response_modes_supported"));
-        assertTrue(json.contains("authorization_response_iss_parameter_supported"));
+        assertTrue(json.contains("\"authorization_response_iss_parameter_supported\":true"));
+        assertTrue(json.contains("\"grant_types_supported\":["));
+        assertTrue(json.contains("\"dpop_signing_alg_values_supported\":[\"RS256\",\"ES256\"]"));
+        assertTrue(!json.contains("\"authorization_response_iss_parameter_supported\":\"true\""));
     }
 
     private static void assertEqualsSafe(Object expected, Object actual) {

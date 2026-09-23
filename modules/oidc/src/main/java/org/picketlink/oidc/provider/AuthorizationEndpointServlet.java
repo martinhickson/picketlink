@@ -377,9 +377,11 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("text/html");
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-            response.getWriter().write(formPost(params.redirectUri,
-                    hidden("code", code), hidden("state", state),
-                    hidden("iss", server.getIssuer())));
+            response.getWriter().write(state == null || state.isBlank()
+                    ? formPost(params.redirectUri, hidden("code", code),
+                            hidden("iss", server.getIssuer()))
+                    : formPost(params.redirectUri, hidden("code", code),
+                            hidden("state", state), hidden("iss", server.getIssuer())));
             return;
         }
         if (mode.endsWith(".jwt") || "jwt".equals(mode)) {
@@ -400,14 +402,14 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_FOUND);
             return;
         }
+        String stateQuery = state == null || state.isBlank()
+                ? "" : "&state=" + urlEncode(state);
+        String issQuery = "&iss=" + urlEncode(server.getIssuer());
         String redirect = params.redirectUri
                 + ("fragment".equals(mode)
-                        ? "#" + "code=" + code + "&state=" + urlEncode(state)
-                          + "&iss=" + urlEncode(server.getIssuer())
+                        ? "#code=" + code + stateQuery + issQuery
                         : (params.redirectUri.contains("?") ? "&" : "?")
-                          + "code=" + code
-                          + "&state=" + urlEncode(state)
-                          + "&iss=" + urlEncode(server.getIssuer()));
+                          + "code=" + code + stateQuery + issQuery);
         response.setHeader("Location", redirect);
         response.setStatus(HttpServletResponse.SC_FOUND);
     }

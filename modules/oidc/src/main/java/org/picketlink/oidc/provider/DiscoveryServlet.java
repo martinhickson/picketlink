@@ -37,21 +37,22 @@ public class DiscoveryServlet extends HttpServlet {
         field(json, "end_session_endpoint", basePath + "/logout", false);
         field(json, "introspection_endpoint", basePath + "/introspect", false);
         field(json, "revocation_endpoint", basePath + "/revoke", false);
-        field(json, "response_modes_supported",
-                "query fragment form_post jwt query.jwt fragment.jwt form_post.jwt", false);
-        field(json, "authorization_response_iss_parameter_supported", "true", false);
         field(json, "jwks_uri", basePath + "/jwks.json", false);
-        field(json, "response_types_supported", "code", false);
-        field(json, "grant_types_supported",
-                "authorization_code refresh_token password client_credentials"
-                + " urn:ietf:params:oauth:grant-type:token-exchange"
-                + " urn:ietf:params:oauth:grant-type:device_code", false);
-        field(json, "subject_types_supported", "public", false);
-        field(json, "id_token_signing_alg_values_supported", "RS256 ES256", false);
-        field(json, "code_challenge_methods_supported", "S256", false);
-        field(json, "token_endpoint_auth_methods_supported",
-                "client_secret_basic client_secret_post private_key_jwt", false);
-        field(json, "scopes_supported", "openid profile email", false);
+        array(json, "response_types_supported", "code");
+        array(json, "response_modes_supported",
+                "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
+        array(json, "grant_types_supported",
+                "authorization_code", "refresh_token", "password", "client_credentials",
+                "urn:ietf:params:oauth:grant-type:token-exchange",
+                "urn:ietf:params:oauth:grant-type:device_code");
+        array(json, "subject_types_supported", "public");
+        array(json, "id_token_signing_alg_values_supported", "RS256", "ES256");
+        array(json, "dpop_signing_alg_values_supported", "RS256", "ES256");
+        array(json, "code_challenge_methods_supported", "S256");
+        array(json, "token_endpoint_auth_methods_supported",
+                "client_secret_basic", "client_secret_post", "private_key_jwt");
+        array(json, "scopes_supported", "openid", "profile", "email");
+        bool(json, "authorization_response_iss_parameter_supported", true);
         json.append('}');
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json");
@@ -65,6 +66,21 @@ public class DiscoveryServlet extends HttpServlet {
         }
         json.append('"').append(OAuthJsonWriter.escape(name)).append("\":\"")
                 .append(OAuthJsonWriter.escape(value)).append('"');
+    }
+
+    private static void array(StringBuilder json, String name, String... values) {
+        json.append(",\"").append(OAuthJsonWriter.escape(name)).append("\":[");
+        for (int i = 0; i < values.length; i++) {
+            if (i > 0) {
+                json.append(',');
+            }
+            json.append('"').append(OAuthJsonWriter.escape(values[i])).append('"');
+        }
+        json.append(']');
+    }
+
+    private static void bool(StringBuilder json, String name, boolean value) {
+        json.append(",\"").append(OAuthJsonWriter.escape(name)).append("\":").append(value);
     }
 
     private static String normalize(String basePath) {
