@@ -84,8 +84,9 @@ public class UserInfoServlet extends HttpServlet {
             if (clientId != null) {
                 field(json, "client_id", clientId.toString(), false);
             }
-            for (java.util.Map.Entry<String, Object> entry
-                    : server.getClaimSource().claimsFor(claims.getSubject()).entrySet()) {
+            for (java.util.Map.Entry<String, Object> entry : ScopedClaims.select(
+                    ScopedClaims.parse(scope),
+                    server.getClaimSource().claimsFor(claims.getSubject())).entrySet()) {
                 field(json, entry.getKey(), String.valueOf(entry.getValue()), false);
             }
             json.append('}');

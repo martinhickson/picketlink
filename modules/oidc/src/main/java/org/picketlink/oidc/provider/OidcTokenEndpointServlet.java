@@ -385,7 +385,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
         if (scopes.contains("openid")) {
             json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(
-                    idToken(client, subject, nonce, authTime, access, sid).getTokenValue())).append('"');
+                    idToken(client, subject, scopes, nonce, authTime, access, sid).getTokenValue()))
+                    .append('"');
         }
         if (!scopes.isEmpty()) {
             json.append(",\"scope\":\"").append(OAuthJsonWriter.escape(ScopeValidator.formatScope(scopes)))
@@ -399,11 +400,11 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     }
 
     /** OIDC ID token. Issued only when the approved scope includes {@code openid}. */
-    private IssuedToken idToken(RegisteredClient client, String subject,
+    private IssuedToken idToken(RegisteredClient client, String subject, Set<String> scopes,
             String nonce, long authTime, IssuedToken access, String sid) {
         // OIDC Core 3.1.3.6 — left half of the access-token hash, SHA-256 for our alg family
         java.util.Map<String, Object> idTokenClaims = new java.util.LinkedHashMap<>(
-                server.getClaimSource().claimsFor(subject));
+                ScopedClaims.select(scopes, server.getClaimSource().claimsFor(subject)));
         idTokenClaims.put("auth_time", Long.valueOf(authTime));
         idTokenClaims.put("at_hash", atHash(access.getTokenValue()));
         idTokenClaims.put("sid", sid == null || sid.isBlank()
