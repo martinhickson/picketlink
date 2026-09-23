@@ -164,7 +164,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         // recent enough — a code exchanged too late fails closed instead of issuing an
         // ID token whose auth_time violates the relying party's freshness requirement
         if (consumed.getMaxAge() != null
-                && java.time.Clock.systemUTC().instant().getEpochSecond()
+                && server.getClock().instant().getEpochSecond()
                         - consumed.getAuthTime() >= consumed.getMaxAge()) {
             throw oauthError(OAuthConstants.INVALID_GRANT, "authentication is older than max_age");
         }
@@ -194,15 +194,30 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         RegisteredClient client = authentication.getClient();
         String token = form.get("refresh_token");
 
-        Optional<RefreshTokenService.Rotation> rotation = server.getRefreshTokens().rotate(token);
+        Optional<RefreshTokenRecord> live = server.getRefreshTokens().findLive(token);
+        if (live.isPresent() && !client.getClientId().equals(live.get().getClientId())) {
+            throw oauthError(OAuthConstants.INVALID_GRANT, "refresh token was not issued to this client");
+        }
+        String scopesForRotation = null;
+        if (live.isPresent()) {
+            String requested = form.get("scope");
+            if (requested != null && !requested.isBlank()) {
+                Set<String> granted = parseScopes(live.get().getScopes());
+                Set<String> asked = parseScopes(requested);
+                if (!granted.containsAll(asked)) {
+                    throw oauthError(OAuthConstants.INVALID_SCOPE,
+                            "requested scope exceeds the granted scope");
+                }
+                scopesForRotation = ScopeValidator.formatScope(asked);
+            }
+        }
+        Optional<RefreshTokenService.Rotation> rotation =
+                server.getRefreshTokens().rotate(token, client.getClientId(), scopesForRotation);
         if (!rotation.isPresent()) {
             throw oauthError(OAuthConstants.INVALID_GRANT,
                     "refresh token is invalid, expired or was replayed");
         }
         RefreshTokenService.Rotation rotated = rotation.get();
-        if (!client.getClientId().equals(rotated.getClientId())) {
-            throw oauthError(OAuthConstants.INVALID_GRANT, "refresh token was not issued to this client");
-        }
         Set<String> scopes = parseScopes(rotated.getScopes());
         IssuedToken access = issueAccess(client, rotated.getSubject(), scopes);
         return tokenResponse(access, rotated.getNewRefreshToken(), scopes);
@@ -439,7 +454,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             return null;
         }
         if (dpopValidator == null) {
-            dpopValidator = new DpopProofValidator(java.time.Clock.systemUTC());
+            dpopValidator = new DpopProofValidator(server.getClock());
         }
         try {
             return dpopValidator.validate(proof, "POST", tokenEndpointUri(request));

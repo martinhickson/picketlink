@@ -45,11 +45,31 @@ public final class RefreshTokenService {
         return value;
     }
 
+    /** The live record for this token. Does not rotate, retire, or revoke. */
+    public Optional<RefreshTokenRecord> findLive(String refreshToken) {
+        if (refreshToken == null) {
+            return Optional.empty();
+        }
+        RefreshTokenRecord stored = store.find(hash(refreshToken));
+        if (stored == null) {
+            return Optional.empty();
+        }
+        return Optional.of(stored);
+    }
+
     /**
      * Rotates the refresh token: returns the stored data plus the new token value. Replaying
      * a previously rotated token revokes the whole family (reuse detection) and fails.
      */
     public Optional<Rotation> rotate(String refreshToken) {
+        return rotate(refreshToken, null, null);
+    }
+
+    /**
+     * @param expectedClientId when set, a token issued to another client is left untouched
+     * @param scopes when set, the rotated token carries these scopes instead of the previous ones
+     */
+    public Optional<Rotation> rotate(String refreshToken, String expectedClientId, String scopes) {
         if (refreshToken == null) {
             return Optional.empty();
         }
@@ -67,13 +87,17 @@ public final class RefreshTokenService {
             store.remove(hash);
             return Optional.empty();
         }
+        if (expectedClientId != null && !expectedClientId.equals(stored.getClientId())) {
+            return Optional.empty();
+        }
         store.remove(hash);
         store.rememberRetired(hash, stored.getFamily());
         String newValue = randomToken();
+        String nextScopes = scopes != null ? scopes : stored.getScopes();
         store.save(new RefreshTokenRecord(hash(newValue), stored.getClientId(), stored.getSubject(),
-                stored.getScopes(), stored.getNonce(), stored.getFamily(),
+                nextScopes, stored.getNonce(), stored.getFamily(),
                 clock.instant().getEpochSecond() + lifetimeSeconds));
-        return Optional.of(new Rotation(stored, newValue));
+        return Optional.of(new Rotation(stored, newValue, nextScopes));
     }
 
     private String randomToken() {
@@ -97,10 +121,12 @@ public final class RefreshTokenService {
 
         final RefreshTokenRecord previous;
         final String newRefreshToken;
+        final String scopes;
 
-        Rotation(RefreshTokenRecord previous, String newRefreshToken) {
+        Rotation(RefreshTokenRecord previous, String newRefreshToken, String scopes) {
             this.previous = previous;
             this.newRefreshToken = newRefreshToken;
+            this.scopes = scopes;
         }
 
         public String getClientId() {
@@ -112,7 +138,7 @@ public final class RefreshTokenService {
         }
 
         public String getScopes() {
-            return previous.getScopes();
+            return scopes;
         }
 
         public String getNewRefreshToken() {

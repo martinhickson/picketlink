@@ -101,7 +101,7 @@ public class UserInfoServlet extends HttpServlet {
             return;
         }
         if (dpopValidator == null) {
-            dpopValidator = new DpopProofValidator(java.time.Clock.systemUTC());
+            dpopValidator = new DpopProofValidator(server.getClock());
         }
         String actualJkt;
         try {

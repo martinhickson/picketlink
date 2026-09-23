@@ -179,7 +179,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             throws IOException {
         if (requestObjectValidator == null) {
             requestObjectValidator = new ClientAssertionValidator(server.getIssuer(),
-                    java.time.Clock.systemUTC());
+                    server.getClock());
         }
         org.apache.cxf.rs.security.jose.jwt.JwtClaims claims;
         try {
@@ -319,7 +319,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
 
     /** JARM (RFC 9101): signed response JWT with iss, aud, short-lived exp, code and state. */
     private String jarmResponse(RequestParams params, String code, String state) {
-        long now = java.time.Clock.systemUTC().instant().getEpochSecond();
+        long now = server.getClock().instant().getEpochSecond();
         org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
                 new org.apache.cxf.rs.security.jose.jwt.JwtClaims();
         claims.setIssuer(server.getIssuer());

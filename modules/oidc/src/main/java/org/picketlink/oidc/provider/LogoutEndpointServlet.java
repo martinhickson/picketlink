@@ -6,7 +6,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -138,7 +137,7 @@ public class LogoutEndpointServlet extends HttpServlet {
     }
 
     private JwtClaims logoutTokenClaims(String clientId, String subject) {
-        long now = Clock.systemUTC().instant().getEpochSecond();
+        long now = server.getClock().instant().getEpochSecond();
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(server.getIssuer());
         claims.setSubject(subject);
