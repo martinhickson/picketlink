@@ -486,7 +486,10 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     private String tokenEndpointUri(TokenRequest request) {
         // the htu the proof binds to; deployments behind a proxy can force it via property
         String configured = System.getProperty("picketlink.oidc.token.endpoint.uri");
-        return configured != null ? configured : server.getIssuer() + "/token";
+        if (configured != null && !configured.isBlank()) {
+            return configured;
+        }
+        return server.endpoint("/token");
     }
 
     private static String dpopHeader(TokenRequest request) {

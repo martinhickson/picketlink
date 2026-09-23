@@ -21,9 +21,11 @@ public final class OidcProviderServer {
     private final PushedAuthorizationRequestService pushedAuthorizationRequests;
     private final DeviceAuthorizationService deviceAuthorizations;
     private final Clock clock;
+    private final String basePath;
 
     private OidcProviderServer(Builder builder) {
         this.issuer = builder.issuer;
+        this.basePath = normalizeBasePath(builder.basePath);
         this.issuanceServer = builder.issuanceServer;
         this.subjectAuthenticator = builder.subjectAuthenticator;
         this.claimSource = builder.claimSource != null
@@ -44,6 +46,36 @@ public final class OidcProviderServer {
 
     public String getIssuer() {
         return issuer;
+    }
+
+    /** Servlet mount prefix, or empty when the provider is at the issuer root. */
+    public String getBasePath() {
+        return basePath;
+    }
+
+    /**
+     * Absolute URL for an endpoint path such as {@code /token}. An http(s) base path is
+     * the root. This is the DPoP {@code htu} target, not the request Host header.
+     */
+    public String endpoint(String path) {
+        return endpoint(issuer, basePath, path);
+    }
+
+    static String endpoint(String issuer, String basePath, String path) {
+        String root = basePath == null ? "" : basePath;
+        if (root.startsWith("https://") || root.startsWith("http://")) {
+            return root + path;
+        }
+        String issuerRoot = issuer.endsWith("/") ? issuer.substring(0, issuer.length() - 1) : issuer;
+        return issuerRoot + root + path;
+    }
+
+    private static String normalizeBasePath(String basePath) {
+        if (basePath == null || basePath.isBlank() || "/".equals(basePath)) {
+            return "";
+        }
+        String normalized = basePath.trim();
+        return normalized.endsWith("/") ? normalized.substring(0, normalized.length() - 1) : normalized;
     }
 
     public ManagedIssuanceServer getIssuanceServer() {
@@ -108,6 +140,7 @@ public final class OidcProviderServer {
         private AuthorizationCodeService authorizationCodes;
         private RefreshTokenService refreshTokens;
         private Clock clock;
+        private String basePath;
 
         private Builder(String issuer, ManagedIssuanceServer issuanceServer) {
             this.issuer = issuer;
@@ -136,6 +169,11 @@ public final class OidcProviderServer {
 
         public Builder clock(Clock clock) {
             this.clock = clock;
+            return this;
+        }
+
+        public Builder basePath(String basePath) {
+            this.basePath = basePath;
             return this;
         }
 

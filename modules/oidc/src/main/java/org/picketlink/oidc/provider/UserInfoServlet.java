@@ -123,7 +123,7 @@ public class UserInfoServlet extends HttpServlet {
         String method = request.getMethod() == null ? "GET" : request.getMethod();
         String actualJkt;
         try {
-            actualJkt = dpopValidator.validate(proof, method, userinfoUri(request));
+            actualJkt = dpopValidator.validate(proof, method, userinfoUri());
         } catch (DpopProofValidator.DpopValidationException ex) {
             error(response, 401, ex.getMessage());
             return false;
@@ -158,18 +158,12 @@ public class UserInfoServlet extends HttpServlet {
         return token.isEmpty() ? null : token;
     }
 
-    private String userinfoUri(HttpServletRequest request) {
+    private String userinfoUri() {
         String configured = System.getProperty("picketlink.oidc.userinfo.uri");
-        if (configured != null) {
+        if (configured != null && !configured.isBlank()) {
             return configured;
         }
-        StringBuilder uri = new StringBuilder(request.getScheme()).append("://")
-                .append(request.getServerName());
-        if (request.getServerPort() > 0) {
-            uri.append(':').append(request.getServerPort());
-        }
-        uri.append(request.getRequestURI());
-        return uri.toString();
+        return server.endpoint("/userinfo");
     }
 
     private static void field(StringBuilder json, String name, String value, boolean first) {

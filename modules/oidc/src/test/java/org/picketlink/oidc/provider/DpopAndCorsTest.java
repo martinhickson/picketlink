@@ -323,6 +323,37 @@ class DpopAndCorsTest {
         assertTrue(ex.getMessage().contains("asymmetric"));
     }
 
+    @Test
+    void dpopProofMustTargetTheMountedTokenEndpoint() throws Exception {
+        System.clearProperty("picketlink.oidc.token.endpoint.uri");
+        try {
+            OidcProviderServer mounted = OidcProviderServer.builder(ISSUER, server.getIssuanceServer())
+                    .basePath("/oidc")
+                    .build();
+            OidcTokenEndpointServlet mountedToken = new OidcTokenEndpointServlet(mounted);
+            postToken(mountedToken, dpopProof("POST", TOKEN_URI, "jti-root"));
+            verify(response).setStatus(400);
+            assertTrue(writer.toString().contains("htu"));
+
+            org.mockito.Mockito.clearInvocations(response);
+            writer.getBuffer().setLength(0);
+            postToken(mountedToken, dpopProof("POST", ISSUER + "/oidc/token", "jti-mounted"));
+            verify(response).setStatus(200);
+            assertTrue(writer.toString().contains("\"token_type\":\"DPoP\""));
+        } finally {
+            System.setProperty("picketlink.oidc.token.endpoint.uri", TOKEN_URI);
+        }
+    }
+
+    private void postToken(OidcTokenEndpointServlet endpoint, String proof) throws Exception {
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=client_credentials&scope=openid"));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+                .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes(StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(proof);
+        endpoint.doPost(request, response);
+    }
+
     private static String accessTokenOf(String tokenResponse) {
         return ((String) tokenResponse.split("\"access_token\":\"")[1]).split("\"")[0];
     }

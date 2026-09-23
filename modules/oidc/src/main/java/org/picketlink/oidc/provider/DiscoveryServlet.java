@@ -43,6 +43,15 @@ public class DiscoveryServlet extends HttpServlet {
         if (basePath == null) {
             basePath = normalize(getInitParameter("basePath"));
         }
+        if (basePath == null || basePath.isEmpty()) {
+            Object configured = getServletContext().getAttribute(OidcProviderServer.class.getName());
+            if (configured instanceof OidcProviderServer) {
+                String mounted = ((OidcProviderServer) configured).getBasePath();
+                if (mounted != null && !mounted.isBlank()) {
+                    basePath = mounted;
+                }
+            }
+        }
         if (issuer == null || issuer.isBlank()) {
             throw new IllegalStateException("issuer is required for discovery");
         }
@@ -110,12 +119,7 @@ public class DiscoveryServlet extends HttpServlet {
 
     /** OIDC discovery requires absolute endpoint URLs. A path is resolved against the issuer. */
     private String endpoint(String path) {
-        String root = basePath == null ? "" : basePath;
-        if (root.startsWith("https://") || root.startsWith("http://")) {
-            return root + path;
-        }
-        String issuerRoot = issuer.endsWith("/") ? issuer.substring(0, issuer.length() - 1) : issuer;
-        return issuerRoot + root + path;
+        return OidcProviderServer.endpoint(issuer, basePath, path);
     }
 
     private static String normalize(String basePath) {

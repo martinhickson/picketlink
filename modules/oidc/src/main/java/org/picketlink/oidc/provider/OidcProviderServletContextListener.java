@@ -45,6 +45,7 @@ public class OidcProviderServletContextListener implements ServletContextListene
                     .build();
             OidcProviderServer server = OidcProviderServer.builder(issuer, issuanceServer)
                     .subjectAuthenticator(resolveAuthenticator(servletContext))
+                    .basePath(servletContext.getInitParameter("basePath"))
                     .build();
             servletContext.setAttribute(OidcProviderServer.class.getName(), server);
             servletContext.setAttribute(ManagedIssuanceServer.class.getName(), issuanceServer);
