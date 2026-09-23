@@ -5,9 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Key;
+import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.cxf.Bus;
 import org.apache.cxf.rs.security.jose.common.JoseConstants;
 import org.apache.cxf.rt.security.rs.RSSecurityConstants;
+import org.picketlink.auth.oauth.jwt.JwtSigner;
+import org.picketlink.auth.oauth.jwt.RotatingRsaJwtSigner;
+import org.picketlink.auth.oauth.jwt.RsaJwtSigner;
 import org.picketlink.oidc.OidcDemoConstants;
 
 /**
@@ -37,6 +44,7 @@ public final class DynamicOidcKeyStore {
     private volatile KeyStore keyStore;
     private volatile String activeAlias;
     private volatile Bus bus;
+    private final RotatingRsaJwtSigner jwtSigner = new RotatingRsaJwtSigner();
 
     private DynamicOidcKeyStore(Path keystorePath, char[] storePassword, String keyPassword, String keystoreType,
             KeyStore keyStore, String activeAlias) {
@@ -47,6 +55,7 @@ public final class DynamicOidcKeyStore {
         this.keyStore = keyStore;
         this.activeAlias = activeAlias;
         this.generation.set(1L);
+        refreshSigner();
     }
 
     public static DynamicOidcKeyStore getGlobal() {
@@ -93,6 +102,11 @@ public final class DynamicOidcKeyStore {
 
     public String keyPassword() {
         return keyPassword;
+    }
+
+    /** Signer auth and OIDC issuance share. Rotation replaces the active key and keeps the previous ones. */
+    public JwtSigner signer() {
+        return jwtSigner;
     }
 
     public void bindBus(Bus bus) {
@@ -177,9 +191,41 @@ public final class DynamicOidcKeyStore {
                 "-dname", "CN=PicketLink OIDC Demo Signing",
                 "-ext", "BasicConstraints=ca:true");
         reloadFromDisk(newAlias);
+        refreshSigner();
         applyConfiguration();
         generation.incrementAndGet();
         return new OidcKeyRotationResult(newAlias, generation.get(), listKeys());
+    }
+
+    private Key privateKey(String alias) throws Exception {
+        try {
+            return keyStore.getKey(alias, keyPassword.toCharArray());
+        } catch (java.security.UnrecoverableKeyException ex) {
+            return keyStore.getKey(alias, storePassword);
+        }
+    }
+
+    private void refreshSigner() {
+        try {
+            List<RsaJwtSigner> keys = new ArrayList<>();
+            Enumeration<String> aliases = keyStore.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                if (!keyStore.isKeyEntry(alias)) {
+                    continue;
+                }
+                Key key = privateKey(alias);
+                Certificate certificate = keyStore.getCertificate(alias);
+                if (!(key instanceof RSAPrivateKey) || certificate == null
+                        || !(certificate.getPublicKey() instanceof RSAPublicKey)) {
+                    continue;
+                }
+                keys.add(new RsaJwtSigner(alias, new KeyPair(certificate.getPublicKey(), (RSAPrivateKey) key)));
+            }
+            jwtSigner.replace(keys, activeAlias);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Unable to publish the signing key", ex);
+        }
     }
 
     private void reloadFromDisk(String newActiveAlias) throws Exception {
@@ -226,6 +272,7 @@ public final class DynamicOidcKeyStore {
             copy.store(out, storePassword);
         }
         reloadFromDisk(activeAlias);
+        refreshSigner();
         generation.incrementAndGet();
     }
 }

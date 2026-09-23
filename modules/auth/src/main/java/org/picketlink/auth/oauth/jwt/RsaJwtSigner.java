@@ -59,12 +59,16 @@ public final class RsaJwtSigner implements JwtSigner {
         }
     }
 
+    public String jwk() {
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+        return "{\"kty\":\"RSA\",\"use\":\"sig\",\"alg\":\"RS256\",\"kid\":\""
+                + keyId + "\",\"n\":\"" + URL.encodeToString(unsigned(publicKey.getModulus()))
+                + "\",\"e\":\"" + URL.encodeToString(unsigned(publicKey.getPublicExponent())) + "\"}";
+    }
+
     @Override
     public String jwks() {
-        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-        return "{\"keys\":[{\"kty\":\"RSA\",\"use\":\"sig\",\"alg\":\"RS256\",\"kid\":\""
-                + keyId + "\",\"n\":\"" + URL.encodeToString(unsigned(publicKey.getModulus()))
-                + "\",\"e\":\"" + URL.encodeToString(unsigned(publicKey.getPublicExponent())) + "\"}]}";
+        return "{\"keys\":[" + jwk() + "]}";
     }
 
     public static byte[] unsigned(BigInteger value) {

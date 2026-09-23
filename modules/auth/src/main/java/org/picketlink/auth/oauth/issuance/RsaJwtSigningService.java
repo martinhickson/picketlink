@@ -7,32 +7,32 @@ import java.util.Set;
 
 import org.apache.cxf.jaxrs.json.basic.JsonMapObjectReaderWriter;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
+import org.picketlink.auth.oauth.jwt.JwtSigner;
 import org.picketlink.auth.oauth.jwt.JwtValidationException;
-import org.picketlink.auth.oauth.jwt.RsaJwtSigner;
 
 /**
- * Signs and verifies issuance JWTs with {@link RsaJwtSigner}, the same key the auth
- * token endpoint uses. The public half is the JWKS document from that signer.
+ * Signs and verifies issuance JWTs with a {@link JwtSigner}. A rotating signer keeps using
+ * the key published by OIDC key rotation. The public half is that signer's JWKS document.
  */
 public final class RsaJwtSigningService implements JwtSigningService {
 
     private static final Base64.Encoder URL = Base64.getUrlEncoder().withoutPadding();
 
     private final String issuer;
-    private final RsaJwtSigner signer;
+    private final JwtSigner signer;
     private final Clock clock;
 
-    public RsaJwtSigningService(String issuer, RsaJwtSigner signer) {
+    public RsaJwtSigningService(String issuer, JwtSigner signer) {
         this(issuer, signer, Clock.systemUTC());
     }
 
-    public RsaJwtSigningService(String issuer, RsaJwtSigner signer, Clock clock) {
+    public RsaJwtSigningService(String issuer, JwtSigner signer, Clock clock) {
         this.issuer = issuer;
         this.signer = signer;
         this.clock = clock;
     }
 
-    public RsaJwtSigner getSigner() {
+    public JwtSigner getSigner() {
         return signer;
     }
 
