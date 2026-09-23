@@ -14,6 +14,7 @@ import org.apache.cxf.rs.security.oauth2.common.UserSubject;
 import org.apache.cxf.rs.security.oauth2.grants.code.ServerAuthorizationCodeGrant;
 import org.apache.cxf.rs.security.oauth2.provider.OAuthServiceException;
 import org.apache.cxf.rs.security.oidc.idp.OidcAuthorizationCodeService;
+import org.picketlink.oidc.provider.AuthorizationCodeService;
 
 /**
  * WildFly FORM login authenticates via {@link HttpServletRequest#getUserPrincipal()} but CXF
@@ -23,6 +24,14 @@ public final class DemoOidcAuthorizationCodeService extends OidcAuthorizationCod
 
     @Override
     protected Response startAuthorization(MultivaluedMap<String, String> params) {
+        String challenge = params == null ? null : params.getFirst("code_challenge");
+        String method = params == null ? null : params.getFirst("code_challenge_method");
+        if (!AuthorizationCodeService.s256ChallengeAccepted(challenge, method)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .type("application/json")
+                    .entity("{\"error\":\"invalid_request\",\"error_description\":\"PKCE S256 is required\"}")
+                    .build();
+        }
         bridgeServletPrincipalToSecurityContext();
         return super.startAuthorization(params);
     }

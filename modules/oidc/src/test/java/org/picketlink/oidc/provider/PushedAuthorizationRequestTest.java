@@ -84,7 +84,7 @@ class PushedAuthorizationRequestTest {
         // 1. push (back channel, client authenticated): nonce and PKCE never touch the browser
         form("response_type=code&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
                 + "&scope=openid&state=s-1&nonce=n-par-1"
-                + "&code_challenge=" + AuthorizationCodeService.s256("par-verifier")
+                + "&code_challenge=" + AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
                 + "&code_challenge_method=S256");
         basicAuth();
         par.doPost(request, response);
@@ -116,7 +116,7 @@ class PushedAuthorizationRequestTest {
         org.mockito.Mockito.clearInvocations(response);
         form("grant_type=authorization_code&code=" + code
                 + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&code_verifier=par-verifier");
+                + "&code_verifier=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         basicAuth();
         token.doPost(request, response);
         verify(response).setStatus(200);
@@ -131,7 +131,7 @@ class PushedAuthorizationRequestTest {
     void pushedRequestUriIsSingleUseAndClientBound() throws Exception {
         form("response_type=code&redirect_uri="
                 + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&scope=openid&code_challenge=x&code_challenge_method=S256");
+                + "&scope=openid&code_challenge=" + AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") + "&code_challenge_method=S256");
         basicAuth();
         par.doPost(request, response);
         String requestUri = writer.toString().split("\"request_uri\":\"")[1].split("\"")[0];
@@ -153,7 +153,7 @@ class PushedAuthorizationRequestTest {
         // another client's request_uri is rejected (client-bound)
         form("response_type=code&redirect_uri="
                 + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&scope=openid&code_challenge=x&code_challenge_method=S256");
+                + "&scope=openid&code_challenge=" + AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa") + "&code_challenge_method=S256");
         basicAuth();
         writer.getBuffer().setLength(0);
         org.mockito.Mockito.clearInvocations(response);
@@ -176,7 +176,8 @@ class PushedAuthorizationRequestTest {
                 "redirect_uri", REDIRECT_URI,
                 "scope", "openid",
                 "max_age", "0",
-                "code_challenge", AuthorizationCodeService.s256("v"),
+                "code_challenge", AuthorizationCodeService.s256(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
                 "code_challenge_method", "S256",
                 "username", "alice",
                 "password", "wonderland")));
@@ -192,7 +193,7 @@ class PushedAuthorizationRequestTest {
         org.mockito.Mockito.clearInvocations(response);
         form("grant_type=authorization_code&code=" + code
                 + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&code_verifier=v");
+                + "&code_verifier=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         basicAuth();
         token.doPost(request, response);
         verify(response).setStatus(400);

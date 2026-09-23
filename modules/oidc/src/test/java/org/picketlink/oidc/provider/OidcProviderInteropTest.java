@@ -135,7 +135,7 @@ class OidcProviderInteropTest {
         params.put("redirect_uri", REDIRECT_URI);
         params.put("scope", "openid");
         params.put("nonce", "n-1");
-        params.put("code_challenge", AuthorizationCodeService.s256("verifier-1"));
+        params.put("code_challenge", AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         params.put("code_challenge_method", "S256");
         params.put("username", "alice");
         params.put("password", "wonderland");
@@ -150,7 +150,7 @@ class OidcProviderInteropTest {
     private Map<String, Object> exchangeCode(String code) throws Exception {
         StringBuilder body = new StringBuilder("grant_type=authorization_code&code=" + code
                 + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&code_verifier=verifier-1");
+                + "&code_verifier=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         when(request.getInputStream()).thenReturn(body(body.toString()));
         lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
                 .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes()));
@@ -245,7 +245,7 @@ class OidcProviderInteropTest {
         params.put("redirect_uri", REDIRECT_URI);
         params.put("scope", "openid");
         params.put("request", requestObject);
-        params.put("code_challenge", AuthorizationCodeService.s256("verifier-1"));
+        params.put("code_challenge", AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         params.put("code_challenge_method", "S256");
         params.put("username", "alice");
         params.put("password", "wonderland");
@@ -262,6 +262,24 @@ class OidcProviderInteropTest {
                 .decode(((String) tokens.get("id_token")).split("\\.")[1]), StandardCharsets.UTF_8);
         assertTrue(payload.contains("n-from-request-object"),
                 "request-object nonce must override query parameters");
+    }
+
+    @Test
+    void requestObjectCannotReplaceAValidPkceChallenge() throws Exception {
+        String requestObject = signedRequestObject(CLIENT_ID, ISSUER, "n", "x", "plain");
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "openid");
+        params.put("request", requestObject);
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        params.put("username", "alice");
+        params.put("password", "wonderland");
+        authorizePost(params);
+        verify(response).setStatus(400);
     }
 
     @Test
@@ -329,6 +347,11 @@ class OidcProviderInteropTest {
 
     /** Signed request object per OIDC Core 6.1: iss/sub = client, aud = issuer. */
     private String signedRequestObject(String clientId, String audience, String nonce) {
+        return signedRequestObject(clientId, audience, nonce, null, null);
+    }
+
+    private String signedRequestObject(String clientId, String audience, String nonce,
+            String codeChallenge, String codeChallengeMethod) {
         long now = java.time.Instant.now().getEpochSecond();
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(clientId);
@@ -340,6 +363,12 @@ class OidcProviderInteropTest {
         claims.setClaim("response_type", "code");
         claims.setClaim("redirect_uri", REDIRECT_URI);
         claims.setClaim("nonce", nonce);
+        if (codeChallenge != null) {
+            claims.setClaim("code_challenge", codeChallenge);
+        }
+        if (codeChallengeMethod != null) {
+            claims.setClaim("code_challenge_method", codeChallengeMethod);
+        }
         JwsHeaders headers = new JwsHeaders();
         headers.setAlgorithm("RS256");
         headers.setKeyId("client-key-1");

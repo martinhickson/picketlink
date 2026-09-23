@@ -11,12 +11,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * OIDC authorization codes: single-use, short-lived (default 60s), bound to client, redirect
- * URI, subject, scopes and the PKCE challenge. PKCE is mandatory for public clients and
- * verified per RFC 7636 (S256 only; the insecure {@code plain} method is rejected).
+ * URI, subject, scopes and a PKCE S256 challenge. Every client must send a challenge. The
+ * verifier is 43 to 128 unreserved characters (RFC 7636). {@code plain} is rejected.
  */
 public final class AuthorizationCodeService {
 
     public static final long DEFAULT_LIFETIME_SECONDS = 60L;
+    public static final int VERIFIER_MIN_LENGTH = 43;
+    public static final int VERIFIER_MAX_LENGTH = 128;
 
     private final ConcurrentHashMap<String, PendingCode> codes = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
@@ -44,14 +46,13 @@ public final class AuthorizationCodeService {
         String code = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         codes.put(code, new PendingCode(clientId, redirectUri, subject, scopes, nonce,
                 codeChallenge, clock.instant().getEpochSecond() + lifetimeSeconds,
-                java.time.Instant.now().getEpochSecond(), maxAge));
+                clock.instant().getEpochSecond(), maxAge));
         return code;
     }
 
     /**
-     * Consumes the code (single use). A consumed or expired code never validates again.
-     *
-     * @param codeVerifier PKCE verifier; required when the authorization request carried a challenge
+     * Consumes the code (single use). A consumed, expired, or PKCE-failed code never validates again.
+     * The code is removed before the verifier is checked, so a wrong verifier cannot be retried.
      */
     public Optional<PendingCode> consume(String code, String codeVerifier) {
         if (code == null) {
@@ -64,22 +65,83 @@ public final class AuthorizationCodeService {
         if (pending.expiresAt <= clock.instant().getEpochSecond()) {
             return Optional.empty();
         }
-        if (pending.codeChallenge != null) {
-            if (codeVerifier == null || !pending.codeChallenge.equals(s256(codeVerifier))) {
-                return Optional.empty();
-            }
+        if (!verifierMatches(pending.codeChallenge, codeVerifier)) {
+            return Optional.empty();
         }
         return Optional.of(pending);
     }
 
-    public static String s256(String verifier) {
+    /** True when the authorization request carries an S256 challenge of the RFC 7636 shape. */
+    public static boolean s256ChallengeAccepted(String challenge, String method) {
+        return "S256".equals(method) && challengeAccepted(challenge);
+    }
+
+    /** True when {@code verifier} is 43–128 unreserved ASCII characters (RFC 7636). */
+    public static boolean verifierAccepted(String verifier) {
+        if (verifier == null) {
+            return false;
+        }
+        int length = verifier.length();
+        if (length < VERIFIER_MIN_LENGTH || length > VERIFIER_MAX_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            char c = verifier.charAt(i);
+            boolean unreserved = (c >= 'A' && c <= 'Z')
+                    || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '-' || c == '.' || c == '_' || c == '~';
+            if (!unreserved) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static boolean verifierMatches(String challenge, String verifier) {
+        if (!challengeAccepted(challenge) || !verifierAccepted(verifier)) {
+            return false;
+        }
+        byte[] expected;
+        try {
+            expected = Base64.getUrlDecoder().decode(challenge + "=");
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        if (expected.length != 32) {
+            return false;
+        }
+        return MessageDigest.isEqual(expected, sha256(verifier));
+    }
+
+    private static boolean challengeAccepted(String challenge) {
+        if (challenge == null || challenge.length() != 43) {
+            return false;
+        }
+        for (int i = 0; i < challenge.length(); i++) {
+            char c = challenge.charAt(i);
+            boolean base64Url = (c >= 'A' && c <= 'Z')
+                    || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9')
+                    || c == '-' || c == '_';
+            if (!base64Url) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static byte[] sha256(String verifier) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return Base64.getUrlEncoder().withoutPadding()
-                    .encodeToString(digest.digest(verifier.getBytes(StandardCharsets.UTF_8)));
+            return digest.digest(verifier.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 unavailable", ex);
         }
+    }
+
+    public static String s256(String verifier) {
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(sha256(verifier));
     }
 
     /** Code payload: everything the token exchange must re-verify. */

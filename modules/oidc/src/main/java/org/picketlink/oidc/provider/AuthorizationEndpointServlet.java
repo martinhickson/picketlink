@@ -143,8 +143,10 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             error(response, 400, "invalid redirect_uri");
             return null;
         }
-        if (codeChallenge != null && !"S256".equals(codeChallengeMethod)) {
-            error(response, 400, "PKCE code_challenge_method must be S256");
+        String requestObject = pick.apply("request", request.getParameter("request"));
+        if (requestObject == null
+                && !AuthorizationCodeService.s256ChallengeAccepted(codeChallenge, codeChallengeMethod)) {
+            error(response, 400, "PKCE S256 is required");
             return null;
         }
         // prompt=none demands silent SSO, which a session-less provider cannot grant —
@@ -158,11 +160,11 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_FOUND);
             return null;
         }
-        String requestObject = pick.apply("request", request.getParameter("request"));
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
                 codeChallenge, maxAge(request), responseMode);
         if (requestObject != null) {
-            params = applyRequestObject(requestObject, params, registered.get(), response);
+            params = applyRequestObject(requestObject, params, codeChallengeMethod,
+                    registered.get(), response);
         }
         return params;
     }
@@ -173,7 +175,8 @@ public class AuthorizationEndpointServlet extends HttpServlet {
      * overlays its authorization parameters on the query parameters.
      */
     private RequestParams applyRequestObject(String requestObject, RequestParams query,
-            RegisteredClient client, HttpServletResponse response) throws IOException {
+            String queryChallengeMethod, RegisteredClient client, HttpServletResponse response)
+            throws IOException {
         if (requestObjectValidator == null) {
             requestObjectValidator = new ClientAssertionValidator(server.getIssuer(),
                     java.time.Clock.systemUTC());
@@ -191,12 +194,19 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         String state = stringClaim(claims, "state");
         String nonce = stringClaim(claims, "nonce");
         String codeChallenge = stringClaim(claims, "code_challenge");
+        String codeChallengeMethod = stringClaim(claims, "code_challenge_method");
         if (responseType != null && !"code".equals(responseType)) {
             error(response, 400, "unsupported_response_type");
             return null;
         }
         if (redirectUri != null && !client.getAllowedRedirectUris().contains(redirectUri)) {
             error(response, 400, "invalid redirect_uri");
+            return null;
+        }
+        String effectiveChallenge = codeChallenge != null ? codeChallenge : query.codeChallenge;
+        String effectiveMethod = codeChallengeMethod != null ? codeChallengeMethod : queryChallengeMethod;
+        if (!AuthorizationCodeService.s256ChallengeAccepted(effectiveChallenge, effectiveMethod)) {
+            error(response, 400, "PKCE S256 is required");
             return null;
         }
         // overlay: request-object values take precedence per OIDC Core 6.1
@@ -206,7 +216,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                 scope != null ? scope : query.scope,
                 state != null ? state : query.state,
                 nonce != null ? nonce : query.nonce,
-                codeChallenge != null ? codeChallenge : query.codeChallenge,
+                effectiveChallenge,
                 query.maxAge,
                 query.responseMode);
     }

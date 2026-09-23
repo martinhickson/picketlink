@@ -88,8 +88,8 @@ public class PushedAuthorizationRequestServlet extends HttpServlet {
             }
             String codeChallenge = form.get("code_challenge");
             String codeChallengeMethod = form.get("code_challenge_method");
-            if (codeChallenge != null && !"S256".equals(codeChallengeMethod)) {
-                writeError(response, 400, "PKCE code_challenge_method must be S256");
+            if (!AuthorizationCodeService.s256ChallengeAccepted(codeChallenge, codeChallengeMethod)) {
+                writeError(response, 400, "PKCE S256 is required");
                 return;
             }
 

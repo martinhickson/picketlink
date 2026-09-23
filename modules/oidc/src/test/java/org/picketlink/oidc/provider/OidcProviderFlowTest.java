@@ -85,7 +85,7 @@ class OidcProviderFlowTest {
         params.put("scope", "openid profile");
         params.put("state", "xyz");
         params.put("nonce", "n-123");
-        params.put("code_challenge", AuthorizationCodeService.s256("verifier-123"));
+        params.put("code_challenge", AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         params.put("code_challenge_method", "S256");
         params.put("username", "alice");
         params.put("password", "wonderland");
@@ -123,7 +123,7 @@ class OidcProviderFlowTest {
         form.put("grant_type", "authorization_code");
         form.put("code", code);
         form.put("redirect_uri", REDIRECT_URI);
-        form.put("code_verifier", "verifier-123");
+        form.put("code_verifier", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         Map<String, Object> json = tokenResponse(form);
 
         assertNotNull(json.get("access_token"));
@@ -176,14 +176,14 @@ class OidcProviderFlowTest {
         form.put("grant_type", "authorization_code");
         form.put("code", code);
         form.put("redirect_uri", REDIRECT_URI);
-        form.put("code_verifier", "verifier-123");
+        form.put("code_verifier", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         assertNotNull(tokenResponse(form));
 
         // second use of the same code must fail (single use)
         when(request.getInputStream()).thenReturn(body(
                 "grant_type=authorization_code&code=" + code
                         + "&redirect_uri=" + java.net.URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                        + "&code_verifier=verifier-123"));
+                        + "&code_verifier=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         writer();
         token.doPost(request, response);
         verify(response).setStatus(400);
@@ -196,7 +196,7 @@ class OidcProviderFlowTest {
         form.put("grant_type", "authorization_code");
         form.put("code", code);
         form.put("redirect_uri", REDIRECT_URI);
-        form.put("code_verifier", "verifier-123");
+        form.put("code_verifier", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         Map<String, Object> first = tokenResponse(form);
         String refreshToken = (String) first.get("refresh_token");
 
@@ -243,6 +243,9 @@ class OidcProviderFlowTest {
         params.put("response_type", "code");
         params.put("client_id", CLIENT_ID);
         params.put("redirect_uri", REDIRECT_URI);
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
         params.put("username", "alice");
         params.put("password", "wrong");
         postAuthorize(params);

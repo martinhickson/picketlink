@@ -130,6 +130,10 @@ public final class OidcAuthorizationServerBootstrap {
             OidcAuthorizationServerConfig config) {
         AuthorizationCodeGrantHandler codeHandler = new AuthorizationCodeGrantHandler();
         codeHandler.setDataProvider(dataProvider);
+        S256CodeVerifier s256 = new S256CodeVerifier();
+        codeHandler.setRequireCodeVerifier(true);
+        codeHandler.setCodeVerifierTransformer(s256);
+        codeHandler.setDefaultCodeVerifierTransformer(s256);
         RefreshTokenGrantHandler refreshHandler = new RefreshTokenGrantHandler();
         refreshHandler.setDataProvider(dataProvider);
         List<AccessTokenGrantHandler> handlers = new ArrayList<>();
