@@ -255,12 +255,13 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         Set<String> scopes = ScopeValidator.resolveApprovedScopes(
                 authentication.getClient(), state.getScopes());
+        String dpopJkt = dpopJkt(request);
         IssuedToken access = issueAccess(authentication.getClient(), state.getSubject(), scopes,
-                dpopJkt(request));
+                dpopJkt);
         StringBuilder json = new StringBuilder("{");
         json.append("\"access_token\":\"").append(org.picketlink.auth.oauth.json.OAuthJsonWriter
                 .escape(access.getTokenValue())).append('"');
-        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"token_type\":\"").append(tokenType(dpopJkt)).append('"');
         json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
         if (!scopes.isEmpty()) {
             json.append(",\"scope\":\"").append(
@@ -353,7 +354,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         json.append("\"access_token\":\"").append(org.picketlink.auth.oauth.json.OAuthJsonWriter
                 .escape(exchanged.getTokenValue())).append('"');
         json.append(",\"issued_token_type\":\"urn:ietf:params:oauth:token-type:jwt\"");
-        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"token_type\":\"").append(tokenType(dpopJkt)).append('"');
         json.append(",\"expires_in\":").append(exchanged.getLifetimeSeconds());
         if (!scopes.isEmpty()) {
             json.append(",\"scope\":\"").append(
@@ -378,7 +379,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         IssuedToken access = issueAccess(client, subject, scopes, dpopJkt, grantType);
         StringBuilder json = new StringBuilder("{");
         json.append("\"access_token\":\"").append(OAuthJsonWriter.escape(access.getTokenValue())).append('"');
-        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"token_type\":\"").append(tokenType(dpopJkt)).append('"');
         json.append(",\"expires_in\":").append(access.getLifetimeSeconds());
         if (scopes.contains("openid")) {
             json.append(",\"id_token\":\"").append(OAuthJsonWriter.escape(
@@ -494,7 +495,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
     private String tokenResponse(IssuedToken issued, String refreshToken, Set<String> scopes) {
         StringBuilder json = new StringBuilder("{");
         json.append("\"access_token\":\"").append(OAuthJsonWriter.escape(issued.getTokenValue())).append('"');
-        json.append(",\"token_type\":\"").append(OAuthConstants.BEARER_TOKEN_TYPE).append('"');
+        json.append(",\"token_type\":\"").append(tokenType(issued)).append('"');
         json.append(",\"expires_in\":").append(issued.getLifetimeSeconds());
         if (refreshToken != null) {
             json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
@@ -505,6 +506,16 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         }
         json.append('}');
         return json.toString();
+    }
+
+    /** RFC 9449: a proof-bound access token is type {@code DPoP}, otherwise {@code Bearer}. */
+    private static String tokenType(String dpopJkt) {
+        return dpopJkt == null ? OAuthConstants.BEARER_TOKEN_TYPE : "DPoP";
+    }
+
+    private static String tokenType(IssuedToken issued) {
+        return issued.getClaims() != null && issued.getClaims().getClaim("cnf") != null
+                ? "DPoP" : OAuthConstants.BEARER_TOKEN_TYPE;
     }
 
     private static Set<String> parseScopes(String scopes) {

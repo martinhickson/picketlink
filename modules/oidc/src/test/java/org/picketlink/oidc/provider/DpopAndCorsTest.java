@@ -129,6 +129,7 @@ class DpopAndCorsTest {
     void tokenIsDpopBoundAndUserinfoRequiresMatchingProof() throws Exception {
         String proof = dpopProof("POST", TOKEN_URI, "jti-1");
         String tokenResponse = fetchAccessToken(proof);
+        assertTrue(tokenResponse.contains("\"token_type\":\"DPoP\""));
 
         // the access token carries cnf.jkt (RFC 9449 §7)
         String accessToken = ((String) tokenResponse.split("\"access_token\":\"")[1])
@@ -159,8 +160,18 @@ class DpopAndCorsTest {
         assertFalse(writer.toString().contains("\"sub\""));
         org.mockito.Mockito.clearInvocations(response);
 
-        // userinfo: bound token + valid fresh proof from the bound key -> 200 with sub
+        // Bearer plus a valid proof is still the wrong scheme for a bound token
         writer.getBuffer().setLength(0);
+        lenient().when(request.getHeader("DPoP")).thenReturn(
+                dpopProof("GET", "https://auth.example.test/userinfo", "jti-bearer"));
+        userinfo.doGet(request, response);
+        verify(response).setStatus(401);
+        verify(response, never()).setStatus(200);
+        org.mockito.Mockito.clearInvocations(response);
+
+        // userinfo: DPoP scheme + valid fresh proof from the bound key -> 200 with sub
+        writer.getBuffer().setLength(0);
+        lenient().when(request.getHeader("Authorization")).thenReturn("DPoP " + accessToken);
         lenient().when(request.getHeader("DPoP")).thenReturn(
                 dpopProof("GET", "https://auth.example.test/userinfo", "jti-2"));
         userinfo.doGet(request, response);
@@ -183,7 +194,7 @@ class DpopAndCorsTest {
         String foreignProof = dpopProof("GET", "https://auth.example.test/userinfo", "jti-b");
         dpopKeyPair = original;
 
-        lenient().when(request.getHeader("Authorization")).thenReturn("Bearer " + accessToken);
+        lenient().when(request.getHeader("Authorization")).thenReturn("DPoP " + accessToken);
         lenient().when(request.getHeader("DPoP")).thenReturn(foreignProof);
         lenient().when(request.getMethod()).thenReturn("GET");
         writer.getBuffer().setLength(0);

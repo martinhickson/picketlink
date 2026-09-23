@@ -50,15 +50,25 @@ public class UserInfoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String authorization = request.getHeader("Authorization");
-        if (authorization == null || !authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            error(response, 401, "bearer token required");
+        String scheme = authorizationScheme(authorization);
+        String token = authorizationToken(authorization);
+        if (scheme == null || token == null) {
+            error(response, 401, "access token required");
             return;
         }
         try {
-            JwtClaims claims = server.getIssuanceServer().getIssuanceManager()
-                    .validate(authorization.substring(7).trim());
+            JwtClaims claims = server.getIssuanceServer().getIssuanceManager().validate(token);
             if (claims.getClaim("at_hash") != null) {
                 error(response, 401, "access token required");
+                return;
+            }
+            boolean dpopBound = claims.getClaim("cnf") != null;
+            if (dpopBound && !"DPoP".equalsIgnoreCase(scheme)) {
+                error(response, 401, "DPoP-bound token requires the DPoP scheme");
+                return;
+            }
+            if (!dpopBound && !"Bearer".equalsIgnoreCase(scheme)) {
+                error(response, 401, "bearer token required");
                 return;
             }
             if (!requireMatchingDpopProof(claims, request, response)) {
@@ -123,6 +133,29 @@ public class UserInfoServlet extends HttpServlet {
             return false;
         }
         return true;
+    }
+
+    private static String authorizationScheme(String authorization) {
+        if (authorization == null) {
+            return null;
+        }
+        int space = authorization.indexOf(' ');
+        if (space <= 0) {
+            return null;
+        }
+        return authorization.substring(0, space);
+    }
+
+    private static String authorizationToken(String authorization) {
+        if (authorization == null) {
+            return null;
+        }
+        int space = authorization.indexOf(' ');
+        if (space < 0 || space == authorization.length() - 1) {
+            return null;
+        }
+        String token = authorization.substring(space + 1).trim();
+        return token.isEmpty() ? null : token;
     }
 
     private String userinfoUri(HttpServletRequest request) {
