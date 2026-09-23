@@ -17,6 +17,7 @@ import org.picketlink.auth.oauth.client.store.PersistingClientRegistry;
 import org.picketlink.auth.oauth.http.FormParameters;
 import org.picketlink.auth.oauth.json.OAuthJsonWriter;
 import org.picketlink.auth.oauth.model.TokenRequest;
+import org.picketlink.auth.oauth.service.ScopeValidator;
 
 /**
  * RFC 8628 device authorization endpoint (typically {@code POST /device_authorization}):
@@ -71,10 +72,11 @@ public class DeviceAuthorizationServlet extends HttpServlet {
                     .formParameters(form)
                     .build();
             ClientAuthentication authentication = authenticator.authenticate(tokenRequest);
+            String scope = ScopeValidator.formatScope(ScopeValidator.resolveApprovedScopes(
+                    authentication.getClient(), form.get(OAuthConstants.SCOPE)));
 
             DeviceAuthorizationService.DeviceGrant grant = server.getDeviceAuthorizations()
-                    .create(authentication.getClient().getClientId(),
-                            form.get(OAuthConstants.SCOPE) == null ? "" : form.get(OAuthConstants.SCOPE));
+                    .create(authentication.getClient().getClientId(), scope == null ? "" : scope);
             String verificationUri = System.getProperty("picketlink.oidc.device.verification.uri",
                     server.getIssuer() + "/device");
             StringBuilder json = new StringBuilder("{");

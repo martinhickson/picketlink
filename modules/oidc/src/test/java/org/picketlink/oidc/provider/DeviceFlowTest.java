@@ -180,6 +180,14 @@ class DeviceFlowTest {
     }
 
     @Test
+    void deviceAuthorizationRejectsAnUnregisteredScope() throws Exception {
+        writer.getBuffer().setLength(0);
+        post("scope=admin");
+        deviceAuthorization.doPost(request, response);
+        verify(response).setStatus(400);
+    }
+
+    @Test
     void discoveryAdvertisesDeviceFlow() throws Exception {
         org.mockito.Mockito.clearInvocations(response);
         writer.getBuffer().setLength(0);

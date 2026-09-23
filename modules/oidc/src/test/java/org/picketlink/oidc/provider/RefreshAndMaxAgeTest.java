@@ -1,5 +1,6 @@
 package org.picketlink.oidc.provider;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -77,6 +78,31 @@ class RefreshAndMaxAgeTest {
         verify(response).setStatus(200);
         assertTrue(narrowed.toString().contains("\"scope\":\"openid\""));
         assertTrue(!narrowed.toString().contains("\"scope\":\"openid profile\""));
+    }
+
+    @Test
+    void aRefreshTokenRotatesOnce() throws Exception {
+        RefreshTokenService tokens = new RefreshTokenService(Clock.systemUTC());
+        String value = tokens.create("rp-client", "alice", "openid", null);
+        java.util.concurrent.CyclicBarrier barrier = new java.util.concurrent.CyclicBarrier(2);
+        java.util.concurrent.atomic.AtomicInteger wins = new java.util.concurrent.atomic.AtomicInteger();
+        Runnable rotate = () -> {
+            try {
+                barrier.await();
+            } catch (Exception ex) {
+                throw new IllegalStateException(ex);
+            }
+            if (tokens.rotate(value).isPresent()) {
+                wins.incrementAndGet();
+            }
+        };
+        Thread first = new Thread(rotate);
+        Thread second = new Thread(rotate);
+        first.start();
+        second.start();
+        first.join();
+        second.join();
+        assertEquals(1, wins.get());
     }
 
     @Test

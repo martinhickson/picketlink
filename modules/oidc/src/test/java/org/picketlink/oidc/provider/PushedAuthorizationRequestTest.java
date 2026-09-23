@@ -163,6 +163,13 @@ class PushedAuthorizationRequestTest {
         params(new LinkedHashMap<>(Map.of("client_id", "auth-admin", "request_uri", otherUri)));
         authorize.doGet(request, response);
         verify(response).setStatus(400);
+
+        // the owner's request_uri is still usable after the other client presented it
+        writer.getBuffer().setLength(0);
+        org.mockito.Mockito.clearInvocations(response);
+        params(new LinkedHashMap<>(Map.of("client_id", CLIENT_ID, "request_uri", otherUri)));
+        authorize.doGet(request, response);
+        verify(response).setStatus(200);
     }
 
     @Test

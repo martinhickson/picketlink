@@ -53,11 +53,15 @@ public final class PushedAuthorizationRequestService {
         if (requestUri == null || !requestUri.startsWith(REQUEST_URI_PREFIX)) {
             return null;
         }
-        StoredRequest stored = byUri.remove(requestUri);
+        StoredRequest stored = byUri.get(requestUri);
         if (stored == null || !stored.clientId.equals(clientId)) {
             return null;
         }
         if (stored.expiresAt <= clock.instant().getEpochSecond()) {
+            byUri.remove(requestUri, stored);
+            return null;
+        }
+        if (!byUri.remove(requestUri, stored)) {
             return null;
         }
         return stored.parameters;

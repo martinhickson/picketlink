@@ -74,7 +74,7 @@ public final class RefreshTokenService {
             return Optional.empty();
         }
         String hash = hash(refreshToken);
-        RefreshTokenRecord stored = store.find(hash);
+        RefreshTokenRecord stored = store.remove(hash);
         if (stored == null) {
             // unknown but previously seen: a rotated token is being replayed — revoke the family
             String family = store.retiredFamily(hash);
@@ -84,13 +84,12 @@ public final class RefreshTokenService {
             return Optional.empty();
         }
         if (stored.getExpiresAtEpochSeconds() <= clock.instant().getEpochSecond()) {
-            store.remove(hash);
             return Optional.empty();
         }
         if (expectedClientId != null && !expectedClientId.equals(stored.getClientId())) {
+            store.save(stored);
             return Optional.empty();
         }
-        store.remove(hash);
         store.rememberRetired(hash, stored.getFamily());
         String newValue = randomToken();
         String nextScopes = scopes != null ? scopes : stored.getScopes();

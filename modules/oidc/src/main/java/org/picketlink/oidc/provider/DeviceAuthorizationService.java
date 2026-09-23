@@ -63,12 +63,17 @@ public final class DeviceAuthorizationService {
     /** The logged-in user approves or denies a device after entering its user code. */
     public boolean decide(String userCode, String subject, boolean approved) {
         DeviceGrant grant = byUserCode.get(normalize(userCode));
-        if (grant == null || isExpired(grant) || grant.status != Status.PENDING) {
+        if (grant == null) {
             return false;
         }
-        grant.status = approved ? Status.APPROVED : Status.DENIED;
-        grant.subject = subject;
-        return true;
+        synchronized (grant) {
+            if (isExpired(grant) || grant.status != Status.PENDING) {
+                return false;
+            }
+            grant.status = approved ? Status.APPROVED : Status.DENIED;
+            grant.subject = subject;
+            return true;
+        }
     }
 
     /**
@@ -80,24 +85,25 @@ public final class DeviceAuthorizationService {
         if (grant == null || !grant.clientId.equals(clientId)) {
             return Optional.empty();
         }
-        if (isExpired(grant)) {
-            byDeviceCode.remove(deviceCode);
-            byUserCode.remove(grant.userCode);
-            return Optional.empty();
-        }
-        if (grant.status == Status.APPROVED) {
-            grant.status = Status.CONSUMED;
-            byDeviceCode.remove(deviceCode);
-            byUserCode.remove(grant.userCode);
+        synchronized (grant) {
+            if (isExpired(grant)) {
+                byDeviceCode.remove(deviceCode);
+                byUserCode.remove(grant.userCode);
+                return Optional.empty();
+            }
+            if (grant.status == Status.APPROVED) {
+                grant.status = Status.CONSUMED;
+                byDeviceCode.remove(deviceCode);
+                byUserCode.remove(grant.userCode);
+                return Optional.of(grant);
+            }
+            if (grant.status == Status.DENIED) {
+                byDeviceCode.remove(deviceCode);
+                byUserCode.remove(grant.userCode);
+                return Optional.of(grant);
+            }
             return Optional.of(grant);
         }
-        if (grant.status == Status.DENIED) {
-            byDeviceCode.remove(deviceCode);
-            byUserCode.remove(grant.userCode);
-            grant.status = Status.DENIED; // surfaced once to the polling device
-            return Optional.of(grant);
-        }
-        return Optional.of(grant); // still PENDING
     }
 
     public long pollIntervalSeconds() {

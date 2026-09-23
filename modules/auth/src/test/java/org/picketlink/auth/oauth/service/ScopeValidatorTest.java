@@ -36,6 +36,15 @@ class ScopeValidatorTest {
     }
 
     @Test
+    void rejectsAnyRequestedScopeWhenTheClientHasNone() {
+        RegisteredClient client = RegisteredClient.builder("demo", "secret").build();
+
+        OAuthException ex = assertThrows(OAuthException.class,
+                () -> ScopeValidator.resolveApprovedScopes(client, "admin"));
+        assertEquals(OAuthConstants.INVALID_SCOPE, ex.getError().getError());
+    }
+
+    @Test
     void rejectsUnknownScope() {
         RegisteredClient client = RegisteredClient.builder("demo", "secret")
                 .scope("api.read")

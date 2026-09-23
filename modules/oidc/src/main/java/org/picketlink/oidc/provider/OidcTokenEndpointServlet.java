@@ -168,7 +168,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                         - consumed.getAuthTime() >= consumed.getMaxAge()) {
             throw oauthError(OAuthConstants.INVALID_GRANT, "authentication is older than max_age");
         }
-        return issueTokens(client, consumed.getSubject(), parseScopes(consumed.getScopes()),
+        return issueTokens(client, consumed.getSubject(),
+                ScopeValidator.resolveApprovedScopes(client, consumed.getScopes()),
                 consumed.getNonce(), consumed.getAuthTime(), dpopJkt(request), "authorization_code");
     }
 
@@ -248,7 +249,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
             throw oauthError(OAuthConstants.INVALID_GRANT,
                     DeviceAuthorizationService.ERROR_AUTHORIZATION_PENDING);
         }
-        Set<String> scopes = parseScopes(state.getScopes());
+        Set<String> scopes = ScopeValidator.resolveApprovedScopes(
+                authentication.getClient(), state.getScopes());
         IssuedToken access = issueAccess(authentication.getClient(), state.getSubject(), scopes,
                 dpopJkt(request));
         StringBuilder json = new StringBuilder("{");

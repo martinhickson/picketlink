@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.picketlink.auth.oauth.OAuthException;
 import org.picketlink.auth.oauth.client.store.ClientRegistrationStore;
 import org.picketlink.auth.oauth.issuance.ClientAssertionValidator;
 import org.picketlink.auth.oauth.model.RegisteredClient;
+import org.picketlink.auth.oauth.service.ScopeValidator;
 
 /**
  * OIDC authorization endpoint ({@code /authorize}): {@code response_type=code} with PKCE
@@ -149,24 +152,47 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             error(response, 400, "PKCE S256 is required");
             return null;
         }
-        // prompt=none demands silent SSO, which a session-less provider cannot grant —
-        // respond per OIDC Core 3.1.2.1 with the login_required error code
-        String prompt = request.getParameter("prompt");
-        if (prompt != null && prompt.contains("none")) {
-            response.setHeader("Location", redirectUri
-                    + (redirectUri.contains("?") ? "&" : "?")
-                    + "error=login_required"
-                    + (state == null ? "" : "&state=" + urlEncode(state)));
-            response.setStatus(HttpServletResponse.SC_FOUND);
-            return null;
-        }
+        String prompt = pick.apply("prompt", request.getParameter("prompt"));
         RequestParams params = new RequestParams(clientId, redirectUri, scope, state, nonce,
                 codeChallenge, maxAge(request), responseMode);
         if (requestObject != null) {
             params = applyRequestObject(requestObject, params, codeChallengeMethod,
                     registered.get(), response);
         }
+        params = approveScopes(params, registered.get(), response);
+        if (params == null) {
+            return null;
+        }
+        // prompt=none demands silent SSO, which a session-less provider cannot grant —
+        // respond per OIDC Core 3.1.2.1 with the login_required error code.
+        // Invalid scope or PKCE is rejected above, so it is not turned into this redirect.
+        if (prompt != null && prompt.contains("none")) {
+            response.setHeader("Location", params.redirectUri
+                    + (params.redirectUri.contains("?") ? "&" : "?")
+                    + "error=login_required"
+                    + (params.state == null ? "" : "&state=" + urlEncode(params.state)));
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            return null;
+        }
         return params;
+    }
+
+    /** Keeps only scopes the client registered. An unknown scope is rejected. */
+    private RequestParams approveScopes(RequestParams params, RegisteredClient client,
+            HttpServletResponse response) throws IOException {
+        if (params == null) {
+            return null;
+        }
+        try {
+            Set<String> approved = ScopeValidator.resolveApprovedScopes(client, params.scope);
+            String formatted = ScopeValidator.formatScope(approved);
+            return new RequestParams(params.clientId, params.redirectUri,
+                    formatted == null ? "" : formatted, params.state, params.nonce,
+                    params.codeChallenge, params.maxAge, params.responseMode);
+        } catch (OAuthException ex) {
+            error(response, ex.getHttpStatus(), ex.getError().getErrorDescription());
+            return null;
+        }
     }
 
     /**

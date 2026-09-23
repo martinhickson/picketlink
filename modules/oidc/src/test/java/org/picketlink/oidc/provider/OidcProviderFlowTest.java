@@ -228,6 +228,22 @@ class OidcProviderFlowTest {
     }
 
     @Test
+    void shouldRejectScopeTheClientDidNotRegister() throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "admin");
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        params.put("username", "alice");
+        params.put("password", "wonderland");
+        postAuthorize(params);
+        verify(response).setStatus(400);
+    }
+
+    @Test
     void shouldRejectUnregisteredRedirectUri() throws Exception {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("response_type", "code");

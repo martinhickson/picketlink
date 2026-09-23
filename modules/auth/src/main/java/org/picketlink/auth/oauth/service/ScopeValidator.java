@@ -25,7 +25,10 @@ public final class ScopeValidator {
 
         Set<String> registered = client.getScopes();
         if (registered.isEmpty()) {
-            return requested;
+            throw new OAuthException(
+                    new OAuthErrorResponse(OAuthConstants.INVALID_SCOPE,
+                            "Requested scope is not registered for this client"),
+                    400);
         }
 
         for (String scope : requested) {

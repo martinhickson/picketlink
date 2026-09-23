@@ -242,6 +242,9 @@ class DpopAndCorsTest {
         lenient().when(request.getParameter("redirect_uri")).thenReturn("https://rp.example/cb");
         lenient().when(request.getParameter("prompt")).thenReturn("none");
         lenient().when(request.getParameter("state")).thenReturn("xyz");
+        lenient().when(request.getParameter("code_challenge")).thenReturn(
+                AuthorizationCodeService.s256("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        lenient().when(request.getParameter("code_challenge_method")).thenReturn("S256");
         new AuthorizationEndpointServlet(server).doGet(request, response);
 
         org.mockito.ArgumentCaptor<String> location =
