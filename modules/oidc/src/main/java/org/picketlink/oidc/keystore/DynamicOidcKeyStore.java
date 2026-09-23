@@ -26,6 +26,7 @@ import org.picketlink.auth.oauth.jwt.JwtSigner;
 import org.picketlink.auth.oauth.jwt.RotatingRsaJwtSigner;
 import org.picketlink.auth.oauth.jwt.RsaJwtSigner;
 import org.picketlink.oidc.OidcDemoConstants;
+import org.picketlink.oidc.keystore.bridge.OidcKeyStoreBridge;
 
 /**
  * Mutable OIDC signing keystore. CXF {@code KeyManagementUtils} caches {@link KeyStore}
@@ -55,6 +56,7 @@ public final class DynamicOidcKeyStore {
         this.keyStore = keyStore;
         this.activeAlias = activeAlias;
         this.generation.set(1L);
+        publish();
         refreshSigner();
     }
 
@@ -235,6 +237,11 @@ public final class DynamicOidcKeyStore {
         }
         this.keyStore = reloaded;
         this.activeAlias = newActiveAlias;
+        publish();
+    }
+
+    private void publish() {
+        OidcKeyStoreBridge.publish(keystorePath.toString(), keyStore);
     }
 
     private static void runKeytool(String... args) throws IOException, InterruptedException {

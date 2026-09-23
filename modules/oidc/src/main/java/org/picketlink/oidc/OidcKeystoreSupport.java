@@ -12,7 +12,8 @@ public final class OidcKeystoreSupport {
 
     /**
      * Loads the signing keystore and applies CXF {@code rs.security.keystore.*} properties on the {@link Bus}.
-     * Optional {@code -javaagent:.../picketlink-oidc-*-keystore-agent.jar} enables hot reload without restart.
+     * {@code -javaagent:.../picketlink-oidc-*-keystore-agent.jar} is what reloads a replaced
+     * signing certificate without restarting the server. The JDK keeps the first loaded store.
      */
     public static DynamicOidcKeyStore bootstrap(Bus bus, Path keystorePath) throws Exception {
         return bootstrap(bus, new OidcKeystoreConfig(

@@ -205,24 +205,45 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
         <executions>
           <execution>
             <id>oidc-keystore-agent</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
             <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
             <configuration>
-              <classifier>keystore-agent</classifier>
-              <archive>
-                <manifestEntries>
-                  <Premain-Class>org.picketlink.oidc.keystore.OidcKeyStoreAgent</Premain-Class>
-                  <Agent-Class>org.picketlink.oidc.keystore.OidcKeyStoreAgent</Agent-Class>
-                  <Can-Redefine-Classes>true</Can-Redefine-Classes>
-                  <Can-Retransform-Classes>true</Can-Retransform-Classes>
-                </manifestEntries>
-              </archive>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>keystore-agent</shadedClassifierName>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <artifactSet>
+                <includes>
+                  <include>net.bytebuddy:byte-buddy</include>
+                  <include>net.bytebuddy:byte-buddy-agent</include>
+                </includes>
+              </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>net.bytebuddy:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Premain-Class>org.picketlink.oidc.keystore.OidcKeyStoreAgent</Premain-Class>
+                    <Agent-Class>org.picketlink.oidc.keystore.OidcKeyStoreAgent</Agent-Class>
+                    <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                    <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                  </manifestEntries>
+                </transformer>
+              </transformers>
             </configuration>
           </execution>
         </executions>

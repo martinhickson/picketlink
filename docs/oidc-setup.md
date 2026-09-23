@@ -133,10 +133,14 @@ Each instance is started similarly to:
 
 (Use `127.0.0.101` for the RP instance.)
 
-The AS server additionally loads a Java agent for keystore signing (see section 6.2). The IT sets this via `JAVA_OPTS`:
+The AS server additionally loads a Java agent for keystore signing (see section 6.2). `MODULE_OPTS` makes WildFly install the log manager before the agent runs. The bridge jar is on the boot classpath so the deployment and the agent share the live keystore:
 
 ```bash
-export JAVA_OPTS="$JAVA_OPTS -javaagent:$JBOSS_HOME/../picketlink-oidc-keystore-agent.jar"
+export JBOSS_MODULES_SYSTEM_PKGS="${JBOSS_MODULES_SYSTEM_PKGS:-org.jboss.byteman},org.picketlink.oidc.keystore.bridge"
+export MODULE_OPTS="-javaagent:$JBOSS_HOME/../picketlink-oidc-keystore-agent.jar"
+unset JAVA_OPTS
+. "$JBOSS_HOME/bin/standalone.conf"
+export JAVA_OPTS="-Xbootclasspath/a:$JBOSS_HOME/../picketlink-oidc-keystore-bridge.jar $JAVA_OPTS"
 ```
 
 ---

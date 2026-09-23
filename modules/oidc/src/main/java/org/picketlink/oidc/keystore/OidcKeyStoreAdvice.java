@@ -1,16 +1,15 @@
 package org.picketlink.oidc.keystore;
 
 import java.security.KeyStore;
-import java.util.Properties;
 
-import org.apache.cxf.message.Message;
-import org.apache.cxf.rt.security.rs.RSSecurityConstants;
+import org.picketlink.oidc.keystore.bridge.OidcKeyStoreBridge;
 
 import net.bytebuddy.asm.Advice;
 
 /**
- * Advice injected into {@code KeyManagementUtils.loadPersistKeyStore} so CXF always
- * reads the latest signing keys from {@link DynamicOidcKeyStore}.
+ * Advice injected into {@code KeyManagementUtils.loadPersistKeyStore} so CXF
+ * reads the keystore {@link OidcKeyStoreBridge} last published. The JDK does
+ * not reload a {@link KeyStore} when the file on disk is replaced.
  */
 public final class OidcKeyStoreAdvice {
 
@@ -18,19 +17,8 @@ public final class OidcKeyStoreAdvice {
     }
 
     @Advice.OnMethodEnter(skipOn = Advice.OnNonDefaultValue.class)
-    static KeyStore enter(@Advice.Argument(0) Message message, @Advice.Argument(1) Properties props) {
-        DynamicOidcKeyStore store = DynamicOidcKeyStore.getGlobal();
-        if (store == null || props == null) {
-            return null;
-        }
-        String file = props.getProperty(RSSecurityConstants.RSSEC_KEY_STORE_FILE);
-        if (!store.manages(file)) {
-            return null;
-        }
-        if (message != null && file != null) {
-            message.getExchange().remove(file);
-        }
-        return store.currentKeyStore();
+    static KeyStore enter(@Advice.Argument(0) Object message, @Advice.Argument(1) Object props) {
+        return OidcKeyStoreBridge.enter(message, props);
     }
 
     @Advice.OnMethodExit
