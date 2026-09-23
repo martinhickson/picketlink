@@ -72,9 +72,14 @@ public class LogoutEndpointServlet extends HttpServlet {
         String tokenClientId = null;
         if (idTokenHint != null) {
             try {
-                tokenClientId = String.valueOf(server.getIssuanceServer().getIssuanceManager()
-                        .validate(idTokenHint).getClaim(
-                                org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_AZP));
+                org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
+                        server.getIssuanceServer().getIssuanceManager().validate(idTokenHint);
+                // An access token must not authorize logout. ID tokens carry at_hash.
+                Object azp = claims.getClaim("at_hash") == null ? null
+                        : claims.getClaim(org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_AZP);
+                if (azp != null) {
+                    tokenClientId = String.valueOf(azp);
+                }
             } catch (RuntimeException ex) {
                 // invalid hint: no redirect trust, fall through to confirmation page
             }
@@ -116,8 +121,12 @@ public class LogoutEndpointServlet extends HttpServlet {
         }
         String subject = null;
         try {
-            subject = String.valueOf(server.getIssuanceServer().getIssuanceManager()
-                    .validate(idTokenHint).getSubject());
+            org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
+                    server.getIssuanceServer().getIssuanceManager().validate(idTokenHint);
+            if (claims.getClaim("at_hash") == null || claims.getSubject() == null) {
+                return;
+            }
+            subject = claims.getSubject();
         } catch (RuntimeException ex) {
             return; // no usable hint, no logout token
         }

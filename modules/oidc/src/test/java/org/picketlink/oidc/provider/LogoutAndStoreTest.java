@@ -16,6 +16,7 @@ import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.picketlink.auth.oauth.admin.ManagedIssuanceServer;
+import org.picketlink.auth.oauth.issuance.IssuanceRequest;
 import org.picketlink.auth.oauth.model.RegisteredClient;
 import org.picketlink.auth.oauth.model.TokenRequest;
 import org.picketlink.auth.oauth.model.TokenResponse;
@@ -75,6 +77,21 @@ class LogoutAndStoreTest {
     }
 
     private String mintIdToken() {
+        RegisteredClient client = server.getIssuanceServer().getClientStore()
+                .findByClientId(CLIENT_ID).orElseThrow();
+        Map<String, Object> extra = new LinkedHashMap<>();
+        extra.put("at_hash", "left-half");
+        return server.getIssuanceServer().getIssuanceManager()
+                .issue(IssuanceRequest.forClient(client)
+                        .grantType("oidc-id-token")
+                        .subject("alice")
+                        .audiences(Set.of(CLIENT_ID))
+                        .extraClaims(extra)
+                        .build())
+                .getTokenValue();
+    }
+
+    private String mintAccessToken() {
         TokenResponse token = server.getIssuanceServer().getTokenService().issueToken(TokenRequest.builder()
                 .grantType("client_credentials")
                 .authorizationHeader("Basic " + java.util.Base64.getEncoder()
@@ -102,6 +119,21 @@ class LogoutAndStoreTest {
         verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
         assertEquals(REDIRECT_URI + "?state=s-1", location.getValue());
         verify(response).setStatus(302);
+    }
+
+    @Test
+    void shouldNotTreatAnAccessTokenAsAnIdTokenHint() throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("id_token_hint", mintAccessToken());
+        params.put("post_logout_redirect_uri", REDIRECT_URI);
+        params.put("state", "s-1");
+        params(params);
+        logout.doGet(request, response);
+
+        verify(response).setStatus(200);
+        org.mockito.Mockito.verify(response, org.mockito.Mockito.never())
+                .setHeader(org.mockito.ArgumentMatchers.eq("Location"),
+                        org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
