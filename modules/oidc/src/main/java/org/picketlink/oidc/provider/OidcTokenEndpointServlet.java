@@ -215,8 +215,19 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 scopesForRotation = ScopeValidator.formatScope(asked);
             }
         }
+        String presentedJkt = null;
+        if (live.isPresent() && live.get().getDpopJkt() != null) {
+            presentedJkt = dpopJkt(request);
+            if (presentedJkt == null || !live.get().getDpopJkt().equals(presentedJkt)) {
+                throw oauthError(OAuthConstants.INVALID_GRANT,
+                        "DPoP proof is required for this refresh token");
+            }
+        } else if (dpopHeader(request) != null) {
+            presentedJkt = dpopJkt(request);
+        }
         Optional<RefreshTokenService.Rotation> rotation =
-                server.getRefreshTokens().rotate(token, client.getClientId(), scopesForRotation);
+                server.getRefreshTokens().rotate(token, client.getClientId(), scopesForRotation,
+                        presentedJkt);
         if (!rotation.isPresent()) {
             throw oauthError(OAuthConstants.INVALID_GRANT,
                     "refresh token is invalid, expired or was replayed");
@@ -224,7 +235,7 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         RefreshTokenService.Rotation rotated = rotation.get();
         Set<String> scopes = parseScopes(rotated.getScopes());
         IssuedToken access = issueAccess(client, rotated.getSubject(), scopes,
-                dpopJkt(request), "refresh_token");
+                rotated.getDpopJkt(), "refresh_token");
         return tokenResponse(access, rotated.getNewRefreshToken(), scopes);
     }
 
@@ -402,7 +413,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                     .append('"');
         }
         String refreshToken = server.getRefreshTokens()
-                .create(client.getClientId(), subject, ScopeValidator.formatScope(scopes), nonce);
+                .create(client.getClientId(), subject, ScopeValidator.formatScope(scopes), nonce,
+                        dpopJkt);
         json.append(",\"refresh_token\":\"").append(OAuthJsonWriter.escape(refreshToken)).append('"');
         json.append('}');
         return json.toString();

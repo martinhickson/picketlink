@@ -38,10 +38,14 @@ public final class RefreshTokenService {
     }
 
     public String create(String clientId, String subject, String scopes, String nonce) {
+        return create(clientId, subject, scopes, nonce, null);
+    }
+
+    public String create(String clientId, String subject, String scopes, String nonce, String dpopJkt) {
         String value = randomToken();
         String family = randomToken();
         store.save(new RefreshTokenRecord(hash(value), clientId, subject, scopes, nonce, family,
-                clock.instant().getEpochSecond() + lifetimeSeconds));
+                clock.instant().getEpochSecond() + lifetimeSeconds, dpopJkt));
         return value;
     }
 
@@ -102,6 +106,15 @@ public final class RefreshTokenService {
      * @param scopes when set, the rotated token carries these scopes instead of the previous ones
      */
     public Optional<Rotation> rotate(String refreshToken, String expectedClientId, String scopes) {
+        return rotate(refreshToken, expectedClientId, scopes, null);
+    }
+
+    /**
+     * @param dpopJkt when set, the rotated token is bound to this thumbprint; otherwise the
+     *        previous binding is kept
+     */
+    public Optional<Rotation> rotate(String refreshToken, String expectedClientId, String scopes,
+            String dpopJkt) {
         if (refreshToken == null) {
             return Optional.empty();
         }
@@ -125,10 +138,11 @@ public final class RefreshTokenService {
         store.rememberRetired(hash, stored.getFamily());
         String newValue = randomToken();
         String nextScopes = scopes != null ? scopes : stored.getScopes();
+        String nextJkt = dpopJkt != null && !dpopJkt.isBlank() ? dpopJkt : stored.getDpopJkt();
         store.save(new RefreshTokenRecord(hash(newValue), stored.getClientId(), stored.getSubject(),
                 nextScopes, stored.getNonce(), stored.getFamily(),
-                clock.instant().getEpochSecond() + lifetimeSeconds));
-        return Optional.of(new Rotation(stored, newValue, nextScopes));
+                clock.instant().getEpochSecond() + lifetimeSeconds, nextJkt));
+        return Optional.of(new Rotation(stored, newValue, nextScopes, nextJkt));
     }
 
     private String randomToken() {
@@ -153,11 +167,13 @@ public final class RefreshTokenService {
         final RefreshTokenRecord previous;
         final String newRefreshToken;
         final String scopes;
+        final String dpopJkt;
 
-        Rotation(RefreshTokenRecord previous, String newRefreshToken, String scopes) {
+        Rotation(RefreshTokenRecord previous, String newRefreshToken, String scopes, String dpopJkt) {
             this.previous = previous;
             this.newRefreshToken = newRefreshToken;
             this.scopes = scopes;
+            this.dpopJkt = dpopJkt;
         }
 
         public String getClientId() {
@@ -170,6 +186,10 @@ public final class RefreshTokenService {
 
         public String getScopes() {
             return scopes;
+        }
+
+        public String getDpopJkt() {
+            return dpopJkt;
         }
 
         public String getNewRefreshToken() {

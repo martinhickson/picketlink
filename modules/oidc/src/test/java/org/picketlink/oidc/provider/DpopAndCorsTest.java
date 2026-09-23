@@ -72,7 +72,10 @@ class DpopAndCorsTest {
                 .scope("openid")
                 .redirectUri("https://rp.example/cb")
                 .build());
-        server = OidcProviderServer.builder(ISSUER, issuanceServer).build();
+        server = OidcProviderServer.builder(ISSUER, issuanceServer)
+                .subjectAuthenticator(new SubjectAuthenticator.InMemorySubjectAuthenticator(
+                        Map.of("alice", "wonderland")))
+                .build();
         token = new OidcTokenEndpointServlet(server);
         userinfo = new UserInfoServlet(server);
         java.security.KeyPairGenerator rsaGen = KeyPairGenerator.getInstance("RSA");
@@ -330,6 +333,55 @@ class DpopAndCorsTest {
                 StandardCharsets.UTF_8);
         assertTrue(payload.contains("\"cnf\""));
         assertTrue(payload.contains("\"sub\":\"alice\""));
+    }
+
+    @Test
+    void boundRefreshTokenRejectsAMissingOrDifferentProof() throws Exception {
+        String proof = dpopProof("POST", TOKEN_URI, "jti-issue");
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=password&username=alice&password=wonderland&scope=openid"));
+        lenient().when(request.getHeader("Authorization")).thenReturn("Basic " + Base64.getEncoder()
+                .encodeToString((CLIENT_ID + ":" + CLIENT_SECRET).getBytes(StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(proof);
+        token.doPost(request, response);
+        verify(response).setStatus(200);
+        String issued = writer.toString();
+        assertTrue(issued.contains("\"token_type\":\"DPoP\""));
+        String refresh = issued.split("\"refresh_token\":\"")[1].split("\"")[0];
+
+        org.mockito.Mockito.clearInvocations(response);
+        writer.getBuffer().setLength(0);
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=refresh_token&refresh_token="
+                        + java.net.URLEncoder.encode(refresh, StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(null);
+        token.doPost(request, response);
+        verify(response).setStatus(400);
+        assertTrue(writer.toString().contains("DPoP"));
+        assertTrue(server.getRefreshTokens().findLive(refresh).isPresent());
+
+        org.mockito.Mockito.clearInvocations(response);
+        writer.getBuffer().setLength(0);
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=refresh_token&refresh_token="
+                        + java.net.URLEncoder.encode(refresh, StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(
+                dpopProof("POST", TOKEN_URI, "jti-again"));
+        token.doPost(request, response);
+        verify(response).setStatus(200);
+        String rotated = writer.toString();
+        assertTrue(rotated.contains("\"token_type\":\"DPoP\""));
+        String next = rotated.split("\"refresh_token\":\"")[1].split("\"")[0];
+
+        org.mockito.Mockito.clearInvocations(response);
+        writer.getBuffer().setLength(0);
+        when(request.getInputStream()).thenReturn(body(
+                "grant_type=refresh_token&refresh_token="
+                        + java.net.URLEncoder.encode(next, StandardCharsets.UTF_8)));
+        lenient().when(request.getHeader("DPoP")).thenReturn(null);
+        token.doPost(request, response);
+        verify(response).setStatus(400);
+        assertTrue(server.getRefreshTokens().findLive(next).isPresent());
     }
 
     @Test

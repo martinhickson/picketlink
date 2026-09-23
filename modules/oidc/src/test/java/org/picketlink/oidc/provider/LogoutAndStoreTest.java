@@ -206,4 +206,28 @@ class LogoutAndStoreTest {
         assertFalse(second.rotate(afterRestart.getNewRefreshToken()).isPresent(),
                 "family must be revoked after replay detection");
     }
+
+    @Test
+    void refreshStoreKeepsTheDpopThumbprintAcrossRestart() throws Exception {
+        DriverManagerConnectionSource source = new DriverManagerConnectionSource(
+                "jdbc:sqlite:" + tempDir.resolve("legacy-refresh.db"), null, null);
+        try (java.sql.Connection connection = source.openConnection()) {
+            connection.createStatement().execute(
+                    "CREATE TABLE picketlink_oidc_refresh ("
+                            + "token_hash VARCHAR(64) PRIMARY KEY, "
+                            + "client_id VARCHAR(128) NOT NULL, "
+                            + "subject_name VARCHAR(256), "
+                            + "scopes VARCHAR(1024), "
+                            + "nonce VARCHAR(256), "
+                            + "family_id VARCHAR(64) NOT NULL, "
+                            + "expires_at BIGINT NOT NULL, "
+                            + "retired INTEGER NOT NULL DEFAULT 0)");
+        }
+        Clock clock = Clock.systemUTC();
+        String token = new RefreshTokenService(clock, new JdbcRefreshTokenStore(source))
+                .create(CLIENT_ID, "alice", "openid", "n-1", "thumbprint-1");
+        RefreshTokenService.Rotation rotation = new RefreshTokenService(clock,
+                new JdbcRefreshTokenStore(source)).rotate(token).orElseThrow();
+        assertEquals("thumbprint-1", rotation.getDpopJkt());
+    }
 }

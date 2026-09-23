@@ -1,6 +1,7 @@
 package org.picketlink.oidc.provider;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -108,7 +109,7 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
         final RefreshTokenRecord[] result = new RefreshTokenRecord[1];
         withConnection(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT client_id, subject_name, scopes, nonce, family_id, expires_at FROM "
+                    "SELECT client_id, subject_name, scopes, nonce, family_id, expires_at, dpop_jkt FROM "
                             + TABLE_NAME + " WHERE token_hash = ? AND retired = ?")) {
                 statement.setString(1, tokenHash);
                 statement.setInt(2, retired ? 1 : 0);
@@ -116,7 +117,7 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
                     if (rs.next()) {
                         result[0] = new RefreshTokenRecord(tokenHash, rs.getString(1),
                                 rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
-                                rs.getLong(6));
+                                rs.getLong(6), rs.getString(7));
                     }
                 }
             }
@@ -153,14 +154,15 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "UPDATE " + TABLE_NAME + " SET client_id = ?, subject_name = ?, scopes = ?,"
-                        + " nonce = ?, family_id = ?, expires_at = ? WHERE token_hash = ?")) {
+                        + " nonce = ?, family_id = ?, expires_at = ?, dpop_jkt = ? WHERE token_hash = ?")) {
             statement.setString(1, record.getClientId());
             statement.setString(2, record.getSubject());
             statement.setString(3, record.getScopes());
             statement.setString(4, record.getNonce());
             statement.setString(5, record.getFamily());
             statement.setLong(6, record.getExpiresAtEpochSeconds());
-            statement.setString(7, record.getTokenHash());
+            statement.setString(7, record.getDpopJkt());
+            statement.setString(8, record.getTokenHash());
             return statement.executeUpdate();
         }
     }
@@ -169,7 +171,8 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
             throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
                 "INSERT INTO " + TABLE_NAME + " (token_hash, client_id, subject_name, scopes,"
-                        + " nonce, family_id, expires_at, retired) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
+                        + " nonce, family_id, expires_at, retired, dpop_jkt)"
+                        + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             statement.setString(1, record.getTokenHash());
             statement.setString(2, record.getClientId());
             statement.setString(3, record.getSubject());
@@ -178,6 +181,7 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
             statement.setString(6, record.getFamily());
             statement.setLong(7, record.getExpiresAtEpochSeconds());
             statement.setInt(8, retired ? 1 : 0);
+            statement.setString(9, record.getDpopJkt());
             statement.executeUpdate();
         }
     }
@@ -201,8 +205,30 @@ public final class JdbcRefreshTokenStore implements RefreshTokenStore {
                         + "nonce VARCHAR(256), "
                         + "family_id VARCHAR(64) NOT NULL, "
                         + "expires_at BIGINT NOT NULL, "
-                        + "retired INTEGER NOT NULL DEFAULT 0)")) {
+                        + "retired INTEGER NOT NULL DEFAULT 0, "
+                        + "dpop_jkt VARCHAR(256))")) {
             statement.execute();
+        }
+        if (!columnExists(connection, "dpop_jkt")) {
+            try (PreparedStatement alter = connection.prepareStatement(
+                    "ALTER TABLE " + TABLE_NAME + " ADD COLUMN dpop_jkt VARCHAR(256)")) {
+                alter.execute();
+            }
+        }
+    }
+
+    private static boolean columnExists(Connection connection, String column) throws SQLException {
+        DatabaseMetaData meta = connection.getMetaData();
+        if (findColumn(meta, TABLE_NAME, column)) {
+            return true;
+        }
+        return findColumn(meta, TABLE_NAME.toUpperCase(), column.toUpperCase());
+    }
+
+    private static boolean findColumn(DatabaseMetaData meta, String table, String column)
+            throws SQLException {
+        try (ResultSet columns = meta.getColumns(null, null, table, column)) {
+            return columns.next();
         }
     }
 
