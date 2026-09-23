@@ -126,12 +126,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         if (reuseBrowserSession(request, params, response)) {
             return true;
         }
-        response.setHeader("Location", params.redirectUri
-                + (params.redirectUri.contains("?") ? "&" : "?")
-                + "error=login_required"
-                + (params.state == null ? "" : "&state=" + urlEncode(params.state))
-                + "&iss=" + urlEncode(server.getIssuer()));
-        response.setStatus(HttpServletResponse.SC_FOUND);
+        emitAuthorizationError(params, "login_required", response);
         return true;
     }
 
@@ -467,6 +462,69 @@ public class AuthorizationEndpointServlet extends HttpServlet {
                           + "code=" + code + stateQuery + issQuery);
         response.setHeader("Location", redirect);
         response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /**
+     * Same delivery rules as a successful response. {@code fragment} keeps the error in the
+     * fragment, {@code form_post} posts it, and JARM puts it in the signed response.
+     */
+    private void emitAuthorizationError(RequestParams params, String error,
+            HttpServletResponse response) throws IOException {
+        String state = params.state == null ? "" : params.state;
+        String mode = params.responseMode == null ? "query" : params.responseMode;
+        if ("form_post".equals(mode)) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("text/html");
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.getWriter().write(state.isBlank()
+                    ? formPost(params.redirectUri, hidden("error", error),
+                            hidden("iss", server.getIssuer()))
+                    : formPost(params.redirectUri, hidden("error", error),
+                            hidden("state", state), hidden("iss", server.getIssuer())));
+            return;
+        }
+        if (mode.endsWith(".jwt") || "jwt".equals(mode)) {
+            String responseJwt = jarmError(params, error, state);
+            if ("form_post.jwt".equals(mode)) {
+                response.setStatus(HttpServletResponse.SC_OK);
+                response.setContentType("text/html");
+                response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                response.getWriter().write(formPost(params.redirectUri, hidden("response", responseJwt)));
+                return;
+            }
+            boolean fragment = "fragment.jwt".equals(mode);
+            String separator = fragment ? "#"
+                    : (params.redirectUri.contains("?") ? "&" : "?");
+            response.setHeader("Location", params.redirectUri + separator
+                    + "response=" + urlEncode(responseJwt));
+            response.setStatus(HttpServletResponse.SC_FOUND);
+            return;
+        }
+        String stateQuery = state.isBlank() ? "" : "&state=" + urlEncode(state);
+        String issQuery = "&iss=" + urlEncode(server.getIssuer());
+        String redirect = params.redirectUri
+                + ("fragment".equals(mode)
+                        ? "#error=" + urlEncode(error) + stateQuery + issQuery
+                        : (params.redirectUri.contains("?") ? "&" : "?")
+                          + "error=" + urlEncode(error) + stateQuery + issQuery);
+        response.setHeader("Location", redirect);
+        response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /** JARM error response: signed JWT with iss, aud, error and state. No code. */
+    private String jarmError(RequestParams params, String error, String state) {
+        long now = server.getClock().instant().getEpochSecond();
+        org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
+                new org.apache.cxf.rs.security.jose.jwt.JwtClaims();
+        claims.setIssuer(server.getIssuer());
+        claims.setAudience(params.clientId);
+        claims.setIssuedAt(now);
+        claims.setExpiryTime(now + 120);
+        claims.setClaim("error", error);
+        if (state != null && !state.isBlank()) {
+            claims.setClaim("state", state);
+        }
+        return server.getIssuanceServer().getSigningService().sign(claims, null);
     }
 
     /** JARM (RFC 9101): signed response JWT with iss, aud, short-lived exp, code and state. */

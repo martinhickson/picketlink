@@ -136,6 +136,64 @@ class ResponseModesAndTokenManagementTest {
     }
 
     @Test
+    void promptNoneFragmentKeepsTheErrorOffTheQuery() throws Exception {
+        promptNone("fragment", "s-1");
+        ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        String redirect = location.getValue();
+        assertTrue(redirect.startsWith(REDIRECT_URI + "#error=login_required"));
+        assertTrue(redirect.contains("state=s-1"));
+        assertTrue(redirect.contains("iss="));
+        assertTrue(!redirect.contains("?error="));
+    }
+
+    @Test
+    void promptNoneFormPostCarriesTheErrorInTheForm() throws Exception {
+        promptNone("form_post", "s-1");
+        verify(response).setStatus(200);
+        String html = writer.toString();
+        assertTrue(html.contains("name=\"error\" value=\"login_required\""));
+        assertTrue(html.contains("name=\"iss\""));
+        assertTrue(!html.contains("name=\"code\""));
+        verify(response, org.mockito.Mockito.never())
+                .setHeader(org.mockito.ArgumentMatchers.eq("Location"),
+                        org.mockito.ArgumentMatchers.anyString());
+    }
+
+    @Test
+    void promptNoneJarmCarriesTheErrorInsideTheResponse() throws Exception {
+        promptNone("jwt", "s-1");
+        ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(org.mockito.ArgumentMatchers.eq("Location"), location.capture());
+        String redirect = location.getValue();
+        assertTrue(redirect.startsWith(REDIRECT_URI + "?response="));
+        String responseJwt = java.net.URLDecoder.decode(
+                redirect.substring(redirect.indexOf("response=") + "response=".length()),
+                StandardCharsets.UTF_8);
+        org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
+                server.getIssuanceServer().getSigningService()
+                        .validate(responseJwt, java.util.Set.of("RS256", "ES256", "EdDSA"));
+        assertEqualsSafe("login_required", claims.getClaim("error"));
+        assertTrue(claims.getClaim("code") == null);
+    }
+
+    private void promptNone(String responseMode, String state) throws Exception {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("response_type", "code");
+        params.put("client_id", CLIENT_ID);
+        params.put("redirect_uri", REDIRECT_URI);
+        params.put("scope", "openid");
+        params.put("state", state);
+        params.put("prompt", "none");
+        params.put("response_mode", responseMode);
+        params.put("code_challenge", AuthorizationCodeService.s256(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        params.put("code_challenge_method", "S256");
+        params.forEach((name, value) -> lenient().when(request.getParameter(name)).thenReturn(value));
+        authorize.doGet(request, response);
+    }
+
+    @Test
     void fragmentModePutsResponseInTheFragment() throws Exception {
         loginAs("fragment");
         ArgumentCaptor<String> location = ArgumentCaptor.forClass(String.class);
