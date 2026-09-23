@@ -9,14 +9,20 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.sun.net.httpserver.HttpServer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -57,6 +63,7 @@ class SsoSessionTest {
     void setUp() throws Exception {
         Map<String, String> users = new LinkedHashMap<>();
         users.put("alice", "wonderland");
+        users.put("bob", "builder");
         ManagedIssuanceServer issuanceServer = ManagedIssuanceServer.builder(ISSUER).build();
         issuanceServer.getClientStore().save(RegisteredClient.builder(CLIENT_A, SECRET)
                 .scope("openid").redirectUri(REDIRECT_A).build());
@@ -91,6 +98,65 @@ class SsoSessionTest {
         String sidB = sidOf(redeem(CLIENT_B, SECRET, REDIRECT_B, codeB));
         assertEquals(sidA, sidB);
         assertFalse(sidA.isBlank());
+        verify(request, times(1)).changeSessionId();
+    }
+
+    @Test
+    void logoutNotifiesEveryClientThatJoinedTheSession() throws Exception {
+        HttpServer http = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        List<String> loggedOut = new ArrayList<>();
+        http.createContext("/a", exchange -> capture(exchange, loggedOut));
+        http.createContext("/b", exchange -> capture(exchange, loggedOut));
+        http.createContext("/c", exchange -> capture(exchange, loggedOut));
+        http.start();
+        try {
+            int port = http.getAddress().getPort();
+            save(CLIENT_A, REDIRECT_A, "http://127.0.0.1:" + port + "/a");
+            save(CLIENT_B, REDIRECT_B, "http://127.0.0.1:" + port + "/b");
+            save("client-c", "https://c.example/cb", "http://127.0.0.1:" + port + "/c");
+            login(CLIENT_A, REDIRECT_A);
+            silent(CLIENT_B, REDIRECT_B);
+            lenient().when(request.getParameter(anyString())).thenReturn(null);
+            writer();
+            new LogoutEndpointServlet(server).doGet(request, response);
+            verify(response).setStatus(200);
+            assertEquals(2, loggedOut.size());
+            assertTrue(loggedOut.get(0).contains("\"sub\":\"alice\""));
+            assertTrue(loggedOut.get(1).contains("\"sub\":\"alice\""));
+            String sid = sidFromLogout(loggedOut.get(0));
+            assertEquals(sid, sidFromLogout(loggedOut.get(1)));
+            assertTrue(loggedOut.get(0).contains("\"aud\":\"client-a\"")
+                    || loggedOut.get(1).contains("\"aud\":\"client-a\""));
+            assertTrue(loggedOut.get(0).contains("\"aud\":\"client-b\"")
+                    || loggedOut.get(1).contains("\"aud\":\"client-b\""));
+            assertFalse(loggedOut.toString().contains("client-c"));
+        } finally {
+            http.stop(0);
+        }
+    }
+
+    @Test
+    void aDifferentSubjectLogsOutThePreviousClients() throws Exception {
+        HttpServer http = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        List<String> loggedOut = new ArrayList<>();
+        http.createContext("/a", exchange -> capture(exchange, loggedOut));
+        http.start();
+        try {
+            int port = http.getAddress().getPort();
+            save(CLIENT_A, REDIRECT_A, "http://127.0.0.1:" + port + "/a");
+            login(CLIENT_A, REDIRECT_A);
+            String aliceSid = String.valueOf(sessionAttributes.get(SsoSession.SID));
+            parameters(CLIENT_A, REDIRECT_A, null, null);
+            lenient().when(request.getParameter("username")).thenReturn("bob");
+            lenient().when(request.getParameter("password")).thenReturn("builder");
+            authorize.doPost(request, response);
+            assertEquals(1, loggedOut.size());
+            assertTrue(loggedOut.get(0).contains("\"sub\":\"alice\""));
+            assertTrue(loggedOut.get(0).contains("\"sid\":\"" + aliceSid + "\""));
+            assertNotEquals(aliceSid, sessionAttributes.get(SsoSession.SID));
+        } finally {
+            http.stop(0);
+        }
     }
 
     @Test
@@ -133,6 +199,32 @@ class SsoSessionTest {
                 org.mockito.ArgumentCaptor.forClass(String.class);
         verify(response).setHeader(eq("Location"), location.capture());
         assertTrue(location.getValue().contains("error=login_required"));
+    }
+
+    private void save(String clientId, String redirectUri, String logoutUrl) {
+        server.getIssuanceServer().getClientStore().save(RegisteredClient.builder(clientId, SECRET)
+                .scope("openid")
+                .redirectUri(redirectUri)
+                .backchannelLogoutUrl(logoutUrl)
+                .build());
+    }
+
+    private static void capture(com.sun.net.httpserver.HttpExchange exchange, List<String> loggedOut)
+            throws java.io.IOException {
+        String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+        String encoded = body.substring("logout_token=".length());
+        String token = java.net.URLDecoder.decode(encoded, StandardCharsets.UTF_8);
+        String payload = new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]),
+                StandardCharsets.UTF_8);
+        loggedOut.add(payload);
+        exchange.sendResponseHeaders(200, -1);
+        exchange.close();
+    }
+
+    private static String sidFromLogout(String payload) {
+        String needle = "\"sid\":\"";
+        int start = payload.indexOf(needle) + needle.length();
+        return payload.substring(start, payload.indexOf('"', start));
     }
 
     private String login(String clientId, String redirectUri) throws Exception {

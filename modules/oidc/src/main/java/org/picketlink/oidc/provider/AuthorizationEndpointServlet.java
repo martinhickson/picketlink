@@ -91,7 +91,15 @@ public class AuthorizationEndpointServlet extends HttpServlet {
             return;
         }
         long authTime = server.getClock().instant().getEpochSecond();
-        String sid = SsoSession.login(request.getSession(true), subject.get(), authTime);
+        jakarta.servlet.http.HttpSession session = request.getSession(true);
+        SsoSession.Held previous = SsoSession.read(session);
+        if (previous != null && !previous.subject.equals(subject.get())) {
+            LogoutEndpointServlet.notifyClients(server, previous.subject, previous.sid,
+                    SsoSession.clientIds(session));
+        }
+        String sid = SsoSession.login(session, subject.get(), authTime);
+        SsoSession.rotate(request);
+        SsoSession.remember(request.getSession(false), params.clientId);
         issueCode(params, subject.get(), sid, Long.valueOf(authTime), response);
     }
 
@@ -141,6 +149,7 @@ public class AuthorizationEndpointServlet extends HttpServlet {
         if (!SsoSession.fresh(held, params.maxAge, now)) {
             return false;
         }
+        SsoSession.remember(request.getSession(false), params.clientId);
         issueCode(params, held.subject, held.sid, Long.valueOf(held.authTime), response);
         return true;
     }

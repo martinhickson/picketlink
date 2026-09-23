@@ -7,8 +7,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,6 +72,8 @@ public class LogoutEndpointServlet extends HttpServlet {
         String state = request.getParameter("state");
 
         String tokenClientId = null;
+        String hintSubject = null;
+        String hintSid = null;
         if (idTokenHint != null) {
             try {
                 org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
@@ -79,18 +83,27 @@ public class LogoutEndpointServlet extends HttpServlet {
                         : claims.getClaim(org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_AZP);
                 if (azp != null) {
                     tokenClientId = String.valueOf(azp);
+                    hintSubject = claims.getSubject();
+                    Object sidClaim = claims.getClaim("sid");
+                    if (sidClaim != null && !String.valueOf(sidClaim).isBlank()) {
+                        hintSid = String.valueOf(sidClaim);
+                    }
                 }
             } catch (RuntimeException ex) {
                 // invalid hint: no redirect trust, fall through to confirmation page
             }
         }
 
+        jakarta.servlet.http.HttpSession session = request.getSession(false);
+        SsoSession.Held held = SsoSession.read(session);
+        Set<String> sessionClients = SsoSession.clientIds(session);
         if (clientId == null) {
             clientId = tokenClientId;
         }
         String redirect = resolveRedirect(clientId, postLogoutRedirectUri, tokenClientId);
+        notifyParticipants(tokenClientId, hintSubject, hintSid, held, sessionClients);
+        endBrowserSession(request);
         if (redirect == null) {
-            endBrowserSession(request);
             response.setStatus(HttpServletResponse.SC_OK);
             response.setContentType("text/html");
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -101,10 +114,50 @@ public class LogoutEndpointServlet extends HttpServlet {
             redirect += (redirect.contains("?") ? "&" : "?") + "state="
                     + java.net.URLEncoder.encode(state, StandardCharsets.UTF_8);
         }
-        notifyBackChannelLogout(clientId, tokenClientId, idTokenHint);
-        endBrowserSession(request);
         response.setHeader("Location", redirect);
         response.setStatus(HttpServletResponse.SC_FOUND);
+    }
+
+    /**
+     * Notifies every client that joined this browser session, and the client named by a
+     * valid ID token when that token is for the same subject. A hint for a different
+     * subject does not log that other user out.
+     */
+    private void notifyParticipants(String tokenClientId, String hintSubject, String hintSid,
+            SsoSession.Held held, Set<String> sessionClients) {
+        LinkedHashSet<String> targets = new LinkedHashSet<>();
+        String subject = null;
+        String sid = null;
+        if (held != null) {
+            targets.addAll(sessionClients);
+            subject = held.subject;
+            sid = held.sid;
+        }
+        boolean hintForThisSession = hintSubject != null && tokenClientId != null
+                && (held == null || hintSubject.equals(held.subject));
+        if (hintForThisSession) {
+            targets.add(tokenClientId);
+            if (subject == null) {
+                subject = hintSubject;
+                sid = hintSid;
+            }
+        }
+        notifyClients(server, subject, sid, targets);
+    }
+
+    /** Posts one logout token per client. Failures of one callback do not skip the others. */
+    static void notifyClients(OidcProviderServer server, String subject, String sid,
+            Set<String> clientIds) {
+        if (server == null || subject == null || subject.isBlank() || clientIds == null) {
+            return;
+        }
+        for (String clientId : clientIds) {
+            try {
+                postLogoutToken(server, clientId, subject, sid);
+            } catch (Exception ex) {
+                // best-effort: one unreachable client must not skip the rest
+            }
+        }
     }
 
     /**
@@ -112,47 +165,27 @@ public class LogoutEndpointServlet extends HttpServlet {
      * callback URL, POST a signed logout_token (events claim per the spec, no nonce) to it.
      * Best-effort: callback failures never block the front-channel logout.
      */
-    private void notifyBackChannelLogout(String clientId, String tokenClientId, String idTokenHint) {
-        if (clientId == null || tokenClientId == null || !clientId.equals(tokenClientId)) {
-            return;
-        }
+    private static void postLogoutToken(OidcProviderServer server, String clientId,
+            String subject, String sid) throws Exception {
         ClientRegistrationStore store = server.getIssuanceServer().getClientStore();
         Optional<RegisteredClient> registered = store.findByClientId(clientId);
         if (!registered.isPresent() || registered.get().getBackchannelLogoutUrl() == null) {
             return;
         }
-        String subject = null;
-        String sid = null;
-        try {
-            org.apache.cxf.rs.security.jose.jwt.JwtClaims claims =
-                    server.getIssuanceServer().getIssuanceManager().validate(idTokenHint);
-            if (claims.getClaim("at_hash") == null || claims.getSubject() == null) {
-                return;
-            }
-            subject = claims.getSubject();
-            Object sidClaim = claims.getClaim("sid");
-            if (sidClaim != null && !String.valueOf(sidClaim).isBlank()) {
-                sid = String.valueOf(sidClaim);
-            }
-        } catch (RuntimeException ex) {
-            return; // no usable hint, no logout token
-        }
-        try {
-            String logoutToken = server.getIssuanceServer().getSigningService()
-                    .sign(logoutTokenClaims(clientId, subject, sid), null);
-            HttpRequest request = HttpRequest.newBuilder(URI.create(registered.get().getBackchannelLogoutUrl()))
-                    .timeout(java.time.Duration.ofSeconds(5))
-                    .header("Content-Type", "application/x-www-form-urlencoded")
-                    .POST(HttpRequest.BodyPublishers.ofString(
-                            "logout_token=" + java.net.URLEncoder.encode(logoutToken, StandardCharsets.UTF_8)))
-                    .build();
-            HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (Exception ex) {
-            // best-effort: front-channel logout proceeds regardless of callback outcome
-        }
+        String logoutToken = server.getIssuanceServer().getSigningService()
+                .sign(logoutTokenClaims(server, clientId, subject, sid), null);
+        HttpRequest request = HttpRequest.newBuilder(
+                URI.create(registered.get().getBackchannelLogoutUrl()))
+                .timeout(java.time.Duration.ofSeconds(5))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        "logout_token=" + java.net.URLEncoder.encode(logoutToken, StandardCharsets.UTF_8)))
+                .build();
+        HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    private JwtClaims logoutTokenClaims(String clientId, String subject, String sid) {
+    private static JwtClaims logoutTokenClaims(OidcProviderServer server, String clientId,
+            String subject, String sid) {
         long now = server.getClock().instant().getEpochSecond();
         JwtClaims claims = new JwtClaims();
         claims.setIssuer(server.getIssuer());
