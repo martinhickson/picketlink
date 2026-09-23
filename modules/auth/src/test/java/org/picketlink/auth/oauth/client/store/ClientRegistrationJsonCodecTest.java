@@ -29,4 +29,21 @@ class ClientRegistrationJsonCodecTest {
                 restored.get(0).getTokenEndpointAuthMethod());
         assertTrue(json.contains(OAuthConstants.TOKEN_ENDPOINT_AUTH_POST));
     }
+
+    @Test
+    void roundTripsRedirectAndBackChannelLogout() {
+        RegisteredClient client = RegisteredClient.builder("rp", "secret")
+                .scope("openid")
+                .redirectUri("https://rp.example/callback")
+                .redirectUri("https://rp.example/renew")
+                .backchannelLogoutUrl("https://rp.example/backchannel")
+                .build();
+
+        RegisteredClient restored = ClientRegistrationJsonCodec.read(
+                ClientRegistrationJsonCodec.write(List.of(client))).get(0);
+
+        assertTrue(restored.getAllowedRedirectUris().contains("https://rp.example/callback"));
+        assertTrue(restored.getAllowedRedirectUris().contains("https://rp.example/renew"));
+        assertEquals("https://rp.example/backchannel", restored.getBackchannelLogoutUrl());
+    }
 }

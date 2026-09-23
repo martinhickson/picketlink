@@ -76,6 +76,12 @@ public final class ClientRegistrationJsonCodec {
         if (!client.getAllowedAudiences().isEmpty()) {
             appendStringArray(json, "allowedAudiences", client.getAllowedAudiences(), false);
         }
+        if (!client.getAllowedRedirectUris().isEmpty()) {
+            appendStringArray(json, "allowedRedirectUris", client.getAllowedRedirectUris(), false);
+        }
+        if (client.getBackchannelLogoutUrl() != null) {
+            appendString(json, "backchannelLogoutUrl", client.getBackchannelLogoutUrl(), false);
+        }
         if (client.getJwks() != null) {
             // base64: the hand-rolled reader matches braces, and a JWKS document contains
             // balanced-but-nested braces that must not leak into the envelope structure
@@ -111,6 +117,13 @@ public final class ClientRegistrationJsonCodec {
         }
         if (!allowedAudiences.isEmpty()) {
             builder.allowedAudiences(allowedAudiences);
+        }
+        for (String redirectUri : readStringArray(objectJson, "allowedRedirectUris")) {
+            builder.redirectUri(redirectUri);
+        }
+        String backchannelLogoutUrl = readString(objectJson, "backchannelLogoutUrl");
+        if (!backchannelLogoutUrl.isEmpty()) {
+            builder.backchannelLogoutUrl(backchannelLogoutUrl);
         }
         if (jwks != null && !jwks.isEmpty()) {
             builder.jwks(jwks);
