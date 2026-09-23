@@ -30,16 +30,59 @@ public final class OidcAuthorizationServerBootstrap {
         return mount(bus, issuerBaseUrl, rpRedirectUri, Collections.emptyList());
     }
 
+    /**
+     * Demo consumer: one client and one user from {@link OidcDemoConstants}, plus the given redirect.
+     * Callers that are not the demo should use {@link #mount(Bus, OidcAuthorizationServerConfig, List)}.
+     */
     public static DemoOidcDataProvider mount(Bus bus, String issuerBaseUrl, String rpRedirectUri,
             List<Object> additionalServiceBeans) {
-        String issuer = trimTrailingSlash(issuerBaseUrl);
+        OidcAuthorizationServerConfig config = OidcAuthorizationServerConfig.builder(issuerBaseUrl)
+                .client(OidcClientRegistration.builder(
+                        OidcDemoConstants.CLIENT_ID, OidcDemoConstants.CLIENT_SECRET)
+                        .redirectUri(rpRedirectUri)
+                        .scope(OidcDemoConstants.OPENID_SCOPE)
+                        .scope(OidcDemoConstants.PROFILE_SCOPE)
+                        .grantType("authorization_code")
+                        .grantType("refresh_token")
+                        .applicationName("PicketLink Demo RP")
+                        .build())
+                .user(new OidcUserRegistration(
+                        OidcDemoConstants.DEMO_USERNAME,
+                        OidcDemoConstants.DEMO_PASSWORD,
+                        java.util.List.of(OidcDemoConstants.DEMO_ROLE)))
+                .build();
         DemoOidcDataProvider dataProvider = new DemoOidcDataProvider(rpRedirectUri);
+        mount(bus, config, dataProvider, additionalServiceBeans);
+        return dataProvider;
+    }
+
+    public static ConfiguredOidcDataProvider mount(Bus bus, OidcAuthorizationServerConfig config) {
+        return mount(bus, config, Collections.emptyList());
+    }
+
+    public static ConfiguredOidcDataProvider mount(Bus bus, OidcAuthorizationServerConfig config,
+            List<Object> additionalServiceBeans) {
+        ConfiguredOidcDataProvider dataProvider = new ConfiguredOidcDataProvider(config.getClients());
+        mount(bus, config, dataProvider, additionalServiceBeans);
+        return dataProvider;
+    }
+
+    private static void mount(Bus bus, OidcAuthorizationServerConfig config,
+            ConfiguredOidcDataProvider dataProvider, List<Object> additionalServiceBeans) {
+        if (config.getKeystore() != null) {
+            try {
+                org.picketlink.oidc.keystore.DynamicOidcKeyStore.load(config.getKeystore()).bindBus(bus);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to load OIDC signing keystore", ex);
+            }
+        }
+        String issuer = config.getIssuer();
         DemoIdTokenProvider idTokenProvider = new DemoIdTokenProvider(issuer);
 
         DemoOidcAuthorizationCodeService authorizeService = new DemoOidcAuthorizationCodeService();
         authorizeService.setDataProvider(dataProvider);
-        authorizeService.setSubjectCreator(new DemoOidcSubjectCreator());
-        authorizeService.setScopesRequiringNoConsent(OidcDemoConstants.DEFAULT_SCOPES);
+        authorizeService.setSubjectCreator(new ConfiguredSubjectCreator(config.getUsers()));
+        authorizeService.setScopesRequiringNoConsent(config.scopes());
 
         AccessTokenService tokenService = new AccessTokenService();
         tokenService.setDataProvider(dataProvider);
@@ -80,8 +123,6 @@ public final class OidcAuthorizationServerBootstrap {
         serviceBeans.addAll(additionalServiceBeans);
 
         createServer(bus, "/", serviceBeans);
-
-        return dataProvider;
     }
 
     private static void createServer(Bus bus, String address, List<Object> serviceBeans) {

@@ -31,14 +31,19 @@ public final class DynamicOidcKeyStore {
 
     private final Path keystorePath;
     private final char[] storePassword;
+    private final String keyPassword;
+    private final String keystoreType;
     private final AtomicLong generation = new AtomicLong();
     private volatile KeyStore keyStore;
     private volatile String activeAlias;
     private volatile Bus bus;
 
-    private DynamicOidcKeyStore(Path keystorePath, char[] storePassword, KeyStore keyStore, String activeAlias) {
+    private DynamicOidcKeyStore(Path keystorePath, char[] storePassword, String keyPassword, String keystoreType,
+            KeyStore keyStore, String activeAlias) {
         this.keystorePath = keystorePath;
         this.storePassword = storePassword.clone();
+        this.keyPassword = keyPassword;
+        this.keystoreType = keystoreType;
         this.keyStore = keyStore;
         this.activeAlias = activeAlias;
         this.generation.set(1L);
@@ -54,20 +59,40 @@ public final class DynamicOidcKeyStore {
 
     public static DynamicOidcKeyStore load(Path keystorePath, String storePassword, String activeAlias)
             throws Exception {
+        return load(new org.picketlink.oidc.OidcKeystoreConfig(
+                keystorePath,
+                storePassword,
+                OidcDemoConstants.KEYSTORE_KEY_PASSWORD,
+                activeAlias,
+                OidcDemoConstants.KEYSTORE_TYPE));
+    }
+
+    public static DynamicOidcKeyStore load(org.picketlink.oidc.OidcKeystoreConfig config) throws Exception {
+        Path keystorePath = config.getPath();
         if (keystorePath == null || !Files.isRegularFile(keystorePath)) {
             throw new IllegalArgumentException("Missing OIDC signing keystore: " + keystorePath);
         }
-        KeyStore ks = KeyStore.getInstance(OidcDemoConstants.KEYSTORE_TYPE);
+        KeyStore ks = KeyStore.getInstance(config.getType());
         try (InputStream in = Files.newInputStream(keystorePath)) {
-            ks.load(in, storePassword.toCharArray());
+            ks.load(in, config.getStorePassword().toCharArray());
         }
         DynamicOidcKeyStore store = new DynamicOidcKeyStore(
                 keystorePath.toAbsolutePath().normalize(),
-                storePassword.toCharArray(),
+                config.getStorePassword().toCharArray(),
+                config.getKeyPassword(),
+                config.getType(),
                 ks,
-                activeAlias);
+                config.getAlias());
         global = store;
         return store;
+    }
+
+    public String storePassword() {
+        return new String(storePassword);
+    }
+
+    public String keyPassword() {
+        return keyPassword;
     }
 
     public void bindBus(Bus bus) {
@@ -77,17 +102,17 @@ public final class DynamicOidcKeyStore {
 
     /** CXF resolves JOSE keystore settings from {@link Bus} contextual properties, not only system properties. */
     public void applyConfiguration() {
-        System.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_TYPE, OidcDemoConstants.KEYSTORE_TYPE);
+        System.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_TYPE, keystoreType);
         System.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_FILE, keystorePath.toString());
         System.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_PSWD, new String(storePassword));
         System.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_ALIAS, activeAlias);
-        System.setProperty(RSSecurityConstants.RSSEC_KEY_PSWD, OidcDemoConstants.KEYSTORE_KEY_PASSWORD);
+        System.setProperty(RSSecurityConstants.RSSEC_KEY_PSWD, keyPassword);
         if (bus != null) {
-            bus.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_TYPE, OidcDemoConstants.KEYSTORE_TYPE);
+            bus.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_TYPE, keystoreType);
             bus.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_FILE, keystorePath.toString());
             bus.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_PSWD, new String(storePassword));
             bus.setProperty(RSSecurityConstants.RSSEC_KEY_STORE_ALIAS, activeAlias);
-            bus.setProperty(RSSecurityConstants.RSSEC_KEY_PSWD, OidcDemoConstants.KEYSTORE_KEY_PASSWORD);
+            bus.setProperty(RSSecurityConstants.RSSEC_KEY_PSWD, keyPassword);
             bus.setProperty(JoseConstants.RSSEC_SIGNATURE_ALGORITHM, "RS256");
         }
     }
@@ -148,7 +173,7 @@ public final class DynamicOidcKeyStore {
                 "-validity", Integer.toString(Math.max(validityDays, 1)),
                 "-keystore", keystorePath.toString(),
                 "-storepass", new String(storePassword),
-                "-keypass", OidcDemoConstants.KEYSTORE_KEY_PASSWORD,
+                "-keypass", keyPassword,
                 "-dname", "CN=PicketLink OIDC Demo Signing",
                 "-ext", "BasicConstraints=ca:true");
         reloadFromDisk(newAlias);
@@ -158,7 +183,7 @@ public final class DynamicOidcKeyStore {
     }
 
     private void reloadFromDisk(String newActiveAlias) throws Exception {
-        KeyStore reloaded = KeyStore.getInstance(OidcDemoConstants.KEYSTORE_TYPE);
+        KeyStore reloaded = KeyStore.getInstance(keystoreType);
         try (InputStream in = Files.newInputStream(keystorePath)) {
             reloaded.load(in, storePassword);
         }

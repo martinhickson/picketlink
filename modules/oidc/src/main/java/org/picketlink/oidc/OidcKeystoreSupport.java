@@ -15,13 +15,20 @@ public final class OidcKeystoreSupport {
      * Optional {@code -javaagent:.../picketlink-oidc-*-keystore-agent.jar} enables hot reload without restart.
      */
     public static DynamicOidcKeyStore bootstrap(Bus bus, Path keystorePath) throws Exception {
-        if (keystorePath == null || !Files.isRegularFile(keystorePath)) {
-            throw new IllegalArgumentException("Missing OIDC signing keystore: " + keystorePath);
-        }
-        DynamicOidcKeyStore store = DynamicOidcKeyStore.load(
+        return bootstrap(bus, new OidcKeystoreConfig(
                 keystorePath,
                 OidcDemoConstants.KEYSTORE_PASSWORD,
-                OidcDemoConstants.KEYSTORE_ALIAS);
+                OidcDemoConstants.KEYSTORE_KEY_PASSWORD,
+                OidcDemoConstants.KEYSTORE_ALIAS,
+                OidcDemoConstants.KEYSTORE_TYPE));
+    }
+
+    public static DynamicOidcKeyStore bootstrap(Bus bus, OidcKeystoreConfig keystore) throws Exception {
+        if (keystore == null || keystore.getPath() == null || !Files.isRegularFile(keystore.getPath())) {
+            throw new IllegalArgumentException("Missing OIDC signing keystore: "
+                    + (keystore == null ? null : keystore.getPath()));
+        }
+        DynamicOidcKeyStore store = DynamicOidcKeyStore.load(keystore);
         store.bindBus(bus);
         return store;
     }
