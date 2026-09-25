@@ -296,7 +296,7 @@ To deploy outside the IT harness:
    - `adminUiEnabled=true` on `VirtualResourcesServlet` if the Angular admin UI should be served (omit or set to any value other than `true` to keep the UI disabled)
 3. Create a separate API WAR (or combine if appropriate) with:
    - `BearerJwtAuthenticationFilter` mapped to `/*`
-   - JAX-RS application `SampleRestApplication` (or your own resources)
+   - your own JAX-RS resources (`SampleRestApplication` is not auto-deployed)
 
 Ensure both deployments share the same JWT issuer and signing secret. Set the system properties or servlet context attributes before the filter and token service initialize.
 

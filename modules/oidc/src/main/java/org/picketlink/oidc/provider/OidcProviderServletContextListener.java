@@ -57,6 +57,7 @@ public class OidcProviderServletContextListener implements ServletContextListene
             seedClient(servletContext, issuanceServer);
             servletContext.setAttribute(JwtClientCredentialsTokenService.class.getName(),
                     issuanceServer.getTokenService());
+            mountStandardServlets(servletContext);
         } catch (Exception ex) {
             throw new IllegalStateException("Unable to start OIDC provider", ex);
         }
@@ -79,6 +80,44 @@ public class OidcProviderServletContextListener implements ServletContextListene
         } catch (ReflectiveOperationException ex) {
             throw new IllegalStateException(
                     "Unable to instantiate SubjectAuthenticator " + className, ex);
+        }
+    }
+
+    /**
+     * Mounts the discovery set when {@code mountServlets} is not {@code false} and the
+     * pattern is not already taken by {@code web.xml}.
+     */
+    private static void mountStandardServlets(ServletContext servletContext) {
+        if ("false".equalsIgnoreCase(servletContext.getInitParameter("mountServlets"))) {
+            return;
+        }
+        java.util.Set<String> taken = new java.util.HashSet<>();
+        for (jakarta.servlet.ServletRegistration registration : servletContext.getServletRegistrations().values()) {
+            taken.addAll(registration.getMappings());
+        }
+        mount(servletContext, taken, "oidc-authorize", AuthorizationEndpointServlet.class.getName(), "/authorize");
+        mount(servletContext, taken, "oidc-par", PushedAuthorizationRequestServlet.class.getName(), "/par");
+        mount(servletContext, taken, "oidc-device-authorization", DeviceAuthorizationServlet.class.getName(),
+                "/device_authorization");
+        mount(servletContext, taken, "oidc-device", DeviceVerificationServlet.class.getName(), "/device");
+        mount(servletContext, taken, "oidc-token", OidcTokenEndpointServlet.class.getName(), "/token");
+        mount(servletContext, taken, "oidc-userinfo", UserInfoServlet.class.getName(), "/userinfo");
+        mount(servletContext, taken, "oidc-logout", LogoutEndpointServlet.class.getName(), "/logout");
+        mount(servletContext, taken, "oidc-introspect", ProviderTokenManagementServlet.class.getName(), "/introspect");
+        mount(servletContext, taken, "oidc-revoke", ProviderTokenManagementServlet.class.getName(), "/revoke");
+        mount(servletContext, taken, "oidc-jwks", "org.picketlink.auth.oauth.servlet.JwksServlet", "/jwks.json");
+        mount(servletContext, taken, "oidc-discovery", DiscoveryServlet.class.getName(),
+                "/.well-known/openid-configuration");
+    }
+
+    private static void mount(ServletContext servletContext, java.util.Set<String> taken,
+            String name, String className, String pattern) {
+        if (taken.contains(pattern)) {
+            return;
+        }
+        jakarta.servlet.ServletRegistration.Dynamic registration = servletContext.addServlet(name, className);
+        if (registration != null) {
+            registration.addMapping(pattern);
         }
     }
 
