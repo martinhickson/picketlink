@@ -110,6 +110,10 @@ public class ProviderTokenManagementServlet extends HttpServlet {
             ClientAuthentication authentication = authenticator.authenticate(tokenRequest);
             if (MODE_REVOKE.equals(resolvedMode())) {
                 String clientId = authentication.getClient().getClientId();
+                if (tokenBelongsToAnotherClient(token, clientId)) {
+                    writeError(response, 400, "unauthorized_client");
+                    return;
+                }
                 server.getIssuanceServer().getIssuanceManager().revoke(token, clientId);
                 server.getRefreshTokens().revoke(token, clientId);
                 response.setStatus(HttpServletResponse.SC_OK);
@@ -124,6 +128,15 @@ public class ProviderTokenManagementServlet extends HttpServlet {
         } catch (OAuthException ex) {
             writeError(response, ex.getHttpStatus(), ex.getError().getErrorDescription());
         }
+    }
+
+    private boolean tokenBelongsToAnotherClient(String token, String clientId) {
+        var access = server.getIssuanceServer().getTokenRegistry().findByTokenValue(token);
+        if (access.isPresent() && !clientId.equals(access.get().getClientId())) {
+            return true;
+        }
+        java.util.Optional<RefreshTokenRecord> refresh = server.getRefreshTokens().findLive(token);
+        return refresh.isPresent() && !clientId.equals(refresh.get().getClientId());
     }
 
     private static void writeError(HttpServletResponse response, int status, String description)

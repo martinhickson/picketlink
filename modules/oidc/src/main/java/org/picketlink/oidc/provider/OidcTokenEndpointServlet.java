@@ -358,6 +358,11 @@ public class OidcTokenEndpointServlet extends HttpServlet {
         if (requestedAudience != null && !requestedAudience.isBlank()) {
             audiences.addAll(Arrays.asList(requestedAudience.trim().split("\s+")));
         }
+        if (!client.getAllowedAudiences().isEmpty()
+                && (audiences.isEmpty() || !client.getAllowedAudiences().containsAll(audiences))) {
+            throw oauthError(OAuthConstants.INVALID_REQUEST,
+                    "audience is not allowed for this client");
+        }
         Set<String> scopes = parseScopes(subjectClaims.getClaim(
                 org.picketlink.auth.oauth.issuance.JwtIssuanceManager.CLAIM_SCOPE) == null
                         ? null

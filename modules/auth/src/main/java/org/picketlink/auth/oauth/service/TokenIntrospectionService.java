@@ -25,7 +25,7 @@ public class TokenIntrospectionService {
     }
 
     public String introspect(TokenRequest request) {
-        authenticator.authenticate(request);
+        String caller = authenticator.authenticate(request).getClient().getClientId();
         String token = request.getFormParameter(OAuthConstants.ACCESS_TOKEN);
         String json;
         if (token == null || token.isBlank()) {
@@ -33,12 +33,25 @@ public class TokenIntrospectionService {
         } else {
             try {
                 JwtClaims claims = issuanceManager.validate(token);
-                json = activeResponse(claims);
+                json = callerMaySee(caller, claims) ? activeResponse(claims) : inactive();
             } catch (RuntimeException ex) {
                 json = inactive();
             }
         }
         return json;
+    }
+
+    /** The issuing client, or a client named in the token audience, may see the claims. */
+    private static boolean callerMaySee(String caller, JwtClaims claims) {
+        if (caller == null || caller.isBlank()) {
+            return false;
+        }
+        Object clientId = claims.getClaim(JwtIssuanceManager.CLAIM_CLIENT_ID);
+        if (caller.equals(clientId == null ? null : clientId.toString())) {
+            return true;
+        }
+        java.util.List<String> audiences = claims.getAudiences();
+        return audiences != null && audiences.contains(caller);
     }
 
     private static String activeResponse(JwtClaims claims) {
