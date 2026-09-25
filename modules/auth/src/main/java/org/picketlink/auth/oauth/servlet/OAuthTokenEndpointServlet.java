@@ -83,8 +83,8 @@ public class OAuthTokenEndpointServlet extends HttpServlet {
                 .build();
 
         if (nextPostFault.consume()) {
-            response.setHeader("Connection", "close");
-            throw new IOException("Connection closed");
+            PeerConnectionCloser.close(request);
+            return;
         }
 
         try {

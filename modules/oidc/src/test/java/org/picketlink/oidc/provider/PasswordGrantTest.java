@@ -1,12 +1,10 @@
 package org.picketlink.oidc.provider;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -139,8 +137,10 @@ class PasswordGrantTest {
         when(request.getInputStream()).thenReturn(body(
                 "grant_type=password&username=alice&password=wonderland"));
         lenient().when(request.getHeader("Authorization")).thenReturn(basic());
-        IOException closed = assertThrows(IOException.class, () -> faulting.doPost(request, response));
-        assertTrue(closed.getMessage().contains("Connection closed"));
+        faulting.doPost(request, response);
+        org.mockito.Mockito.verify(response, org.mockito.Mockito.never()).setStatus(
+                org.mockito.ArgumentMatchers.anyInt());
+        org.mockito.Mockito.verify(response, org.mockito.Mockito.never()).getWriter();
 
         writer.getBuffer().setLength(0);
         when(request.getInputStream()).thenReturn(body(

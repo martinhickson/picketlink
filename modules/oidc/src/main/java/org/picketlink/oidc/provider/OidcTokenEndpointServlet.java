@@ -101,8 +101,8 @@ public class OidcTokenEndpointServlet extends HttpServlet {
                 .formParameters(form)
                 .build();
         if (nextPostFault.consume()) {
-            response.setHeader("Connection", "close");
-            throw new IOException("Connection closed");
+            org.picketlink.auth.oauth.servlet.PeerConnectionCloser.close(request);
+            return;
         }
         try {
             String json = handle(tokenRequest, form);

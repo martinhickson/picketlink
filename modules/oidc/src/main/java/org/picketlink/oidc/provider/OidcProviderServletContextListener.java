@@ -8,6 +8,8 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 
 import org.picketlink.auth.oauth.admin.ManagedIssuanceServer;
+import org.picketlink.auth.oauth.model.RegisteredClient;
+import org.picketlink.auth.oauth.model.TokenEndpointAuthMethod;
 import org.picketlink.auth.oauth.service.JwtClientCredentialsTokenService;
 
 /**
@@ -17,6 +19,9 @@ import org.picketlink.auth.oauth.service.JwtClientCredentialsTokenService;
  *
  * <p>Subject authentication is pluggable: the {@code subjectAuthenticator} init-param names a
  * {@link SubjectAuthenticator} class with a no-arg constructor (default: deny all logins).
+ * {@link ConfiguredUsers} reads the {@code users} init-param instead. A confidential client
+ * is seeded when {@code clientId} is set ({@code clientSecret}, {@code tokenEndpointAuthMethod},
+ * {@code scopes}, {@code redirectUris}, {@code backchannelLogoutUrl}).
  *
  * <p>Typical mapping (see the module README):
  * {@code /authorize} {@link AuthorizationEndpointServlet}, {@code /token}
@@ -49,6 +54,7 @@ public class OidcProviderServletContextListener implements ServletContextListene
                     .build();
             servletContext.setAttribute(OidcProviderServer.class.getName(), server);
             servletContext.setAttribute(ManagedIssuanceServer.class.getName(), issuanceServer);
+            seedClient(servletContext, issuanceServer);
             servletContext.setAttribute(JwtClientCredentialsTokenService.class.getName(),
                     issuanceServer.getTokenService());
         } catch (Exception ex) {
@@ -61,6 +67,11 @@ public class OidcProviderServletContextListener implements ServletContextListene
         if (className == null || className.isBlank()) {
             return OidcProviderServer.DENY_ALL;
         }
+        if (ConfiguredUsers.class.getName().equals(className.trim())
+                || SubjectAuthenticator.InMemorySubjectAuthenticator.class.getName().equals(className.trim())) {
+            return new ConfiguredUsers(ConfiguredUsers.parse(
+                    servletContext.getInitParameter(ConfiguredUsers.INIT_PARAM_USERS)));
+        }
         try {
             return (SubjectAuthenticator) Class.forName(className.trim())
                     .getDeclaredConstructor()
@@ -69,6 +80,35 @@ public class OidcProviderServletContextListener implements ServletContextListene
             throw new IllegalStateException(
                     "Unable to instantiate SubjectAuthenticator " + className, ex);
         }
+    }
+
+    private static void seedClient(ServletContext servletContext, ManagedIssuanceServer issuanceServer) {
+        String clientId = servletContext.getInitParameter("clientId");
+        if (clientId == null || clientId.isBlank()) {
+            return;
+        }
+        RegisteredClient.Builder builder = RegisteredClient.builder(
+                clientId.trim(), servletContext.getInitParameter("clientSecret"))
+                .tokenEndpointAuthMethod(TokenEndpointAuthMethod.fromValue(
+                        servletContext.getInitParameter("tokenEndpointAuthMethod")));
+        for (String scope : split(servletContext.getInitParameter("scopes"))) {
+            builder.scope(scope);
+        }
+        for (String redirectUri : split(servletContext.getInitParameter("redirectUris"))) {
+            builder.redirectUri(redirectUri);
+        }
+        String logoutUrl = servletContext.getInitParameter("backchannelLogoutUrl");
+        if (logoutUrl != null && !logoutUrl.isBlank()) {
+            builder.backchannelLogoutUrl(logoutUrl.trim());
+        }
+        issuanceServer.getClientStore().save(builder.build());
+    }
+
+    private static String[] split(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return new String[0];
+        }
+        return raw.trim().split("\\s+");
     }
 
     /** Convenience for the common "fixed user set" configuration. */
