@@ -27,7 +27,7 @@
   </licenses>
 
   <properties>
-    <picketbox.version>5.0.3.jakarta.bravura.1</picketbox.version>
+    <picketbox.version>5.2.1</picketbox.version>
   </properties>
 
   <dependencies>
@@ -54,9 +54,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.jboss.security</groupId>
+      <groupId>io.github.martinhickson</groupId>
       <artifactId>jboss-xacml</artifactId>
-      <version>2.1.8.jakarta.bravura.11</version>
+      <version>5.2.1</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.xerces</groupId>
@@ -208,7 +208,7 @@
       </activation>
       <dependencies>
         <dependency>
-          <groupId>org.picketbox</groupId>
+          <groupId>io.github.martinhickson</groupId>
           <artifactId>picketbox</artifactId>
           <version>${picketbox.version}</version>
           <scope>compile</scope>
@@ -232,7 +232,7 @@
           <scope>compile</scope>
         </dependency>
         <dependency>
-          <groupId>org.picketbox</groupId>
+          <groupId>io.github.martinhickson</groupId>
           <artifactId>picketbox</artifactId>
           <version>${picketbox.version}</version>
           <scope>compile</scope>
