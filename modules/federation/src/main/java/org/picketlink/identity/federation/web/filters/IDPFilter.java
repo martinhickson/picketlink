@@ -240,21 +240,25 @@ public class IDPFilter implements Filter {
             chain.doFilter(request,response);
         }
 
-        HttpSession session = httpServletRequest.getSession();
+        HttpSession session = httpServletRequest.getSession(false);
 
-        // here we serve the hosted pages, if necessary.
+        // Hosted pages and the user-principal note need a session that already exists.
+        // Creating one here throws after sendPost has committed the SAMLResponse.
         if (!response.isCommitted()) {
-            if ((httpServletRequest.getRequestURI().startsWith(httpServletRequest.getContextPath() + "/index.") && !isUserAuthenticated(session))
-                    || httpServletRequest.getRequestURI().equals(httpServletRequest.getContextPath() + "/")) {
+            if (session != null
+                    && ((httpServletRequest.getRequestURI().startsWith(httpServletRequest.getContextPath() + "/index.") && !isUserAuthenticated(session))
+                    || httpServletRequest.getRequestURI().equals(httpServletRequest.getContextPath() + "/"))) {
                 forwardHosted(httpServletRequest, httpServletResponse);
             }
+            configureUserSessionIfNecessary(httpServletRequest);
         }
-
-        configureUserSessionIfNecessary(httpServletRequest);
     }
 
     private void configureUserSessionIfNecessary(HttpServletRequest httpServletRequest) {
-        HttpSession session = httpServletRequest.getSession();
+        HttpSession session = httpServletRequest.getSession(false);
+        if (session == null) {
+            return;
+        }
 
         if (!isUserAuthenticated(session)) {
             session.setAttribute(SESSION_PARAM_USER_PRINCIPAL, httpServletRequest.getUserPrincipal());

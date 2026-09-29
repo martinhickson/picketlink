@@ -96,7 +96,6 @@ import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -536,13 +535,13 @@ public class SPFilter implements Filter {
 
     protected void sendRequestToIDP(AuthnRequestType authnRequest, String relayState, HttpServletResponse response)
             throws IOException, SAXException, GeneralSecurityException {
-        SAML2Request saml2Request = new SAML2Request();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        saml2Request.marshall(authnRequest, baos);
-
-        String samlMessage = PostBindingUtil.base64Encode(baos.toString());
-        String destination = authnRequest.getDestination().toASCIIString();
-        PostBindingUtil.sendPost(new DestinationInfoHolder(destination, samlMessage, relayState), response, true);
+        Document samlDocument;
+        try {
+            samlDocument = new SAML2Request().convert(authnRequest);
+        } catch (ProcessingException | ConfigurationException | ParsingException e) {
+            throw new IOException(e);
+        }
+        sendToDestination(samlDocument, relayState, authnRequest.getDestination().toASCIIString(), response, true);
     }
 
     protected void sendToDestination(Document samlDocument, String relayState, String destination,
