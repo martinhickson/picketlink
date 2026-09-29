@@ -19,6 +19,7 @@ package org.picketlink.test.identity.federation.web.filters;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
@@ -59,6 +60,25 @@ public class SPFilterAuthnRequestSignatureTestCase {
     }
 
     @Test
+    public void missingKeyManagerFailsWhenSignaturesAreEnabled() throws Exception {
+        ExposedFilter filter = new ExposedFilter();
+        filter.setIgnoreSignatures(false);
+        AuthnRequestType authnRequest = new SAML2Request().createAuthnRequestType(
+                "ID_authn",
+                "https://sp.example/acs",
+                "https://idp.example/saml",
+                "https://sp.example");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        response.setOutputStream(new ByteArrayOutputStream());
+        try {
+            filter.sendRequestToIDP(authnRequest, null, response);
+            fail("expected a missing signing key to fail");
+        } catch (java.security.GeneralSecurityException e) {
+            assertTrue(e.getMessage().contains("no signing key"));
+        }
+    }
+
+    @Test
     public void leavesAuthnRequestUnsignedWhenSignaturesAreIgnored() throws Exception {
         String xml = postedAuthnRequest(true);
         assertTrue(xml.contains("AuthnRequest"));
@@ -67,7 +87,7 @@ public class SPFilterAuthnRequestSignatureTestCase {
 
     private static String postedAuthnRequest(boolean ignoreSignatures) throws Exception {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        generator.initialize(2048);
+        generator.initialize(1024);
         KeyPair keyPair = generator.generateKeyPair();
 
         ExposedFilter filter = new ExposedFilter();

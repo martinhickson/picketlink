@@ -541,6 +541,9 @@ public class SPFilter implements Filter {
         } catch (ProcessingException | ConfigurationException | ParsingException e) {
             throw new IOException(e);
         }
+        if (!ignoreSignatures && keyManager == null) {
+            throw new GeneralSecurityException("Cannot sign the AuthnRequest: no signing key is configured");
+        }
         sendToDestination(samlDocument, relayState, authnRequest.getDestination().toASCIIString(), response, true);
     }
 

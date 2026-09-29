@@ -240,25 +240,24 @@ public class IDPFilter implements Filter {
             chain.doFilter(request,response);
         }
 
-        HttpSession session = httpServletRequest.getSession(false);
-
-        // Hosted pages and the user-principal note need a session that already exists.
-        // Creating one here throws after sendPost has committed the SAMLResponse.
-        if (!response.isCommitted()) {
-            if (session != null
-                    && ((httpServletRequest.getRequestURI().startsWith(httpServletRequest.getContextPath() + "/index.") && !isUserAuthenticated(session))
-                    || httpServletRequest.getRequestURI().equals(httpServletRequest.getContextPath() + "/"))) {
-                forwardHosted(httpServletRequest, httpServletResponse);
-            }
-            configureUserSessionIfNecessary(httpServletRequest);
+        // sendPost commits the SAMLResponse. Creating a session after that is UT010067.
+        // An uncommitted hosted index request still needs a session created here.
+        if (response.isCommitted()) {
+            return;
         }
+
+        HttpSession session = httpServletRequest.getSession();
+
+        if ((httpServletRequest.getRequestURI().startsWith(httpServletRequest.getContextPath() + "/index.") && !isUserAuthenticated(session))
+                || httpServletRequest.getRequestURI().equals(httpServletRequest.getContextPath() + "/")) {
+            forwardHosted(httpServletRequest, httpServletResponse);
+        }
+
+        configureUserSessionIfNecessary(httpServletRequest);
     }
 
     private void configureUserSessionIfNecessary(HttpServletRequest httpServletRequest) {
-        HttpSession session = httpServletRequest.getSession(false);
-        if (session == null) {
-            return;
-        }
+        HttpSession session = httpServletRequest.getSession();
 
         if (!isUserAuthenticated(session)) {
             session.setAttribute(SESSION_PARAM_USER_PRINCIPAL, httpServletRequest.getUserPrincipal());

@@ -18,24 +18,28 @@
 package org.picketlink.test.identity.federation.web.filters;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.security.Principal;
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import org.junit.Test;
+import org.picketlink.config.federation.IDPType;
 import org.picketlink.identity.federation.web.filters.IDPFilter;
 import org.picketlink.test.identity.federation.web.mock.MockHttpServletRequest;
 import org.picketlink.test.identity.federation.web.mock.MockHttpServletResponse;
 import org.picketlink.test.identity.federation.web.mock.MockHttpSession;
+import org.picketlink.test.identity.federation.web.mock.MockServletContext;
 
 /**
  * After the IdP has written the SAMLResponse, a later getSession() create is rejected by the
- * container. The filter must keep using a session that already exists.
+ * container. While the response is still open, a hosted index request may still create one.
  */
 public class IDPFilterSessionAfterCommitTestCase {
 
@@ -73,10 +77,36 @@ public class IDPFilterSessionAfterCommitTestCase {
         assertEquals(0, request.createsAfterCommit);
     }
 
+    @Test
+    public void openHostedUriCreatesASession() throws Exception {
+        TrackingRequest request = new TrackingRequest(null);
+        request.principal = null;
+        request.uri = "/sonata/";
+        TrackingResponse response = new TrackingResponse(request);
+        HostedFilter filter = new HostedFilter();
+
+        filter.doFilter(request, response, new FilterChain() {
+            @Override
+            public void doFilter(ServletRequest req, ServletResponse res) {
+            }
+        });
+
+        assertNotNull(request.current);
+        assertEquals(0, request.createsAfterCommit);
+        assertEquals(1, filter.forwards);
+    }
+
     private static final class TrackingRequest extends MockHttpServletRequest {
         private HttpSession current;
         private boolean committed;
         private int createsAfterCommit;
+        private Principal principal = new Principal() {
+            @Override
+            public String getName() {
+                return "testuser";
+            }
+        };
+        private String uri = "/sonata/idp/saml/auth";
 
         TrackingRequest(HttpSession session) {
             super(session, "POST");
@@ -109,8 +139,13 @@ public class IDPFilterSessionAfterCommitTestCase {
         }
 
         @Override
+        public Principal getUserPrincipal() {
+            return principal;
+        }
+
+        @Override
         public String getRequestURI() {
-            return "/sonata/idp/saml/auth";
+            return uri;
         }
 
         @Override
@@ -129,6 +164,22 @@ public class IDPFilterSessionAfterCommitTestCase {
         @Override
         public boolean isCommitted() {
             return request.committed;
+        }
+    }
+
+    private static final class HostedFilter extends IDPFilter {
+        private int forwards;
+
+        HostedFilter() {
+            idpConfiguration = new IDPType();
+            idpConfiguration.setHostedURI("/hosted/");
+            servletContext = new MockServletContext() {
+                @Override
+                public RequestDispatcher getRequestDispatcher(String path) {
+                    forwards++;
+                    return super.getRequestDispatcher(path);
+                }
+            };
         }
     }
 }
