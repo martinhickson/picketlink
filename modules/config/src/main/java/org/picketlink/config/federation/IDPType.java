@@ -44,7 +44,7 @@ import static org.picketlink.common.util.StringUtil.isNullOrEmpty;
  *       &lt;/sequence>
  *       &lt;attribute name="AssertionValidity" type="{http://www.w3.org/2001/XMLSchema}long" default="300000" />
  *       &lt;attribute name="RoleGenerator" type="{http://www.w3.org/2001/XMLSchema}string"
- * default="org.picketlink.identity.federation.bindings.tomcat.TomcatRoleGenerator" />
+ * default="org.picketlink.identity.federation.bindings.wildfly.idp.UndertowRoleGenerator" />
  *       &lt;attribute name="AttributeManager" type="{http://www.w3.org/2001/XMLSchema}string"
  * default="org.picketlink.identity.federation.bindings.tomcat.TomcatAttributeManager" />
  *       &lt;attribute name="Encrypt" type="{http://www.w3.org/2001/XMLSchema}boolean" default="false" />
@@ -100,13 +100,13 @@ public class IDPType extends ProviderType {
     }
 
     /**
-     * Gets the value of the roleGenerator property. If not set defaults to {@link org.picketlink.identity.federation.bindings.tomcat.TomcatRoleGenerator}.
+     * Gets the value of the roleGenerator property. If not set defaults to {@link org.picketlink.identity.federation.bindings.wildfly.idp.UndertowRoleGenerator}.
      *
      * @return possible object is {@link String }
      */
     public String getRoleGenerator() {
         if (!hasRoleGenerator()) {
-            return "org.picketlink.identity.federation.bindings.tomcat.TomcatRoleGenerator";
+            return "org.picketlink.identity.federation.bindings.wildfly.idp.UndertowRoleGenerator";
         } else {
             return roleGenerator;
         }

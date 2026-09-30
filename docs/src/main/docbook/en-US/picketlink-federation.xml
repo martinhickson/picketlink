@@ -546,7 +546,7 @@
                             
                             Default: org.picketlink.identity.
                             federation.bindings.
-                            tomcat.TomcatRoleGenerator
+                            wildfly.idp.UndertowRoleGenerator
                           </para>
                         </entry>
                         <entry>

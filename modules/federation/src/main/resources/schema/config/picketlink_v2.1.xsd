@@ -20,7 +20,7 @@
                    default="300000"> <!-- 5 minutes expressed in miliseconds -->
         </attribute>
         <attribute name="RoleGenerator" type="string" use="optional"
-                   default="org.picketlink.identity.federation.bindings.tomcat.TomcatRoleGenerator">
+                   default="org.picketlink.identity.federation.bindings.wildfly.idp.UndertowRoleGenerator">
         </attribute>
         <attribute name="AttributeManager" type="string" use="optional"
                    default="org.picketlink.identity.federation.bindings.tomcat.TomcatAttributeManager">

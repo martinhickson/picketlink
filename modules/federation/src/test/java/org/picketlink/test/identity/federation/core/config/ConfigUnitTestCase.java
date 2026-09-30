@@ -62,7 +62,7 @@ public class ConfigUnitTestCase {
          * IDPType idp = ((JAXBElement<IDPType>) object).getValue();
          */
         IDPType idp = (IDPType) object;
-        assertEquals("org.picketlink.identity.federation.bindings.tomcat.TomcatRoleGenerator", idp.getRoleGenerator());
+        assertEquals("org.picketlink.identity.federation.bindings.wildfly.idp.UndertowRoleGenerator", idp.getRoleGenerator());
 
         TrustType trust = idp.getTrust();
         assertNotNull("Trust is not null", trust);
