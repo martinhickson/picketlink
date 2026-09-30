@@ -517,8 +517,7 @@ public class IDPFilter implements Filter {
 
             // if this is a SAML AuthnRequest load the roles using the generator.
             if (requestAbstractType instanceof AuthnRequestType) {
-                List<String> roles = roleGenerator.generateRoles(userPrincipal);
-                session.setAttribute(GeneralConstants.ROLES_ID, roles);
+                rememberGeneratedRoles(session, roleGenerator.generateRoles(userPrincipal));
 
                 Map<String, Object> attribs = this.attribManager.getAttributes(
                         passUserPrincipalToAttributeManager == true
@@ -1511,5 +1510,15 @@ public class IDPFilter implements Filter {
 
     private boolean isUserAuthenticated(final HttpSession session) {
         return session.getAttribute(SESSION_PARAM_USER_PRINCIPAL) != null;
+    }
+
+    /**
+     * An empty list is what the pre-login AuthnRequest produces. Storing it makes the
+     * handler treat roles as already generated, and a later call must not replace a real list with it.
+     */
+    void rememberGeneratedRoles(HttpSession session, List<String> generated) {
+        if (generated != null && !generated.isEmpty()) {
+            session.setAttribute(GeneralConstants.ROLES_ID, generated);
+        }
     }
 }

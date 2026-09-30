@@ -37,6 +37,7 @@ import org.picketlink.identity.federation.web.core.HTTPContext;
 import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -91,16 +92,21 @@ public class RolesGenerationHandler extends BaseSAML2Handler {
         Principal userPrincipal = (Principal) session.getAttribute(GeneralConstants.PRINCIPAL_ID);
         List<String> roles = (List<String>) session.getAttribute(GeneralConstants.ROLES_ID);
 
-        if (roles == null) {
-            roles = roleGenerator.generateRoles(userPrincipal);
-            if (auditHelper != null) {
-                PicketLinkAuditEvent auditEvent = new PicketLinkAuditEvent(AuditLevel.INFO);
-                auditEvent.setWhoIsAuditing(contextPath);
-                auditEvent.setType(PicketLinkAuditEventType.GENERATED_ROLES);
-                auditEvent.setOptionalString(userPrincipal.getName() + "(" + Arrays.toString(roles.toArray()) + ")");
-                auditHelper.audit(auditEvent);
+        if (roles == null || roles.isEmpty()) {
+            List<String> generated = roleGenerator.generateRoles(userPrincipal);
+            if (generated != null && !generated.isEmpty()) {
+                roles = generated;
+                session.setAttribute(GeneralConstants.ROLES_ID, roles);
+                if (auditHelper != null && userPrincipal != null) {
+                    PicketLinkAuditEvent auditEvent = new PicketLinkAuditEvent(AuditLevel.INFO);
+                    auditEvent.setWhoIsAuditing(contextPath);
+                    auditEvent.setType(PicketLinkAuditEventType.GENERATED_ROLES);
+                    auditEvent.setOptionalString(userPrincipal.getName() + "(" + Arrays.toString(roles.toArray()) + ")");
+                    auditHelper.audit(auditEvent);
+                }
+            } else if (roles == null) {
+                roles = Collections.emptyList();
             }
-            session.setAttribute(GeneralConstants.ROLES_ID, roles);
         }
         response.setRoles(roles);
     }
