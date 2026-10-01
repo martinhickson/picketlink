@@ -58,6 +58,20 @@ public class ParserHardeningUnitTestCase {
     }
 
     @Test
+    public void doesNotExpandXInclude() throws Exception {
+        String xml = "<?xml version=\"1.0\"?>"
+                + "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\""
+                + " xmlns:xi=\"http://www.w3.org/2001/XInclude\">"
+                + "<xi:include href=\"file:///etc/passwd\"/>"
+                + "</samlp:Response>";
+        Document document = parse(xml);
+        String text = document.getDocumentElement().getTextContent();
+        if (text != null && text.contains("root:")) {
+            fail("XInclude resolved file:///etc/passwd");
+        }
+    }
+
+    @Test
     public void parsesOrdinarySamlDocument() throws Exception {
         String xml = "<?xml version=\"1.0\"?>"
                 + "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" ID=\"r1\"/>";

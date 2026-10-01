@@ -544,6 +544,13 @@ public class XMLSignatureUtil {
             return true;
         }
 
+        // A SAML Response whose signature covers neither the document nor an
+        // assertion must not count as success (CVE-2026-15556).
+        Element root = signedDoc.getDocumentElement();
+        if (root != null && "Response".equals(root.getLocalName())
+                && JBossSAMLURIConstants.PROTOCOL_NSURI.get().equals(root.getNamespaceURI())) {
+            return false;
+        }
         return true;
     }
 

@@ -282,6 +282,10 @@ public class IDPFilter implements Filter {
      */
     private void handleSAMLMessage(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         if (isUnsolicitedResponse(request)) {
+            if (request.getUserPrincipal() == null) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
             String samlVersion = request.getParameter(JBossSAMLConstants.UNSOLICITED_RESPONSE_SAML_VERSION.get());
 
             if (samlVersion != null && JBossSAMLConstants.VERSION_2_0.get().equals(samlVersion)) {
