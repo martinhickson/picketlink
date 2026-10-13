@@ -1,0 +1,103 @@
+name: Release ScribeJava to Maven Central
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'martinhickson/scribejava ref to publish'
+        required: true
+        default: 'release/8.3.3-bravura-1'
+        type: string
+      central_group_id:
+        description: 'Maven groupId for Maven Central (verified namespace)'
+        required: false
+        default: 'io.github.martinhickson'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout ScribeJava
+        uses: actions/checkout@v4
+        with:
+          repository: martinhickson/scribejava
+          ref: ${{ inputs.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Publish to Maven Central
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_CENTRAL_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_CENTRAL_GPG_PRIVATE_KEY }}
+          MAVEN_CENTRAL_GPG_PASSPHRASE: ${{ secrets.MAVEN_CENTRAL_GPG_PASSPHRASE }}
+          CENTRAL_GROUP_ID: ${{ inputs.central_group_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${MAVEN_CENTRAL_USERNAME}" ] || [ -z "${MAVEN_CENTRAL_PASSWORD}" ] || [ -z "${MAVEN_CENTRAL_GPG_PRIVATE_KEY}" ]; then
+            echo "::error::Maven Central publishing is not configured on this repository."
+            exit 1
+          fi
+          if ! [[ "${CENTRAL_GROUP_ID}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Maven Central groupId is not valid"
+            exit 1
+          fi
+          python3 - << 'PY'
+          import pathlib, shutil
+          backup = pathlib.Path("/tmp/pom-backup")
+          if backup.exists():
+              shutil.rmtree(backup)
+          for pom in pathlib.Path(".").rglob("pom.xml"):
+              if ".git" in pom.parts or "target" in pom.parts:
+                  continue
+              dest = backup / pom
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(pom, dest)
+          print("backed up poms")
+          PY
+          chmod +x .github/scripts/rewrite-group-id.sh
+          .github/scripts/rewrite-group-id.sh com.github.scribejava "${CENTRAL_GROUP_ID}"
+          find . -name pom.xml \
+            -not -path './.git/*' \
+            -not -path '*/target/*' \
+            -print0 |
+            xargs -0 sed -i 's|github.com/scribejava/scribejava|github.com/martinhickson/scribejava|g'
+          mkdir -p ~/.m2
+          python3 - << 'PY'
+          import os
+          from pathlib import Path
+          from xml.sax.saxutils import escape
+          settings = Path.home() / ".m2" / "settings.xml"
+          settings.parent.mkdir(parents=True, exist_ok=True)
+          if not settings.exists():
+              settings.write_text("<settings><servers></servers></settings>\n")
+          text = settings.read_text()
+          if "<id>central</id>" not in text:
+              server = (
+                  "\n            <server>\n"
+                  "              <id>central</id>\n"
+                  f"              <username>{escape(os.environ['MAVEN_CENTRAL_USERNAME'])}</username>\n"
+                  f"              <password>{escape(os.environ['MAVEN_CENTRAL_PASSWORD'])}</password>\n"
+                  "            </server>"
+              )
+              text = text.replace("</servers>", server + "\n            </servers>", 1)
+              settings.write_text(text)
+          print("central server configured")
+          PY
+          echo "${MAVEN_CENTRAL_GPG_PRIVATE_KEY}" | gpg --batch --import --pinentry-mode loopback
+          mvn -B -ntp deploy -Pcentral-release \
+            -Dmaven.test.skip=true \
+            -Dcheckstyle.skip=true \
+            -Dpmd.skip=true \
+            -Dgpg.passphrase="${MAVEN_CENTRAL_GPG_PASSPHRASE}"
+          echo "Published ${CENTRAL_GROUP_ID}:scribejava:$(mvn -B -ntp -q help:evaluate -Dexpression=project.version -DforceStdout -Dcheckstyle.skip=true -Dpmd.skip=true)"
