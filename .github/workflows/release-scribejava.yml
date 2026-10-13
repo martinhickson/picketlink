@@ -100,4 +100,4 @@ jobs:
             -Dcheckstyle.skip=true \
             -Dpmd.skip=true \
             -Dgpg.passphrase="${MAVEN_CENTRAL_GPG_PASSPHRASE}"
-          echo "Published ${CENTRAL_GROUP_ID}:scribejava:$(mvn -B -ntp -q help:evaluate -Dexpression=project.version -DforceStdout -Dcheckstyle.skip=true -Dpmd.skip=true)"
+          echo "Published ${CENTRAL_GROUP_ID} from ref ${{ inputs.ref }}"
