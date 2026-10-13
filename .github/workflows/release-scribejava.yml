@@ -96,7 +96,7 @@ jobs:
           PY
           echo "${MAVEN_CENTRAL_GPG_PRIVATE_KEY}" | gpg --batch --import --pinentry-mode loopback
           mvn -B -ntp deploy -Pcentral-release \
-            -Dmaven.test.skip=true \
+            -DskipTests \
             -Dcheckstyle.skip=true \
             -Dpmd.skip=true \
             -Dgpg.passphrase="${MAVEN_CENTRAL_GPG_PASSPHRASE}"
