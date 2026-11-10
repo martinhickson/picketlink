@@ -23,6 +23,7 @@
 package org.picketlink.common.logging;
 
 import org.jboss.logging.BasicLogger;
+import org.jboss.logging.annotations.MessageLogger;
 
 /**
  * <p>PicketLink's log abstraction layer on top of JBoss Logging, providing the base interface for any module-specific logger
@@ -33,6 +34,7 @@ import org.jboss.logging.BasicLogger;
  * @author Pedro Silva
  *
  */
+@MessageLogger(projectCode = "PL")
 public interface Log extends BasicLogger {
 
 }
