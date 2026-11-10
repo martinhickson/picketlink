@@ -43,6 +43,8 @@ public class DomElementToStaxWritingTestCase {
 
         XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(baos);
         StaxUtil.writeDOMElement(writer, doc.getDocumentElement());
+        writer.flush();
+        writer.close();
 
         String writtenDoc = new String(baos.toByteArray());
         doc = DocumentUtil.getDocument(writtenDoc);
