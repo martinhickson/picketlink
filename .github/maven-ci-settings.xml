@@ -1,0 +1,17 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <mirrors>
+    <!-- Maven 3.8+ blocks the HTTP JBoss repositories declared in the POMs. -->
+    <mirror>
+      <id>maven-default-http-blocker</id>
+      <mirrorOf>external:dummy:*</mirrorOf>
+      <name>Disable the default HTTP blocker</name>
+      <url>http://0.0.0.0/</url>
+      <blocked>false</blocked>
+    </mirror>
+    <mirror>
+      <id>jboss-public-https</id>
+      <mirrorOf>jboss-public-repository-group,repository.jboss.org,snapshots.jboss.org</mirrorOf>
+      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+    </mirror>
+  </mirrors>
+</settings>
