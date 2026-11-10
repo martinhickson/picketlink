@@ -41,7 +41,7 @@ jobs:
           -f .ci/picketbox/pom.xml
           -pl picketbox -am
           install
-          -DskipTests
+          -Dmaven.test.skip=true
           -Dcheckstyle.skip=true
           -Denforcer.skip=true
 
