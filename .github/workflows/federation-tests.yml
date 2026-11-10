@@ -30,20 +30,35 @@ jobs:
             17
           cache: maven
 
-      # PicketBox 5.0.3.jdk17.1 is not published to Maven Central. Its sources
-      # target 1.8, and the jboss-logging processor needs javax.annotation.Generated,
-      # which JDK 17 no longer provides. Compile it with JDK 8; run the tests on 17.
+      # PicketBox 5.0.3.jdk17.1 is not published to Maven Central. Compile the
+      # modules with JDK 8 (the logging processor needs javax.annotation.Generated),
+      # then install the shaded org.picketbox:picketbox jar the federation POM uses.
       - name: Install PicketBox
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_8_X64 }}
-        run: >
-          mvn -B -s .github/maven-ci-settings.xml
-          -f .ci/picketbox/pom.xml
-          -pl picketbox -am
-          install
-          -Dmaven.test.skip=true
-          -Dcheckstyle.skip=true
-          -Denforcer.skip=true
+        run: |
+          mvn -B -s .github/maven-ci-settings.xml \
+            -f .ci/picketbox/pom.xml \
+            -pl picketbox,security-jboss-sx/jbosssx,security-spi/spi -am \
+            install \
+            -Dmaven.test.skip=true \
+            -Dcheckstyle.skip=true \
+            -Denforcer.skip=true
+          version=5.0.3.jdk17.1
+          repo="${HOME}/.m2/repository/org/picketbox"
+          mvn -B -s .github/maven-ci-settings.xml install:install-file \
+            -Dfile="${repo}/jbosssx-bare/${version}/jbosssx-bare-${version}.jar" \
+            -DgroupId=org.picketbox -DartifactId=jbosssx -Dversion="${version}" -Dpackaging=jar
+          mvn -B -s .github/maven-ci-settings.xml install:install-file \
+            -Dfile="${repo}/picketbox-spi-bare/${version}/picketbox-spi-bare-${version}.jar" \
+            -DgroupId=org.picketbox -DartifactId=jboss-security-spi -Dversion="${version}" -Dpackaging=jar
+          mvn -B -s .github/maven-ci-settings.xml \
+            -f .ci/picketbox/pom.xml \
+            -pl dist -am \
+            install \
+            -Dmaven.test.skip=true \
+            -Dcheckstyle.skip=true \
+            -Denforcer.skip=true
 
       - name: Build federation dependencies
         run: >
