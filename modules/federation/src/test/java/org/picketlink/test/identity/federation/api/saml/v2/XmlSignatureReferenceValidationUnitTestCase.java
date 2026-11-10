@@ -87,6 +87,21 @@ public class XmlSignatureReferenceValidationUnitTestCase {
         assertFalse(XMLSignatureUtil.validate(document, keyPair.getPublic()));
     }
 
+    @Test
+    public void testSignatureCoveringNoAssertionIsRejected() throws Exception {
+        KeyPair keyPair = getKeyPair();
+        Document document = DocumentUtil.createDocument();
+        Element response = document.createElementNS(JBossSAMLURIConstants.PROTOCOL_NSURI.get(), "samlp:Response");
+        response.setAttribute("ID", "response-1");
+        document.appendChild(response);
+        Element status = document.createElementNS(JBossSAMLURIConstants.PROTOCOL_NSURI.get(), "samlp:Status");
+        status.setAttribute("ID", "status-1");
+        status.setIdAttribute("ID", true);
+        response.appendChild(status);
+        XMLSignatureUtil.sign(document, status, keyPair, DigestMethod.SHA1, SignatureMethod.RSA_SHA1, "#status-1");
+        assertFalse(XMLSignatureUtil.validate(document, keyPair.getPublic()));
+    }
+
     private Document createSignedResponseDocument(KeyPair keyPair) throws Exception {
         IssuerInfoHolder issuerInfo = new IssuerInfoHolder("testIssuer");
         SAML2Response response = new SAML2Response();
