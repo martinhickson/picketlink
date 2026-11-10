@@ -83,7 +83,7 @@ public class SAML2LogoutWorkflowUnitTestCase {
      */
     @Test
     public void testSPFilterLogOutRequestGeneration() throws Exception {
-        tcl = Thread.currentThread().getContextClassLoader();
+        tcl = SAML2LogoutWorkflowUnitTestCase.class.getClassLoader();
 
         MockHttpSession session = new MockHttpSession();
         session.setAttribute(GeneralConstants.PRINCIPAL_ID, new Principal() {
@@ -146,7 +146,7 @@ public class SAML2LogoutWorkflowUnitTestCase {
      */
     @Test
     public void testSAML2LogOutFromIDPServlet() throws Exception {
-        tcl = Thread.currentThread().getContextClassLoader();
+        tcl = SAML2LogoutWorkflowUnitTestCase.class.getClassLoader();
         MockHttpSession session = new MockHttpSession();
 
         MockContextClassLoader mclIDP = setupTCL(profile + "/idp");

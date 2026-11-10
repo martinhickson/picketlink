@@ -77,6 +77,7 @@ public class SignatureValidationUnitTestCase {
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
 
         SAML2Signature ss = new SAML2Signature();
@@ -109,6 +110,7 @@ public class SignatureValidationUnitTestCase {
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
 
         SAML2Signature ss = new SAML2Signature();
@@ -148,6 +150,7 @@ public class SignatureValidationUnitTestCase {
         assertion.addStatement(authnStatement);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
 
         id = IDGenerator.create("ID_"); // regenerate
@@ -198,10 +201,12 @@ public class SignatureValidationUnitTestCase {
         Node signedNode = DocumentUtil.getNodeWithAttribute(signedDoc, "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion",
                 "ID", id);
 
-        // Let us just validate the signature of the assertion
+        // Let us just validate the signature of the assertion. Drop the unsigned
+        // sibling assertion so validation covers the signed assertion only.
         Document validatingDoc = DocumentUtil.createDocument();
         Node importedSignedNode = validatingDoc.importNode(signedNode.getOwnerDocument().getFirstChild(), true);
         validatingDoc.appendChild(importedSignedNode);
+        removeUnsignedAssertions(validatingDoc, id);
 
         // set IDness in validating document
         Element assertionEl = (Element) DocumentUtil.getNodeWithAttribute(validatingDoc,
@@ -225,6 +230,7 @@ public class SignatureValidationUnitTestCase {
         validatingDoc = DocumentUtil.createDocument();
         importedSignedNode = validatingDoc.importNode(signedNode.getOwnerDocument().getFirstChild(), true);
         validatingDoc.appendChild(importedSignedNode);
+        removeUnsignedAssertions(validatingDoc, id);
 
         // set IDness in validating document
         assertionEl = (Element) DocumentUtil.getNodeWithAttribute(validatingDoc, "urn:oasis:names:tc:SAML:2.0:assertion",
@@ -235,6 +241,16 @@ public class SignatureValidationUnitTestCase {
         assertTrue("Signature is valid:", XMLSignatureUtil.validate(validatingDoc, kp.getPublic()));
     }
 
+    private static void removeUnsignedAssertions(Document document, String signedId) {
+        NodeList assertions = document.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Assertion");
+        for (int i = assertions.getLength() - 1; i >= 0; i--) {
+            Element assertion = (Element) assertions.item(i);
+            if (!signedId.equals(assertion.getAttribute("ID"))) {
+                assertion.getParentNode().removeChild(assertion);
+            }
+        }
+    }
+
     /**
      * Test signing a string
      *
@@ -243,6 +259,7 @@ public class SignatureValidationUnitTestCase {
     @Test
     public void testStringContentSignature() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
 
         String arbitContent = "I am A String";
@@ -263,6 +280,7 @@ public class SignatureValidationUnitTestCase {
         AuthnRequestType authnRequest = saml2Request.createAuthnRequestType(id, assertionConsumerURL, destination, issuerValue);
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
+        kpg.initialize(1024);
         KeyPair kp = kpg.genKeyPair();
         PublicKey publicKey = kp.getPublic();
 

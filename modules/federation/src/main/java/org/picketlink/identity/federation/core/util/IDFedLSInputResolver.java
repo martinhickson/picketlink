@@ -19,7 +19,6 @@ package org.picketlink.identity.federation.core.util;
 
 import org.picketlink.common.PicketLinkLogger;
 import org.picketlink.common.PicketLinkLoggerFactory;
-import org.picketlink.common.util.StringUtil;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -28,7 +27,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -42,14 +40,13 @@ public class IDFedLSInputResolver implements LSResourceResolver {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
-    private static Map<String, LSInput> lsmap = new HashMap<String, LSInput>();
-
     private static Map<String, String> schemaLocationMap = new LinkedHashMap<String, String>();
 
     static {
         // XML Schema/DTD
         schemaLocationMap.put("datatypes.dtd", "schema/w3c/xmlschema/datatypes.dtd");
         schemaLocationMap.put("XMLSchema.dtd", "schema/w3c/xmlschema/XMLSchema.dtd");
+        schemaLocationMap.put("http://www.w3.org/2001/XMLSchema.dtd", "schema/w3c/xmlschema/XMLSchema.dtd");
         schemaLocationMap.put("http://www.w3.org/2001/xml.xsd", "schema/w3c/xmlschema/xml.xsd");
 
         // XML DSIG
@@ -65,7 +62,11 @@ public class IDFedLSInputResolver implements LSResourceResolver {
         // XACML
         schemaLocationMap.put("access_control-xacml-2.0-context-schema-os.xsd",
                 "schema/access_control-xacml-2.0-context-schema-os.xsd");
+        schemaLocationMap.put("http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-context-schema-os.xsd",
+                "schema/access_control-xacml-2.0-context-schema-os.xsd");
         schemaLocationMap.put("access_control-xacml-2.0-policy-schema-os.xsd",
+                "schema/access_control-xacml-2.0-policy-schema-os.xsd");
+        schemaLocationMap.put("http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-policy-schema-os.xsd",
                 "schema/access_control-xacml-2.0-policy-schema-os.xsd");
 
         // SAML
@@ -98,7 +99,13 @@ public class IDFedLSInputResolver implements LSResourceResolver {
         schemaLocationMap.put("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd",
                 "schema/wstrust/v1_3/oasis-200401-wss-wssecurity-utility-1.0.xsd");
         schemaLocationMap.put("http://schemas.xmlsoap.org/ws/2004/09/policy", "schema/wstrust/v1_3/ws-policy.xsd");
+        schemaLocationMap.put("http://schemas.xmlsoap.org/ws/2004/09/policy/ws-policy.xsd",
+                "schema/wstrust/v1_3/ws-policy.xsd");
         schemaLocationMap.put("http://www.w3.org/2005/08/addressing", "schema/wstrust/v1_3/ws-addr.xsd");
+        schemaLocationMap.put("http://www.w3.org/2006/03/addressing/ws-addr.xsd", "schema/wstrust/v1_3/ws-addr.xsd");
+        schemaLocationMap.put("http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd",
+                "schema/w3c/xmldsig/xmldsig-core-schema.xsd");
+        schemaLocationMap.put("http://www.w3.org/2001/03/xml.xsd", "schema/w3c/xmlschema/xml.xsd");
     }
 
     public static Collection<String> schemas() {
@@ -111,26 +118,26 @@ public class IDFedLSInputResolver implements LSResourceResolver {
 
     public LSInput resolveResource(String type, String namespaceURI, final String publicId, final String systemId,
                                    final String baseURI) {
-        LSInput lsi = null;
         if (systemId == null)
             throw logger.nullValueError("systemid");
-        if (StringUtil.isNotNull(systemId) && systemId.endsWith("dtd") && StringUtil.isNotNull(baseURI)) {
-            lsi = lsmap.get(baseURI);
-        }
-        if (lsi == null)
-            lsi = lsmap.get(systemId);
-        if (lsi == null) {
-            final String loc = schemaLocationMap.get(systemId);
-            if (loc == null)
-                return null;
 
-            lsi = new PicketLinkLSInput(baseURI, loc, publicId, systemId);
+        final String loc = resolveSchemaLocation(systemId);
+        if (loc == null)
+            return null;
 
-            logger.trace("Loaded:" + lsi);
+        return new PicketLinkLSInput(baseURI, loc, publicId, systemId);
+    }
 
-            lsmap.put(systemId, lsi);
-        }
-        return lsi;
+    private static String resolveSchemaLocation(String systemId) {
+        String loc = schemaLocationMap.get(systemId);
+        if (loc != null)
+            return loc;
+
+        int slash = systemId.lastIndexOf('/');
+        if (slash >= 0 && slash < systemId.length() - 1)
+            return schemaLocationMap.get(systemId.substring(slash + 1));
+
+        return null;
     }
 
     public static class PicketLinkLSInput implements LSInput {

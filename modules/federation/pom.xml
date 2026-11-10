@@ -84,6 +84,8 @@
             <include>**/**TestCase.java</include>
           </includes>
           <forkMode>pertest</forkMode>
+          <!-- JDK 17 enables XML DSig secure validation, which rejects the SHA-1 signatures these tests exercise. -->
+          <argLine>-Djdk.xml.dsig.secureValidation=false -Dorg.jcp.xml.dsig.secureValidation=false</argLine>
           <useFile>false</useFile>
           <trimStackTrace>false</trimStackTrace>
         </configuration>

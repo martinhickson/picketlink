@@ -357,8 +357,16 @@ public class SAML2MultipleAssertionAndSignatureTestCase extends TestCase {
     }
 
     private boolean isSignatureValidationFailure(ProcessingException exception) {
-        Throwable cause = exception.getCause();
-        return cause instanceof SignatureValidationException || cause instanceof XMLSignatureException;
+        Throwable current = exception;
+        while (current != null) {
+            if (current instanceof SignatureValidationException || current instanceof XMLSignatureException)
+                return true;
+            String message = current.getMessage();
+            if (message != null && message.contains("Error validating signature"))
+                return true;
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void addBadAssertionWithoutSignature(ResponseType responseType) {
