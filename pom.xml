@@ -71,7 +71,7 @@
     <jboss.logging.version>3.4.3.Final</jboss.logging.version>
     <jboss.logging.processor.version>2.2.1.Final</jboss.logging.processor.version>
     <junit.version>4.10</junit.version>
-    <mockito.version>1.9.0</mockito.version>
+    <mockito.version>4.11.0</mockito.version>
   </properties>
 
   <profiles>
@@ -344,7 +344,7 @@
 
       <dependency>
         <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
+        <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
         <scope>test</scope>
       </dependency>
