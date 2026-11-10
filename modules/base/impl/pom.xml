@@ -16,7 +16,6 @@
 
   <properties>
     <version.weld>1.1.23.Final</version.weld>
-    <version.mockito>1.9.5</version.mockito>
     <version.slf4j>1.6.0</version.slf4j>
   </properties>
 
@@ -69,8 +68,8 @@
 
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
-      <version>${version.mockito}</version>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
 

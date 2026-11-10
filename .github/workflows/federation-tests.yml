@@ -21,14 +21,14 @@ jobs:
           ref: 5.0.3
           path: .ci/picketbox
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: "11"
+          java-version: "17"
           cache: maven
 
-      # PicketBox 5.0.3.jdk17.1 is not published to Maven Central. JDK 11 does
+      # PicketBox 5.0.3.jdk17.1 is not published to Maven Central. JDK 17 does
       # not include javax.annotation.Generated, which its logging processor
       # loads, so the checked-out build gets that API on the compile classpath.
       # The shaded org.picketbox:picketbox jar is what federation depends on.
@@ -48,8 +48,8 @@ jobs:
               inserted = 1
             }
             { print }
-          ' .ci/picketbox/pom.xml > .ci/picketbox/pom.xml.jdk11
-          mv .ci/picketbox/pom.xml.jdk11 .ci/picketbox/pom.xml
+          ' .ci/picketbox/pom.xml > .ci/picketbox/pom.xml.generated
+          mv .ci/picketbox/pom.xml.generated .ci/picketbox/pom.xml
           mvn -B -s .github/maven-ci-settings.xml \
             -f .ci/picketbox/pom.xml \
             -pl picketbox,security-jboss-sx/jbosssx,security-spi/spi -am \
