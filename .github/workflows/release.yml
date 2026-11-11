@@ -80,9 +80,9 @@ jobs:
           git pull origin "$BASE_BRANCH"
 
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
-            echo "Branch $BRANCH_NAME already exists, checking it out"
-            git checkout "$BRANCH_NAME"
-            git pull origin "$BRANCH_NAME"
+            echo "Rebuilding $BRANCH_NAME from $BASE_BRANCH"
+            git checkout -B "$BRANCH_NAME"
+            git push --force-with-lease origin "$BRANCH_NAME"
           else
             echo "Creating new branch $BRANCH_NAME from $BASE_BRANCH"
             git checkout -b "$BRANCH_NAME"
@@ -115,8 +115,8 @@ jobs:
 
       - name: Build project
         run: |
-          # One compile. A later mvn test makes the logging processor recreate
-          # IDMLog_$logger and IDMMessages_$bundle, which JDK 17 rejects.
+          # Tests run in this install when requested. logging-filer keeps an existing
+          # IDMLog_$logger or IDMMessages_$bundle if javac already has that type.
           if [ "${{ github.event.inputs.run_tests }}" = "true" ]; then
             mvn -B -s .github/maven-ci-settings.xml clean install -Dcheckstyle.skip=true -Denforcer.skip=true
           else

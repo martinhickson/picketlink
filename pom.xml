@@ -85,6 +85,7 @@
       </activation>
       <modules>
         <module>build-config</module>
+        <module>logging-filer</module>
         <module>modules/common</module>
         <module>modules/config</module>
         <module>modules/idm</module>
@@ -98,6 +99,7 @@
     <profile>
       <id>eap6</id>
       <modules>
+          <module>logging-filer</module>
           <module>modules/common</module>
           <module>modules/config</module>
           <module>modules/idm</module>
@@ -287,6 +289,13 @@
         <groupId>org.jboss.logging</groupId>
         <artifactId>jboss-logging</artifactId>
         <version>${jboss.logging.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.picketlink</groupId>
+        <artifactId>picketlink-logging-filer</artifactId>
+        <version>${project.version}</version>
         <scope>provided</scope>
       </dependency>
 
