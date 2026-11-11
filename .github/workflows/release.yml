@@ -120,7 +120,10 @@ jobs:
       - name: Run tests
         if: github.event.inputs.run_tests == 'true'
         run: |
-          mvn -B -s .github/maven-ci-settings.xml test -Dcheckstyle.skip=true -Denforcer.skip=true
+          # install already compiled. A second compile makes the logging processor
+          # try to recreate IDMLog_$logger and IDMMessages_$bundle.
+          find . -path '*/target/generated-sources' -type d -prune -exec rm -rf {} +
+          mvn -B -s .github/maven-ci-settings.xml surefire:test -Dcheckstyle.skip=true -Denforcer.skip=true
 
       - name: Publish to GitHub Packages
         if: github.event.inputs.publish_packages == 'true'
