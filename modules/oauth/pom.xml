@@ -253,12 +253,23 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- 1.5.7 crashes on Java 9+ in SystemUtils. This build parses those versions. -->
+    <!-- 1.5.7 crashes on Java 9+ in SystemUtils. This build parses those versions.
+         The uber jar already contains these artifacts, so they must stay off the classpath. -->
     <dependency>
       <groupId>org.apache.directory.server</groupId>
       <artifactId>apacheds-all</artifactId>
       <version>1.5.7.1-bravura-1</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.directory.shared</groupId>
+          <artifactId>shared-ldap</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.directory.shared</groupId>
+          <artifactId>shared-ldap-schema</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
   </dependencies>
