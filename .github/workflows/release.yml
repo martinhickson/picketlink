@@ -1,0 +1,179 @@
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 2.5.5.1-javax-bravura-1)'
+        required: true
+        type: string
+        default: '2.5.5.1-javax-bravura-1'
+      base_branch:
+        description: 'Base branch to create release from (e.g., 2.5.5)'
+        required: false
+        type: string
+        default: '2.5.5'
+      branch_name:
+        description: 'Branch name for release (e.g., release/2.5.5.1-javax)'
+        required: true
+        type: string
+        default: 'release/2.5.5.1-javax'
+      release_tag:
+        description: 'Git tag for release (e.g., 2.5.5.1-javax-bravura-1)'
+        required: true
+        type: string
+        default: '2.5.5.1-javax-bravura-1'
+      create_release:
+        description: 'Create GitHub Release'
+        required: false
+        type: boolean
+        default: true
+      publish_packages:
+        description: 'Publish to GitHub Packages'
+        required: false
+        type: boolean
+        default: true
+      run_tests:
+        description: 'Run tests after the build'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+      ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create release branch
+        run: |
+          BASE_BRANCH="${{ github.event.inputs.base_branch }}"
+          BRANCH_NAME="${{ github.event.inputs.branch_name }}"
+
+          git fetch origin
+          git checkout "$BASE_BRANCH"
+          git pull origin "$BASE_BRANCH"
+
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME already exists, checking it out"
+            git checkout "$BRANCH_NAME"
+            git pull origin "$BRANCH_NAME"
+          else
+            echo "Creating new branch $BRANCH_NAME from $BASE_BRANCH"
+            git checkout -b "$BRANCH_NAME"
+            git push -u origin "$BRANCH_NAME"
+          fi
+
+      - name: Update version in all POM files
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          # The root POM has no parent. Its first version is the project version.
+          OLD_VERSION=$(grep -m 1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | tr -d '[:space:]')
+
+          if [ -z "$OLD_VERSION" ] || [ -z "$VERSION" ]; then
+            echo "Refusing to rewrite version '${OLD_VERSION}' to '${VERSION}'."
+            exit 1
+          fi
+
+          echo "Updating version from $OLD_VERSION to $VERSION"
+          find . -name "pom.xml" -not -path "*/target/*" -not -path "*/.git/*" -exec sed -i "s|<version>${OLD_VERSION}</version>|<version>${VERSION}</version>|g" {} \;
+          if grep -q "<tag>" pom.xml; then
+            sed -i "s|<tag>.*</tag>|<tag>${VERSION}</tag>|" pom.xml
+          fi
+          echo "Version update complete"
+
+      - name: Commit version changes
+        run: |
+          git add -A
+          git commit -m "Update version to ${{ github.event.inputs.version }}" || echo "No changes to commit"
+          git push
+
+      - name: Build project
+        run: |
+          mvn -B -s .github/maven-ci-settings.xml clean install -DskipTests -Dcheckstyle.skip=true -Denforcer.skip=true
+
+      - name: Run tests
+        if: github.event.inputs.run_tests == 'true'
+        run: |
+          mvn -B -s .github/maven-ci-settings.xml test -Dcheckstyle.skip=true -Denforcer.skip=true
+
+      - name: Publish to GitHub Packages
+        if: github.event.inputs.publish_packages == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p ~/.m2
+          awk '
+            /<\/servers>/ && !inserted {
+              print "    <server>"
+              print "      <id>github</id>"
+              print "      <username>${{ github.repository_owner }}</username>"
+              print "      <password>${{ secrets.GITHUB_TOKEN }}</password>"
+              print "    </server>"
+              inserted=1
+            }
+            { print }
+          ' .github/maven-ci-settings.xml > ~/.m2/settings.xml
+          mvn -B -s ~/.m2/settings.xml deploy -DskipTests -Dcheckstyle.skip=true -Denforcer.skip=true \
+            -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
+
+      - name: Create Git tag
+        run: |
+          TAG="${{ github.event.inputs.release_tag }}"
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "Tag $TAG already exists remotely, skipping tag creation"
+          else
+            echo "Creating new tag $TAG"
+            git tag -a "$TAG" -m "Release ${{ github.event.inputs.version }}"
+            git push origin "$TAG"
+          fi
+
+      - name: Create GitHub Release
+        if: github.event.inputs.create_release == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: Release ${{ github.event.inputs.version }}
+          body: |
+            ## Release ${{ github.event.inputs.version }}
+
+            Maven artifacts are published to GitHub Packages under `org.picketlink`.
+            Tag: ${{ github.event.inputs.release_tag }}
+            Branch: ${{ github.event.inputs.branch_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-artifacts-${{ github.event.inputs.version }}
+          path: |
+            **/target/*.jar
+            **/target/*.pom
+          retention-days: 30
+          if-no-files-found: warn
