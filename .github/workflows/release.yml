@@ -82,7 +82,7 @@ jobs:
           if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
             echo "Rebuilding $BRANCH_NAME from $BASE_BRANCH"
             git checkout -B "$BRANCH_NAME"
-            git push --force-with-lease origin "$BRANCH_NAME"
+            git push --force-with-lease -u origin "$BRANCH_NAME"
           else
             echo "Creating new branch $BRANCH_NAME from $BASE_BRANCH"
             git checkout -b "$BRANCH_NAME"
@@ -111,7 +111,7 @@ jobs:
         run: |
           git add -A
           git commit -m "Update version to ${{ github.event.inputs.version }}" || echo "No changes to commit"
-          git push
+          git push -u origin HEAD
 
       - name: Build project
         run: |
