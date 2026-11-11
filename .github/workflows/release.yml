@@ -118,7 +118,9 @@ jobs:
           # Tests run in this install when requested. logging-filer keeps an existing
           # IDMLog_$logger or IDMMessages_$bundle if javac already has that type.
           if [ "${{ github.event.inputs.run_tests }}" = "true" ]; then
-            mvn -B -s .github/maven-ci-settings.xml clean install -Dcheckstyle.skip=true -Denforcer.skip=true
+            # Weld 1 proxies call ClassLoader.defineClass, which JDK 17 blocks without this open.
+            mvn -B -s .github/maven-ci-settings.xml clean install -Dcheckstyle.skip=true -Denforcer.skip=true \
+              -Dsurefire.jvm.opens="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.security=ALL-UNNAMED"
           else
             mvn -B -s .github/maven-ci-settings.xml clean install -DskipTests -Dcheckstyle.skip=true -Denforcer.skip=true
           fi

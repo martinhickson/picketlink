@@ -72,6 +72,8 @@
     <jboss.logging.processor.version>2.2.1.Final</jboss.logging.processor.version>
     <junit.version>4.10</junit.version>
     <mockito.version>4.11.0</mockito.version>
+    <!-- JDK 9+ test runs pass add-opens here. JDK 8 leaves it empty. -->
+    <surefire.jvm.opens></surefire.jvm.opens>
   </properties>
 
   <profiles>
@@ -489,6 +491,7 @@
             <forkMode>pertest</forkMode>
             <useFile>false</useFile>
             <trimStackTrace>false</trimStackTrace>
+            <argLine>${surefire.jvm.opens}</argLine>
             </configuration>
         </plugin>
         <plugin>

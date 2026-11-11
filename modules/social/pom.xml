@@ -51,7 +51,7 @@
             <include>**/**TestCase.java</include>
           </includes>
           <forkMode>pertest</forkMode>
-          <argLine>-Djava.endorsed.dirs=${basedir}/src/test/resources/endorsed</argLine>
+          <argLine>${surefire.jvm.opens} -Djava.endorsed.dirs=${basedir}/src/test/resources/endorsed</argLine>
           <useFile>false</useFile>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
