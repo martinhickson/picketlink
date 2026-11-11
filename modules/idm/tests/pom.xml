@@ -73,6 +73,12 @@
       <artifactId>picketbox-ldap</artifactId>
       <version>1.0.2.Final</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.directory.server</groupId>
+          <artifactId>apacheds-all</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.picketbox</groupId>
@@ -80,6 +86,19 @@
       <version>1.0.2.Final</version>
       <scope>test</scope>
       <type>test-jar</type>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.directory.server</groupId>
+          <artifactId>apacheds-all</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- 1.5.7 crashes on Java 9+ in SystemUtils. This build parses those versions. -->
+    <dependency>
+      <groupId>org.apache.directory.server</groupId>
+      <artifactId>apacheds-all</artifactId>
+      <version>1.5.7.1-bravura-1</version>
+      <scope>test</scope>
     </dependency>
 
     <!-- JPA Identity Store Dependencies -->

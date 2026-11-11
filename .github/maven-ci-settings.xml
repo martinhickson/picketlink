@@ -25,6 +25,11 @@
       <username>${env.GITHUB_ACTOR}</username>
       <password>${env.GITHUB_TOKEN}</password>
     </server>
+    <server>
+      <id>github-directory-server</id>
+      <username>${env.GITHUB_ACTOR}</username>
+      <password>${env.GITHUB_TOKEN}</password>
+    </server>
   </servers>
   <profiles>
     <profile>
@@ -43,6 +48,16 @@
         <repository>
           <id>github-picketbox</id>
           <url>https://maven.pkg.github.com/martinhickson/picketbox</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>github-directory-server</id>
+          <url>https://maven.pkg.github.com/martinhickson/directory-server</url>
           <releases>
             <enabled>true</enabled>
           </releases>
