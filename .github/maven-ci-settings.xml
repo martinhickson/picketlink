@@ -20,6 +20,11 @@
       <username>${env.ARTIFACTORY_USERNAME}</username>
       <password>${env.ARTIFACTORY_PASSWORD}</password>
     </server>
+    <server>
+      <id>github-picketbox</id>
+      <username>${env.GITHUB_ACTOR}</username>
+      <password>${env.GITHUB_TOKEN}</password>
+    </server>
   </servers>
   <profiles>
     <profile>
@@ -28,6 +33,16 @@
         <repository>
           <id>bravura-central-aws</id>
           <url>https://repoaws.bravurasolutions.net/artifactory/libs-release</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>github-picketbox</id>
+          <url>https://maven.pkg.github.com/martinhickson/picketbox</url>
           <releases>
             <enabled>true</enabled>
           </releases>
