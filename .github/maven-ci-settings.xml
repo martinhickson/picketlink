@@ -14,4 +14,31 @@
       <url>https://repository.jboss.org/nexus/content/groups/public/</url>
     </mirror>
   </mirrors>
+  <servers>
+    <server>
+      <id>bravura-central-aws</id>
+      <username>${env.ARTIFACTORY_USERNAME}</username>
+      <password>${env.ARTIFACTORY_PASSWORD}</password>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <id>bravura-central</id>
+      <repositories>
+        <repository>
+          <id>bravura-central-aws</id>
+          <url>https://repoaws.bravurasolutions.net/artifactory/libs-release</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>bravura-central</activeProfile>
+  </activeProfiles>
 </settings>
