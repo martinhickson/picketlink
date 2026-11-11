@@ -115,15 +115,13 @@ jobs:
 
       - name: Build project
         run: |
-          mvn -B -s .github/maven-ci-settings.xml clean install -DskipTests -Dcheckstyle.skip=true -Denforcer.skip=true
-
-      - name: Run tests
-        if: github.event.inputs.run_tests == 'true'
-        run: |
-          # install already compiled. A second compile makes the logging processor
-          # try to recreate IDMLog_$logger and IDMMessages_$bundle.
-          find . -path '*/target/generated-sources' -type d -prune -exec rm -rf {} +
-          mvn -B -s .github/maven-ci-settings.xml surefire:test -Dcheckstyle.skip=true -Denforcer.skip=true
+          # One compile. A later mvn test makes the logging processor recreate
+          # IDMLog_$logger and IDMMessages_$bundle, which JDK 17 rejects.
+          if [ "${{ github.event.inputs.run_tests }}" = "true" ]; then
+            mvn -B -s .github/maven-ci-settings.xml clean install -Dcheckstyle.skip=true -Denforcer.skip=true
+          else
+            mvn -B -s .github/maven-ci-settings.xml clean install -DskipTests -Dcheckstyle.skip=true -Denforcer.skip=true
+          fi
 
       - name: Publish to GitHub Packages
         if: github.event.inputs.publish_packages == 'true'
