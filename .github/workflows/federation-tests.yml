@@ -10,9 +10,14 @@ on:
 jobs:
   federation-unit-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
       ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout PicketLink
         uses: actions/checkout@v5
