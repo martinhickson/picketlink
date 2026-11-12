@@ -105,6 +105,13 @@ public class PostBindingUtil {
             throw logger.nullValueError("Destination is null");
         }
 
+        // Both values are placed in double-quoted HTML attributes. Leave them encoded so a
+        // RelayState or destination cannot break out of the attribute (CVE-2019-3872).
+        destination = escapeHtml(destination);
+        if (isNotNull(relayState)) {
+            relayState = escapeHtml(relayState);
+        }
+
         response.setContentType("text/html");
         common(holder.getDestination(), response);
         StringBuilder builder = new StringBuilder();
@@ -145,6 +152,37 @@ public class PostBindingUtil {
 
         outputStream.print(str);
         outputStream.close();
+    }
+
+    /**
+     * Encode a value for a double-quoted HTML attribute.
+     */
+    static String escapeHtml(String value) {
+        StringBuilder escaped = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char chr = value.charAt(i);
+            switch (chr) {
+                case '&':
+                    escaped.append("&amp;");
+                    break;
+                case '"':
+                    escaped.append("&quot;");
+                    break;
+                case '\'':
+                    escaped.append("&#39;");
+                    break;
+                case '<':
+                    escaped.append("&lt;");
+                    break;
+                case '>':
+                    escaped.append("&gt;");
+                    break;
+                default:
+                    escaped.append(chr);
+                    break;
+            }
+        }
+        return escaped.toString();
     }
 
     private static void common(String destination, HttpServletResponse response) {
